@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* NutriPlan — light theme */
+    --background: 45 100% 97%;        /* cream */
+    --foreground: 20 40% 20%;         /* bark-dark */
+
+    --card: 40 60% 94%;               /* parchment */
+    --card-foreground: 20 40% 20%;
+
+    --popover: 40 60% 94%;
+    --popover-foreground: 20 40% 20%;
+
+    --primary: 25 50% 32%;            /* bark */
+    --primary-foreground: 45 100% 97%;
+
+    --secondary: 127 14% 55%;         /* sage */
+    --secondary-foreground: 20 40% 20%;
+
+    --muted: 40 30% 88%;
+    --muted-foreground: 20 20% 45%;
+
+    --accent: 28 62% 52%;             /* amber */
+    --accent-foreground: 45 100% 97%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 40 30% 82%;
+    --input: 40 30% 82%;
+    --ring: 28 62% 52%;
+
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+}
+
+/* Self-hosted fonts — loaded in layout.tsx via next/font/local */
