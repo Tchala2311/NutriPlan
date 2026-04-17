@@ -2,51 +2,668 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────
+   NutriPlan Design System — v2
+   DNA: Apple clarity · Nike vitality · Loro Piana luxury
+   ───────────────────────────────────────────────────────── */
+
 @layer base {
   :root {
-    /* NutriPlan — light theme */
-    --background: 45 100% 97%;        /* cream */
-    --foreground: 20 40% 20%;         /* bark-dark */
+    /* ── Core palette ─────────────────────────────────── */
+    /* Cream — Loro Piana cashmere warmth */
+    --np-cream-50:   #FFFDF8;
+    --np-cream-100:  #FFFBF0;
+    --np-cream-200:  #FFF5D9;
+    --np-cream-300:  #FFEDC0;
 
-    --card: 40 60% 94%;               /* parchment */
-    --card-foreground: 20 40% 20%;
+    /* Parchment — aged paper, editorial texture */
+    --np-parchment-50:  #FAF6EE;
+    --np-parchment-100: #F5EDDA;
+    --np-parchment-200: #EDD9B5;
+    --np-parchment-300: #E4C48F;
 
-    --popover: 40 60% 94%;
-    --popover-foreground: 20 40% 20%;
+    /* Bark — warm espresso, primary brand color */
+    --np-bark-50:  #F3EDE8;
+    --np-bark-100: #D9C2B0;
+    --np-bark-200: #A67D5D;
+    --np-bark-300: #6B4C35;
+    --np-bark-400: #4A3323;
+    --np-bark-500: #2E1F15;
 
-    --primary: 25 50% 32%;            /* bark */
-    --primary-foreground: 45 100% 97%;
+    /* Stone — Apple-neutral, cool counterpoint */
+    --np-stone-50:  #F8F7F6;
+    --np-stone-100: #EFEDEA;
+    --np-stone-200: #D9D4CD;
+    --np-stone-300: #B8B0A6;
+    --np-stone-400: #8A8078;
+    --np-stone-500: #5C534A;
 
-    --secondary: 127 14% 55%;         /* sage */
+    /* Sage — botanical vitality */
+    --np-sage-50:  #EEF4EF;
+    --np-sage-100: #C8DCC9;
+    --np-sage-200: #9BBFA0;
+    --np-sage-300: #7A9E7E;
+    --np-sage-400: #587460;
+    --np-sage-500: #3A4D3D;
+
+    /* Vital — Nike-energy, health metric highlight */
+    --np-vital-50:  #E8F8F2;
+    --np-vital-100: #BEEDDA;
+    --np-vital-200: #7EDAB8;
+    --np-vital-300: #3DC496;
+    --np-vital-400: #1EA876;
+    --np-vital-500: #0D7A55;
+
+    /* Amber — NutriPlan accent, warm action */
+    --np-amber-50:  #FAF0E6;
+    --np-amber-100: #F0CFA0;
+    --np-amber-200: #E5A85C;
+    --np-amber-300: #D4813A;
+    --np-amber-400: #A85E20;
+    --np-amber-500: #7A4315;
+
+    /* Signal — semantic / destructive */
+    --np-signal-error:   #C0392B;
+    --np-signal-warning: #D4813A;
+    --np-signal-success: #1EA876;
+    --np-signal-info:    #2980B9;
+
+    /* ── shadcn/ui semantic tokens (HSL space-separated)
+       Used as: hsl(var(--background)) etc in tailwind.config
+       ─────────────────────────────────────────────────── */
+    --background:           45 100% 97%;   /* cream-100 */
+    --foreground:           20 40% 20%;    /* bark-400 */
+    --card:                 40 60% 94%;    /* parchment-50 */
+    --card-foreground:      20 40% 20%;
+    --popover:              45 100% 97%;
+    --popover-foreground:   20 40% 20%;
+    --primary:              25 50% 32%;    /* bark-300 */
+    --primary-foreground:   45 100% 97%;
+    --secondary:            127 14% 55%;   /* sage-300 */
     --secondary-foreground: 20 40% 20%;
-
-    --muted: 40 30% 88%;
-    --muted-foreground: 20 20% 45%;
-
-    --accent: 28 62% 52%;             /* amber */
-    --accent-foreground: 45 100% 97%;
-
-    --destructive: 0 72% 51%;
+    --muted:                40 30% 88%;    /* parchment-100 */
+    --muted-foreground:     20 20% 45%;
+    --accent:               28 62% 52%;    /* amber-300 */
+    --accent-foreground:    45 100% 97%;
+    --destructive:          0 72% 51%;
     --destructive-foreground: 0 0% 98%;
+    --border:               40 30% 82%;    /* parchment-200 */
+    --input:                40 30% 82%;
+    --ring:                 28 62% 52%;    /* amber-300 */
 
-    --border: 40 30% 82%;
-    --input: 40 30% 82%;
-    --ring: 28 62% 52%;
+    /* Non-shadcn semantic extras (used directly as colors) */
+    --background-elevated: var(--np-cream-50);
 
-    --radius: 0.75rem;
+    /* ── Radius ───────────────────────────────────────── */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-2xl: 28px;
+    --radius-full: 9999px;
+    --radius: var(--radius-lg); /* shadcn default */
+
+    /* ── Typography scale ─────────────────────────────── */
+    --type-xs:   0.6875rem;   /* 11px — label/badge */
+    --type-sm:   0.8125rem;   /* 13px — caption */
+    --type-base: 0.9375rem;   /* 15px — body */
+    --type-md:   1.0625rem;   /* 17px — body large */
+    --type-lg:   1.1875rem;   /* 19px — callout */
+    --type-xl:   1.375rem;    /* 22px — title 3 */
+    --type-2xl:  1.75rem;     /* 28px — title 2 */
+    --type-3xl:  2.125rem;    /* 34px — title 1 */
+    --type-4xl:  2.75rem;     /* 44px — large title */
+    --type-5xl:  3.5rem;      /* 56px — hero */
+    --type-6xl:  4.5rem;      /* 72px — super hero */
+
+    /* ── Spacing scale (8px grid) ────────────────────── */
+    --space-1:  0.25rem;   /* 4px */
+    --space-2:  0.5rem;    /* 8px */
+    --space-3:  0.75rem;   /* 12px */
+    --space-4:  1rem;      /* 16px */
+    --space-5:  1.25rem;   /* 20px */
+    --space-6:  1.5rem;    /* 24px */
+    --space-8:  2rem;      /* 32px */
+    --space-10: 2.5rem;    /* 40px */
+    --space-12: 3rem;      /* 48px */
+    --space-16: 4rem;      /* 64px */
+    --space-20: 5rem;      /* 80px */
+    --space-24: 6rem;      /* 96px */
+    --space-32: 8rem;      /* 128px */
+
+    /* ── Elevation / Shadows ─────────────────────────── */
+    /* Warm-tinted shadows — not cold gray */
+    --shadow-xs:  0 1px 2px rgba(74, 51, 35, 0.06);
+    --shadow-sm:  0 1px 4px rgba(74, 51, 35, 0.08), 0 1px 2px rgba(74, 51, 35, 0.04);
+    --shadow-md:  0 4px 12px rgba(74, 51, 35, 0.10), 0 2px 4px rgba(74, 51, 35, 0.06);
+    --shadow-lg:  0 8px 24px rgba(74, 51, 35, 0.12), 0 4px 8px rgba(74, 51, 35, 0.06);
+    --shadow-xl:  0 16px 48px rgba(74, 51, 35, 0.14), 0 6px 16px rgba(74, 51, 35, 0.08);
+    --shadow-2xl: 0 24px 64px rgba(74, 51, 35, 0.18), 0 8px 24px rgba(74, 51, 35, 0.10);
+    /* Ambient glow for accent elements */
+    --shadow-amber-glow: 0 4px 20px rgba(212, 129, 58, 0.24);
+    --shadow-vital-glow: 0 4px 20px rgba(61, 196, 150, 0.22);
+
+    /* ── Motion ──────────────────────────────────────── */
+    /* Apple-calibrated easing: deliberate, never bouncy */
+    --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out:     cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1); /* subtle spring — Nike energy */
+
+    --duration-instant: 80ms;
+    --duration-fast:    150ms;
+    --duration-base:    220ms;
+    --duration-slow:    350ms;
+    --duration-enter:   400ms;
+    --duration-exit:    200ms;
+
+    /* ── Z-index scale ───────────────────────────────── */
+    --z-below:   -1;
+    --z-base:     0;
+    --z-raised:   1;
+    --z-dropdown: 10;
+    --z-sticky:   20;
+    --z-overlay:  30;
+    --z-modal:    40;
+    --z-toast:    50;
+    --z-tooltip:  60;
+
+    /* ── Layout ──────────────────────────────────────── */
+    --sidebar-width:        256px;
+    --header-height:        64px;
+    --content-max-width:    1120px;
+    --content-prose-width:  680px;
+  }
+
+  /* ── Dark mode ──────────────────────────────────────── */
+  .dark {
+    /* shadcn HSL tokens — warm dark */
+    --background:           20 30% 8%;     /* near-black warm */
+    --foreground:           40 60% 90%;    /* parchment light */
+    --card:                 20 28% 12%;
+    --card-foreground:      40 60% 90%;
+    --popover:              20 30% 10%;
+    --popover-foreground:   40 60% 90%;
+    --primary:              28 75% 62%;    /* amber-200 */
+    --primary-foreground:   20 30% 8%;
+    --secondary:            127 14% 40%;   /* sage-400 */
+    --secondary-foreground: 40 60% 90%;
+    --muted:                20 25% 16%;
+    --muted-foreground:     20 20% 55%;
+    --accent:               28 62% 52%;
+    --accent-foreground:    20 30% 8%;
+    --destructive:          0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border:               20 25% 22%;
+    --input:                20 25% 22%;
+    --ring:                 28 62% 52%;
+
+    /* Extras */
+    --background-elevated: #221B16;
+
+    --shadow-xs:  0 1px 2px rgba(0, 0, 0, 0.20);
+    --shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.16);
+    --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.20);
+    --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.36), 0 4px 8px rgba(0, 0, 0, 0.24);
+    --shadow-xl:  0 16px 48px rgba(0, 0, 0, 0.40), 0 6px 16px rgba(0, 0, 0, 0.28);
   }
 
   * {
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
-  h1, h2, h3 {
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-size: var(--type-base);
+    line-height: 1.6;
+  }
+
+  /* Display headings — Playfair Display editorial luxury */
+  h1, .h1 {
     @apply font-display;
+    font-size: var(--type-4xl);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  h2, .h2 {
+    @apply font-display;
+    font-size: var(--type-3xl);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: -0.018em;
+  }
+  h3, .h3 {
+    @apply font-display;
+    font-size: var(--type-2xl);
+    font-weight: 600;
+    line-height: 1.24;
+    letter-spacing: -0.014em;
+  }
+  h4, .h4 {
+    @apply font-sans;
+    font-size: var(--type-xl);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  h5, .h5 {
+    @apply font-sans;
+    font-size: var(--type-lg);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  h6, .h6 {
+    @apply font-sans;
+    font-size: var(--type-md);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* Focus ring — Apple precision */
+  :focus-visible {
+    outline: 2px solid var(--np-amber-300);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(212, 129, 58, 0.18);
+    color: var(--np-bark-400);
   }
 }
 
-/* Self-hosted fonts — loaded in layout.tsx via next/font/local */
+/* ─────────────────────────────────────────────────────────
+   Utility layer — NutriPlan-specific utilities
+   ───────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Metric numbers — tabular, monospaced feel for data */
+  .font-metric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.02em;
+  }
+
+  /* Luxury letterspace — Loro Piana label style */
+  .tracking-luxury {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: var(--type-xs);
+    font-weight: 500;
+  }
+
+  /* Editorial italics */
+  .italic-display {
+    @apply font-display italic;
+  }
+
+  /* Shadows */
+  .shadow-warm-xs  { box-shadow: var(--shadow-xs); }
+  .shadow-warm-sm  { box-shadow: var(--shadow-sm); }
+  .shadow-warm-md  { box-shadow: var(--shadow-md); }
+  .shadow-warm-lg  { box-shadow: var(--shadow-lg); }
+  .shadow-warm-xl  { box-shadow: var(--shadow-xl); }
+  .shadow-amber-glow { box-shadow: var(--shadow-amber-glow); }
+  .shadow-vital-glow { box-shadow: var(--shadow-vital-glow); }
+
+  /* Glass surface — backdrop blur card */
+  .surface-glass {
+    background: rgba(255, 251, 240, 0.72);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(237, 217, 181, 0.5);
+  }
+
+  /* Texture overlay — subtle Loro Piana paper feel */
+  .texture-parchment::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Nike-style bold stat display */
+  .stat-hero {
+    @apply font-display font-bold font-metric;
+    font-size: var(--type-5xl);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  /* Gradient text — premium heading */
+  .text-gradient-warm {
+    background: linear-gradient(135deg, var(--np-bark-300) 0%, var(--np-amber-300) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Vital/health positive gradient */
+  .text-gradient-vital {
+    background: linear-gradient(135deg, var(--np-sage-300) 0%, var(--np-vital-300) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Motion utilities */
+  .transition-fast   { transition-duration: var(--duration-fast);  transition-timing-function: var(--ease-out-expo); }
+  .transition-base   { transition-duration: var(--duration-base);  transition-timing-function: var(--ease-out-expo); }
+  .transition-slow   { transition-duration: var(--duration-slow);  transition-timing-function: var(--ease-out-expo); }
+  .transition-spring { transition-duration: var(--duration-base);  transition-timing-function: var(--ease-spring); }
+
+  /* Progress bar — macronutrient tracker */
+  .progress-bar {
+    @apply relative overflow-hidden rounded-full bg-parchment-200;
+    height: 6px;
+  }
+  .progress-bar-fill {
+    @apply absolute inset-y-0 left-0 rounded-full;
+    transition: width var(--duration-slow) var(--ease-out-expo);
+  }
+
+  /* Divider with label */
+  .divider-label {
+    @apply flex items-center gap-3 text-muted-foreground;
+    font-size: var(--type-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .divider-label::before,
+  .divider-label::after {
+    content: "";
+    @apply flex-1 border-t border-border;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Component layer — NutriPlan base components
+   ───────────────────────────────────────────────────────── */
+@layer components {
+  /* ── Buttons ───────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-lg;
+    @apply transition-all select-none;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out-expo);
+    font-size: var(--type-sm);
+    padding: 0.625rem 1.25rem;
+    line-height: 1.2;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--np-amber-300);
+    outline-offset: 2px;
+  }
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    pointer-events: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .btn-primary {
+    @apply btn;
+    background: var(--np-bark-300);
+    color: var(--np-cream-100);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--np-bark-400);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .btn-accent {
+    @apply btn;
+    background: var(--np-amber-300);
+    color: var(--np-cream-50);
+    box-shadow: var(--shadow-amber-glow);
+  }
+  .btn-accent:hover:not(:disabled) {
+    background: var(--np-amber-400);
+    box-shadow: var(--shadow-amber-glow), var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .btn-vital {
+    @apply btn;
+    background: var(--np-vital-300);
+    color: var(--np-cream-50);
+  }
+  .btn-vital:hover:not(:disabled) {
+    background: var(--np-vital-400);
+    box-shadow: var(--shadow-vital-glow);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    @apply btn;
+    background: transparent;
+    border: 1.5px solid var(--np-parchment-200);
+    color: var(--np-bark-300);
+  }
+  .btn-outline:hover:not(:disabled) {
+    background: var(--np-parchment-100);
+    border-color: var(--np-parchment-300);
+  }
+
+  .btn-ghost {
+    @apply btn;
+    background: transparent;
+    color: var(--np-bark-200);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--np-parchment-100);
+    color: var(--np-bark-300);
+  }
+
+  .btn-sm {
+    font-size: var(--type-xs);
+    padding: 0.375rem 0.875rem;
+  }
+  .btn-lg {
+    font-size: var(--type-base);
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-xl);
+  }
+  .btn-xl {
+    font-size: var(--type-md);
+    padding: 1.125rem 2.25rem;
+    border-radius: var(--radius-xl);
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Cards ─────────────────────────────────────────── */
+  .card-np {
+    @apply rounded-2xl border;
+    background: var(--np-parchment-50);
+    border-color: var(--np-parchment-200);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--duration-base) var(--ease-out-expo),
+                transform var(--duration-base) var(--ease-out-expo);
+  }
+  .card-np:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .card-cream {
+    @apply rounded-2xl border;
+    background: var(--np-cream-50);
+    border-color: var(--np-parchment-200);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .card-glass {
+    @apply surface-glass rounded-2xl;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ── Stat card — Nike data display energy ────────── */
+  .stat-card {
+    @apply card-np p-5;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card-label {
+    @apply tracking-luxury text-muted-foreground;
+    margin-bottom: 0.5rem;
+  }
+  .stat-card-value {
+    @apply font-display font-bold font-metric text-bark-300;
+    font-size: var(--type-3xl);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .stat-card-unit {
+    @apply font-sans font-medium text-muted-foreground;
+    font-size: var(--type-sm);
+    margin-left: 0.25rem;
+  }
+  .stat-card-delta-up   { color: var(--np-vital-400); font-size: var(--type-xs); }
+  .stat-card-delta-down { color: var(--np-signal-error); font-size: var(--type-xs); }
+
+  /* ── Form inputs ────────────────────────────────────── */
+  .input-np {
+    @apply w-full rounded-lg border;
+    background: var(--np-cream-50);
+    border-color: var(--np-parchment-200);
+    color: var(--np-bark-400);
+    font-size: var(--type-base);
+    padding: 0.625rem 0.875rem;
+    transition: border-color var(--duration-fast) var(--ease-out-expo),
+                box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+  .input-np::placeholder { color: var(--np-stone-300); }
+  .input-np:focus {
+    outline: none;
+    border-color: var(--np-amber-300);
+    box-shadow: 0 0 0 3px rgba(212, 129, 58, 0.14);
+  }
+  .input-np:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── Badge / Pill ───────────────────────────────────── */
+  .badge-np {
+    @apply inline-flex items-center gap-1 rounded-full font-medium;
+    font-size: var(--type-xs);
+    padding: 0.25rem 0.625rem;
+    letter-spacing: 0.04em;
+  }
+  .badge-bark  { @apply badge-np; background: var(--np-bark-50);    color: var(--np-bark-300); }
+  .badge-sage  { @apply badge-np; background: var(--np-sage-50);    color: var(--np-sage-400); }
+  .badge-vital { @apply badge-np; background: var(--np-vital-50);   color: var(--np-vital-400); }
+  .badge-amber { @apply badge-np; background: var(--np-amber-50);   color: var(--np-amber-400); }
+  .badge-stone { @apply badge-np; background: var(--np-stone-100);  color: var(--np-stone-500); }
+
+  /* ── Navigation item ────────────────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 rounded-lg font-medium;
+    font-size: var(--type-sm);
+    padding: 0.625rem 0.75rem;
+    color: var(--np-bark-200);
+    transition: background var(--duration-fast) var(--ease-out-expo),
+                color var(--duration-fast) var(--ease-out-expo);
+  }
+  .nav-item:hover {
+    background: var(--np-parchment-100);
+    color: var(--np-bark-300);
+  }
+  .nav-item.active {
+    background: var(--np-bark-300);
+    color: var(--np-cream-100);
+  }
+
+  /* ── Section label — Loro Piana editorial ──────────── */
+  .section-label {
+    @apply tracking-luxury text-muted-foreground;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Macronutrient bar ──────────────────────────────── */
+  .macro-bar-protein { background: var(--np-vital-300); }
+  .macro-bar-carbs   { background: var(--np-amber-300); }
+  .macro-bar-fats    { background: var(--np-sage-300); }
+  .macro-bar-calories { background: var(--np-bark-200); }
+
+  /* ── Hero section ──────────────────────────────────── */
+  .hero-gradient {
+    background: linear-gradient(
+      160deg,
+      var(--np-cream-200) 0%,
+      var(--np-parchment-100) 40%,
+      var(--np-cream-100) 100%
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Animations
+   ───────────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes accordion-down {
+  from { height: 0; }
+  to   { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to   { height: 0; }
+}
+@keyframes pulse-vital {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.animate-fade-in       { animation: fade-in var(--duration-enter) var(--ease-out-expo) both; }
+.animate-slide-right   { animation: slide-in-right var(--duration-enter) var(--ease-out-expo) both; }
+.animate-slide-left    { animation: slide-in-left var(--duration-enter) var(--ease-out-expo) both; }
+.animate-scale-in      { animation: scale-in var(--duration-base) var(--ease-spring) both; }
+.animate-accordion-down { animation: accordion-down 0.2s var(--ease-out-expo); }
+.animate-accordion-up   { animation: accordion-up 0.2s var(--ease-out-expo); }
+.animate-pulse-vital    { animation: pulse-vital 2s ease-in-out infinite; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--np-parchment-100) 25%,
+    var(--np-parchment-200) 50%,
+    var(--np-parchment-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Self-hosted fonts loaded in layout.tsx via next/font/local */
