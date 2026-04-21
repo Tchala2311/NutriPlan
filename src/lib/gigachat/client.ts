@@ -411,6 +411,36 @@ function extractJson(raw: string): string {
   return source.slice(start, end + 1);
 }
 
+/**
+ * GigaChat sometimes returns numeric fields as strings with units ("250 г", "1.5 г").
+ * Recursively walk the parsed object and coerce those to numbers.
+ * Also joins any ingredient arrays that arrive as Array instead of string.
+ */
+function sanitizeNumbers(obj: unknown, numericKeys: Set<string>): unknown {
+  if (Array.isArray(obj)) return obj.map((v) => sanitizeNumbers(v, numericKeys));
+  if (obj !== null && typeof obj === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (numericKeys.has(k) && (typeof v === "string")) {
+        const n = parseFloat((v as string).replace(/[^0-9.]/g, ""));
+        out[k] = isNaN(n) ? 0 : n;
+      } else if (k === "ingredients" && Array.isArray(v)) {
+        // ingredients: string[] — join sub-arrays or leave as-is
+        out[k] = (v as unknown[]).map((item) =>
+          Array.isArray(item) ? (item as string[]).join(", ") : item
+        );
+      } else {
+        out[k] = sanitizeNumbers(v, numericKeys);
+      }
+    }
+    return out;
+  }
+  return obj;
+}
+
+const FOOD_PHOTO_NUMERIC_KEYS = new Set(["calories", "protein_g", "carbs_g", "fat_g"]);
+const MEAL_NUMERIC_KEYS = new Set(["prep_min", "kcal", "p", "c", "f"]);
+
 export async function generateWeeklyMealPlan(
   user: UserProfile & { avoided_ingredients?: string[] },
   weekStart: string, // "YYYY-MM-DD" Monday
@@ -425,7 +455,8 @@ export async function generateWeeklyMealPlan(
   const userMsg = interpolate(PROMPT_MEAL_PLAN_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.meal_plan.краткий);
   const json = extractJson(raw);
-  return JSON.parse(json) as WeekPlanRaw;
+  const parsed = JSON.parse(json);
+  return sanitizeNumbers(parsed, MEAL_NUMERIC_KEYS) as WeekPlanRaw;
 }
 
 export async function swapMealSlot(
@@ -452,7 +483,8 @@ export async function swapMealSlot(
   const userMsg = interpolate(PROMPT_SWAP_SLOT_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.swap_slot.краткий);
   const json = extractJson(raw);
-  return JSON.parse(json) as MealRecipeRaw;
+  const parsed = JSON.parse(json);
+  return sanitizeNumbers(parsed, MEAL_NUMERIC_KEYS) as MealRecipeRaw;
 }
 
 // ── Photo food recognition ────────────────────────────────────────────────────
@@ -491,7 +523,7 @@ export async function getFoodPhotoAnalysis(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "GigaChat-Max",
+      model: "GigaChat-2-Max",
       max_tokens: MAX_TOKENS.food_photo.краткий,
       messages: [
         {
@@ -511,7 +543,8 @@ export async function getFoodPhotoAnalysis(
   const data = await res.json();
   const raw = data.choices[0].message.content as string;
   const json = extractJson(raw);
-  return JSON.parse(json) as FoodPhotoResult;
+  const parsed = JSON.parse(json);
+  return sanitizeNumbers(parsed, FOOD_PHOTO_NUMERIC_KEYS) as FoodPhotoResult;
 }
 
 // ── Post-log AI suggestion ────────────────────────────────────────────────────
