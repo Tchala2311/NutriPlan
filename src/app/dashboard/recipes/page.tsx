@@ -1,23 +1,35 @@
 import type { Metadata } from "next";
+import { isPremium } from "@/lib/subscription";
+import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
 
-export const metadata: Metadata = { title: "Recipes — NutriPlan" };
+export const metadata: Metadata = { title: "Рецепты — NutriPlan" };
 
-export default function RecipesPage() {
+export default async function RecipesPage() {
+  const premium = await isPremium();
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-display text-2xl font-bold text-bark-300">Recipes</h1>
+        <h1 className="font-display text-2xl font-bold text-bark-300">Рецепты</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Discover recipes tailored to your nutrition goals.
+          Рецепты, подобранные под ваши цели по нутриентам.
         </p>
       </div>
-      <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
-        <BookIcon className="mx-auto h-10 w-10 text-parchment-300 mb-3" />
-        <p className="font-display text-lg font-semibold text-bark-200">Coming soon</p>
-        <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-          Personalised recipe suggestions with full macro breakdowns.
-        </p>
-      </div>
+
+      {!premium ? (
+        <UpgradePrompt
+          feature="База рецептов"
+          description="Получите доступ к персональным рецептам с полным расчётом КБЖУ, подобранным под ваши цели."
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
+          <BookIcon className="mx-auto h-10 w-10 text-parchment-300 mb-3" />
+          <p className="font-display text-lg font-semibold text-bark-200">Скоро</p>
+          <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+            Персональные рецепты с полным расчётом макронутриентов уже в разработке.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
