@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { saveOnboarding, type OnboardingFormData } from "@/app/onboarding/actions";
+
+export const ONBOARDING_STORAGE_KEY = "nutriplan_onboarding";
 
 /* ── Option lists ── */
 
@@ -60,24 +63,114 @@ const MEDICAL_OPTIONS = [
   { value: "heart_disease", label: "Heart disease" },
 ];
 
+const ACTIVITY_OPTIONS = [
+  { value: "sedentary", label: "Sedentary", sub: "Little or no exercise" },
+  { value: "light", label: "Light", sub: "1–3 days/week" },
+  { value: "moderate", label: "Moderate", sub: "3–5 days/week" },
+  { value: "active", label: "Active", sub: "6–7 days/week" },
+  { value: "very_active", label: "Very active", sub: "Hard exercise daily" },
+];
+
+const ACTIVITY_MULTIPLIERS: Record<string, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+/* ── TDEE helpers ── */
+
+interface TdeeInputs {
+  age: string;
+  weight_kg: string;
+  height_cm: string;
+  sex: "male" | "female" | "";
+  activity_level: string;
+}
+
+interface MacroTargets {
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
+function computeTdee(inputs: TdeeInputs): number | null {
+  const age = parseInt(inputs.age, 10);
+  const weight = parseFloat(inputs.weight_kg);
+  const height = parseFloat(inputs.height_cm);
+  if (!inputs.sex || isNaN(age) || isNaN(weight) || isNaN(height)) return null;
+  const bmr =
+    inputs.sex === "male"
+      ? 10 * weight + 6.25 * height - 5 * age + 5
+      : 10 * weight + 6.25 * height - 5 * age - 161;
+  const multiplier = ACTIVITY_MULTIPLIERS[inputs.activity_level] ?? 1.55;
+  return Math.round(bmr * multiplier);
+}
+
+function computeMacros(tdee: number | null, primaryGoal: string): MacroTargets | null {
+  if (!tdee) return null;
+  let calories = tdee;
+  let proteinPct = 0.25;
+  let carbsPct = 0.5;
+  let fatPct = 0.25;
+
+  switch (primaryGoal) {
+    case "weight_loss":
+      calories = Math.max(1200, tdee - 400);
+      proteinPct = 0.3;
+      carbsPct = 0.4;
+      fatPct = 0.3;
+      break;
+    case "muscle_gain":
+      calories = tdee + 300;
+      proteinPct = 0.35;
+      carbsPct = 0.45;
+      fatPct = 0.2;
+      break;
+    case "maintenance":
+      proteinPct = 0.25;
+      carbsPct = 0.5;
+      fatPct = 0.25;
+      break;
+    case "disease_management":
+      proteinPct = 0.25;
+      carbsPct = 0.45;
+      fatPct = 0.3;
+      break;
+    case "general_wellness":
+      proteinPct = 0.25;
+      carbsPct = 0.5;
+      fatPct = 0.25;
+      break;
+  }
+
+  return {
+    calories,
+    protein_g: Math.round((calories * proteinPct) / 4),
+    carbs_g: Math.round((calories * carbsPct) / 4),
+    fat_g: Math.round((calories * fatPct) / 9),
+  };
+}
+
 /* ── Subcomponents ── */
 
 function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
     <div className="flex items-center gap-2 mb-8">
       {Array.from({ length: total }).map((_, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <div
-            className={cn(
-              "h-2 rounded-full transition-all duration-300",
-              i < current
-                ? "w-6 bg-sage-300"
-                : i === current
-                ? "w-8 bg-bark-300"
-                : "w-6 bg-parchment-200"
-            )}
-          />
-        </div>
+        <div
+          key={i}
+          className={cn(
+            "h-2 rounded-full transition-all duration-300",
+            i < current
+              ? "w-6 bg-sage-300"
+              : i === current
+              ? "w-8 bg-bark-300"
+              : "w-6 bg-parchment-200"
+          )}
+        />
       ))}
       <span className="ml-2 text-xs text-muted-foreground">
         Step {current + 1} of {total}
@@ -111,9 +204,41 @@ function MultiSelectChip({
   );
 }
 
+function MacroBar({
+  label,
+  value,
+  unit,
+  color,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  color: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className={cn("h-3 w-3 rounded-full", color)} />
+        <span className="text-sm text-bark-200">{label}</span>
+      </div>
+      <span className="text-sm font-semibold text-bark-300">
+        {value}
+        <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unit}</span>
+      </span>
+    </div>
+  );
+}
+
 /* ── Main wizard ── */
 
-export function OnboardingWizard() {
+interface OnboardingWizardProps {
+  /** true when user is already authenticated — submit saves directly to DB */
+  isAuthenticated: boolean;
+}
+
+const TOTAL_STEPS = 4; // Goals, Dietary, Medical+Disclaimer, Results
+
+export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -129,36 +254,46 @@ export function OnboardingWizard() {
     disclaimer_accepted: false,
   });
 
+  const [tdee, setTdee] = useState<TdeeInputs>({
+    age: "",
+    weight_kg: "",
+    height_cm: "",
+    sex: "",
+    activity_level: "moderate",
+  });
+
   function toggleArray(field: keyof OnboardingFormData, value: string) {
     setForm((prev) => {
       const arr = prev[field] as string[];
       return {
         ...prev,
-        [field]: arr.includes(value)
-          ? arr.filter((v) => v !== value)
-          : [...arr, value],
+        [field]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
       };
     });
   }
 
-  function canAdvanceStep0() {
-    return form.health_goals.length > 0 && form.primary_goal !== "";
+  const tdeeValue = computeTdee(tdee);
+  const macros = computeMacros(tdeeValue, form.primary_goal);
+
+  /** Persist to localStorage and advance to results (step 3) */
+  function persistAndShowResults() {
+    try {
+      localStorage.setItem(
+        ONBOARDING_STORAGE_KEY,
+        JSON.stringify({ ...form, tdee: tdeeValue, macros })
+      );
+    } catch {
+      // localStorage unavailable — proceed anyway
+    }
   }
 
-  function canAdvanceStep1() {
-    return true; // dietary is optional
-  }
-
-  function canSubmit() {
-    return form.disclaimer_accepted;
-  }
-
-  function handleSubmit() {
-    if (!canSubmit()) return;
+  /** For authenticated users: save directly to DB */
+  function handleAuthenticatedSave() {
     setError(null);
     startTransition(async () => {
       try {
         await saveOnboarding(form);
+        // saveOnboarding redirects to /dashboard on success
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       }
@@ -167,16 +302,16 @@ export function OnboardingWizard() {
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      <StepIndicator current={step} total={3} />
+      {step < TOTAL_STEPS - 1 && <StepIndicator current={step} total={TOTAL_STEPS - 1} />}
 
-      {/* Step 0 — Health Goals */}
+      {/* ── Step 0: Health Goals + TDEE ── */}
       {step === 0 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            What are your health goals?
+            What are your goals?
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Select everything that applies. We&apos;ll tailor your plan accordingly.
+            Select everything that applies.
           </p>
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -190,10 +325,8 @@ export function OnboardingWizard() {
             ))}
           </div>
 
-          <div className="mb-8">
-            <p className="text-sm font-medium text-foreground mb-3">
-              Which is your primary focus?
-            </p>
+          <div className="mb-5">
+            <p className="text-sm font-medium text-foreground mb-3">Primary focus</p>
             <div className="space-y-2">
               {PRIMARY_GOAL_OPTIONS.map((opt) => (
                 <label
@@ -219,9 +352,112 @@ export function OnboardingWizard() {
             </div>
           </div>
 
+          {/* Optional TDEE inputs */}
+          <details className="mb-8">
+            <summary className="text-sm font-medium text-bark-200 cursor-pointer hover:text-bark-300 transition-colors mb-3">
+              + Add body stats for calorie estimate (optional)
+            </summary>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  min={10}
+                  max={120}
+                  value={tdee.age}
+                  onChange={(e) => setTdee((t) => ({ ...t, age: e.target.value }))}
+                  placeholder="e.g. 30"
+                  className={cn(
+                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
+                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  )}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  min={20}
+                  max={300}
+                  value={tdee.weight_kg}
+                  onChange={(e) => setTdee((t) => ({ ...t, weight_kg: e.target.value }))}
+                  placeholder="e.g. 75"
+                  className={cn(
+                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
+                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  )}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Height (cm)
+                </label>
+                <input
+                  type="number"
+                  min={100}
+                  max={250}
+                  value={tdee.height_cm}
+                  onChange={(e) => setTdee((t) => ({ ...t, height_cm: e.target.value }))}
+                  placeholder="e.g. 175"
+                  className={cn(
+                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
+                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  )}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Sex
+                </label>
+                <select
+                  value={tdee.sex}
+                  onChange={(e) =>
+                    setTdee((t) => ({ ...t, sex: e.target.value as "male" | "female" | "" }))
+                  }
+                  className={cn(
+                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
+                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  )}
+                >
+                  <option value="">Select</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-muted-foreground block mb-1">
+                  Activity level
+                </label>
+                <div className="flex gap-1 flex-wrap">
+                  {ACTIVITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() =>
+                        setTdee((t) => ({ ...t, activity_level: opt.value }))
+                      }
+                      className={cn(
+                        "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                        tdee.activity_level === opt.value
+                          ? "border-sage-300 bg-sage-300 text-primary-foreground"
+                          : "border-parchment-200 bg-parchment-100 text-bark-200 hover:border-sage-200"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </details>
+
           <button
             type="button"
-            disabled={!canAdvanceStep0()}
+            disabled={form.health_goals.length === 0 || form.primary_goal === ""}
             onClick={() => setStep(1)}
             className={cn(
               "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
@@ -233,7 +469,7 @@ export function OnboardingWizard() {
         </div>
       )}
 
-      {/* Step 1 — Food Preferences */}
+      {/* ── Step 1: Food Preferences ── */}
       {step === 1 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
@@ -300,11 +536,10 @@ export function OnboardingWizard() {
             </button>
             <button
               type="button"
-              disabled={!canAdvanceStep1()}
               onClick={() => setStep(2)}
               className={cn(
                 "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-                "hover:bg-primary/90 transition-colors disabled:opacity-40"
+                "hover:bg-primary/90 transition-colors"
               )}
             >
               Continue
@@ -313,7 +548,7 @@ export function OnboardingWizard() {
         </div>
       )}
 
-      {/* Step 2 — Medical & Disclaimer */}
+      {/* ── Step 2: Medical + Disclaimer ── */}
       {step === 2 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
@@ -340,7 +575,7 @@ export function OnboardingWizard() {
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <label className="text-sm font-medium text-foreground block mb-1.5">
               Current medications{" "}
               <span className="font-normal text-muted-foreground">(optional)</span>
@@ -357,8 +592,7 @@ export function OnboardingWizard() {
             />
           </div>
 
-          {/* Disclaimer */}
-          <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-6">
+          <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-8">
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
               NutriPlan provides nutritional information and meal planning tools for general
               wellness purposes only. It is <strong>not a substitute</strong> for professional
@@ -381,35 +615,166 @@ export function OnboardingWizard() {
             </label>
           </div>
 
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              disabled={!form.disclaimer_accepted}
+              onClick={() => {
+                persistAndShowResults();
+                setStep(3);
+              }}
+              className={cn(
+                "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
+                "hover:bg-primary/90 transition-colors disabled:opacity-40"
+              )}
+            >
+              See my plan
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 3: Results screen ── */}
+      {step === 3 && (
+        <div>
+          {/* Success header */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-sage-300/20 mb-3">
+              <CheckIcon className="h-6 w-6 text-sage-400" />
+            </div>
+            <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
+              Your personalised plan is ready
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Based on your{" "}
+              <strong>{PRIMARY_GOAL_OPTIONS.find((o) => o.value === form.primary_goal)?.label ?? "goals"}</strong>{" "}
+              goal.
+            </p>
+          </div>
+
+          {/* Macro targets */}
+          <div className="rounded-xl border border-parchment-200 bg-white/60 p-5 mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+              Daily targets
+            </p>
+            {macros ? (
+              <div className="space-y-3">
+                <MacroBar
+                  label="Calories"
+                  value={macros.calories}
+                  unit="kcal"
+                  color="bg-bark-300"
+                />
+                <MacroBar
+                  label="Protein"
+                  value={macros.protein_g}
+                  unit="g"
+                  color="bg-sage-300"
+                />
+                <MacroBar
+                  label="Carbohydrates"
+                  value={macros.carbs_g}
+                  unit="g"
+                  color="bg-amber-400"
+                />
+                <MacroBar
+                  label="Fat"
+                  value={macros.fat_g}
+                  unit="g"
+                  color="bg-rose-400"
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                Add your body stats on the first step to get calorie targets, or create an
+                account to set them manually.
+              </p>
+            )}
+          </div>
+
+          {/* What's included teaser */}
+          <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              What you&apos;ll get with an account
+            </p>
+            <ul className="space-y-2">
+              {[
+                "AI-generated weekly meal plans matched to your goals",
+                "Nutrition log with macro tracking",
+                "Photo-based food recognition",
+                "Progress trends and insights",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm text-bark-200">
+                  <CheckIcon className="h-4 w-4 text-sage-300 shrink-0 mt-0.5" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {error && (
             <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive mb-4">
               {error}
             </div>
           )}
 
-          <div className="flex gap-3">
+          {isAuthenticated ? (
+            /* Authenticated: save directly to DB */
             <button
               type="button"
-              onClick={() => setStep(1)}
               disabled={isPending}
-              className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={!canSubmit() || isPending}
-              onClick={handleSubmit}
+              onClick={handleAuthenticatedSave}
               className={cn(
-                "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-                "hover:bg-primary/90 transition-colors disabled:opacity-40"
+                "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
+                "hover:bg-primary/90 transition-colors disabled:opacity-40 mb-3"
               )}
             >
-              {isPending ? "Saving…" : "Finish setup"}
+              {isPending ? "Saving…" : "Save my plan and go to dashboard"}
             </button>
-          </div>
+          ) : (
+            /* Unauthenticated: CTA to register */
+            <Link
+              href="/register?from=onboarding"
+              className={cn(
+                "block w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground text-center",
+                "hover:bg-primary/90 transition-colors mb-3"
+              )}
+            >
+              Create your free account to save this plan
+            </Link>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Back
+          </button>
         </div>
       )}
     </div>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
   );
 }

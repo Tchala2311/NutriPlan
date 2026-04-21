@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // After auth: flush any pre-registration onboarding data then go to dashboard
+  const next = searchParams.get("next") ?? "/onboarding/complete";
 
   if (code) {
     const supabase = await createClient();

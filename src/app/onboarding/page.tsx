@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
-export const metadata: Metadata = { title: "Set up your profile — NutriPlan" };
+export const metadata: Metadata = { title: "Personalise your plan — NutriPlan" };
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -11,16 +11,16 @@ export default async function OnboardingPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  // Authenticated + already onboarded → skip straight to dashboard
+  if (user) {
+    const { data: assessment } = await supabase
+      .from("health_assessments")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-  // Already onboarded → skip to dashboard
-  const { data: assessment } = await supabase
-    .from("health_assessments")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (assessment) redirect("/dashboard");
+    if (assessment) redirect("/dashboard");
+  }
 
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col items-center justify-center px-4 py-12">
@@ -31,12 +31,13 @@ export default async function OnboardingPage() {
           <span className="font-display text-2xl font-bold text-bark-300">NutriPlan</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Let&apos;s personalise your nutrition plan — takes about 2 minutes.
+          Tell us about your goals — we&apos;ll build your personalised plan in seconds.
         </p>
       </div>
 
       <div className="w-full max-w-lg rounded-2xl border border-parchment-200 bg-parchment-100 p-8 shadow-sm">
-        <OnboardingWizard />
+        {/* isAuthenticated=true → submit saves directly to DB */}
+        <OnboardingWizard isAuthenticated={!!user} />
       </div>
     </div>
   );

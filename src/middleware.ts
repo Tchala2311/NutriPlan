@@ -30,9 +30,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // /onboarding is intentionally PUBLIC (pre-registration flow)
+  // /onboarding/complete requires auth (flushes localStorage → DB)
   const isProtected =
     request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/onboarding");
+    request.nextUrl.pathname === "/onboarding/complete";
 
   if (!user && isProtected) {
     const loginUrl = request.nextUrl.clone();
@@ -44,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding"],
+  matcher: ["/dashboard/:path*", "/onboarding/complete"],
 };
