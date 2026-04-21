@@ -40,10 +40,11 @@ export function RegisterForm() {
     setLoading(false);
   }
 
-  async function handleOAuth(provider: "google" | "yandex") {
+  async function handleOAuth(provider: string) {
     const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.auth.signInWithOAuth({
-      provider,
+      provider: provider as any,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
   }

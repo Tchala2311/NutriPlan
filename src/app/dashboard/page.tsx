@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Dashboard — NutriPlan" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -10,9 +11,35 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   const firstName =
-    user?.user_metadata?.full_name?.split(" ")[0] ??
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??
     user?.email?.split("@")[0] ??
     "there";
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const { data: entries } = await supabase
+    .from("nutrition_logs")
+    .select("calories, protein_g, carbs_g, fat_g")
+    .eq("logged_date", today);
+
+  const totals = (entries ?? []).reduce(
+    (acc, e) => ({
+      calories: acc.calories + (e.calories ?? 0),
+      protein_g: acc.protein_g + Number(e.protein_g ?? 0),
+      carbs_g: acc.carbs_g + Number(e.carbs_g ?? 0),
+      fat_g: acc.fat_g + Number(e.fat_g ?? 0),
+    }),
+    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+  );
+
+  const hasEntries = (entries ?? []).length > 0;
+
+  const statCards = [
+    { label: "Calories today", value: hasEntries ? `${Math.round(totals.calories)}` : "—", unit: "kcal" },
+    { label: "Protein", value: hasEntries ? `${totals.protein_g.toFixed(1)}` : "—", unit: "g" },
+    { label: "Carbs", value: hasEntries ? `${totals.carbs_g.toFixed(1)}` : "—", unit: "g" },
+    { label: "Fats", value: hasEntries ? `${totals.fat_g.toFixed(1)}` : "—", unit: "g" },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -25,9 +52,9 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Placeholder stat cards */}
+      {/* Live stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {STAT_CARDS.map((card) => (
+        {statCards.map((card) => (
           <div
             key={card.label}
             className="rounded-xl border border-parchment-200 bg-parchment-100 p-4"
@@ -35,29 +62,67 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {card.label}
             </p>
-            <p className="mt-1.5 text-2xl font-semibold text-bark-300">{card.value}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{card.sub}</p>
+            <p className="mt-1.5 text-2xl font-semibold text-bark-300">
+              {card.value}
+              {hasEntries && (
+                <span className="ml-1 text-sm font-normal text-muted-foreground">{card.unit}</span>
+              )}
+            </p>
+            {!hasEntries && (
+              <p className="mt-0.5 text-xs text-muted-foreground">No entries yet today</p>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Coming soon panel */}
-      <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-8 text-center">
-        <p className="font-display text-lg font-semibold text-bark-200">
-          Your personalised nutrition plan is coming soon
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-          Complete your profile and nutrition goals to unlock AI-powered meal suggestions
-          and daily tracking.
-        </p>
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          href="/dashboard/log"
+          className="group rounded-xl border border-parchment-200 bg-parchment-100 p-6 hover:border-bark-100 hover:bg-parchment-200 transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <span className="rounded-lg bg-bark-300 p-2">
+              <LogIcon className="h-4 w-4 text-primary-foreground" />
+            </span>
+            <h2 className="font-semibold text-bark-300 text-sm">Log food</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Track your meals and macros for today.
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/profile"
+          className="group rounded-xl border border-parchment-200 bg-parchment-100 p-6 hover:border-bark-100 hover:bg-parchment-200 transition-colors"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <span className="rounded-lg bg-sage-300 p-2">
+              <ProfileIcon className="h-4 w-4 text-primary-foreground" />
+            </span>
+            <h2 className="font-semibold text-bark-300 text-sm">Profile & Goals</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            View your account and set nutrition targets.
+          </p>
+        </Link>
       </div>
     </div>
   );
 }
 
-const STAT_CARDS = [
-  { label: "Calories today", value: "—", sub: "Goal: not set" },
-  { label: "Protein", value: "—", sub: "Goal: not set" },
-  { label: "Carbs", value: "—", sub: "Goal: not set" },
-  { label: "Fats", value: "—", sub: "Goal: not set" },
-];
+function LogIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  );
+}
+
+function ProfileIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
