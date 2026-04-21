@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { GoalSettingsForm } from "@/components/dashboard/GoalSettingsForm";
-import { getUserGoals } from "./actions";
+import { TrendsSection } from "@/components/dashboard/TrendsSection";
+import { getUserGoals, getTrendsData } from "./actions";
 import { getUserSubscription } from "@/lib/subscription";
 import { UpgradeButton } from "@/components/subscription/UpgradeButton";
 
@@ -17,7 +18,10 @@ export default async function ProfilePage() {
   const email = user?.email ?? "";
   const fullName = user?.user_metadata?.full_name as string | undefined;
   const goals = await getUserGoals();
-  const sub = await getUserSubscription();
+  const [sub, trends] = await Promise.all([
+    getUserSubscription(),
+    getTrendsData(goals),
+  ]);
 
   const isPremium = sub?.plan === "premium" && sub?.status === "active";
   const periodEnd = sub?.current_period_end
@@ -103,11 +107,16 @@ export default async function ProfilePage() {
       </div>
 
       {/* Goal settings */}
-      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6">
+      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 mb-6">
         <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-6">
           Цели по нутриентам
         </h2>
         <GoalSettingsForm initial={goals} />
+      </div>
+
+      {/* Trends */}
+      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6">
+        <TrendsSection trends={trends} goals={goals} />
       </div>
     </div>
   );
