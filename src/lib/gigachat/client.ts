@@ -510,7 +510,7 @@ export interface FoodPhotoResult {
  */
 export async function getFoodPhotoAnalysis(
   imageBuffer: Buffer,
-  // mimeType kept for API compatibility but image is always converted to JPEG internally
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _mimeType = "image/jpeg"
 ): Promise<FoodPhotoResult> {
   const token = await getToken();
