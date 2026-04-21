@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
+
 export function RegisterForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -40,13 +41,8 @@ export function RegisterForm() {
     setLoading(false);
   }
 
-  async function handleOAuth(provider: string) {
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.auth.signInWithOAuth({
-      provider: provider as any,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+  function handleOAuth(provider: "yandex" | "vk") {
+    window.location.href = `/api/auth/${provider}`;
   }
 
   if (success) {
@@ -148,17 +144,6 @@ export function RegisterForm() {
 
       <button
         type="button"
-        onClick={() => handleOAuth("google")}
-        className={cn(
-          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
-          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
-        )}
-      >
-        Continue with Google
-      </button>
-
-      <button
-        type="button"
         onClick={() => handleOAuth("yandex")}
         className={cn(
           "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
@@ -166,6 +151,17 @@ export function RegisterForm() {
         )}
       >
         Continue with Yandex ID
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleOAuth("vk")}
+        className={cn(
+          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
+          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
+        )}
+      >
+        Continue with VK
       </button>
     </form>
   );
