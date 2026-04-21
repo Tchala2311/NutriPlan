@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +12,24 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const telegramRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = telegramRef.current;
+    if (!container || container.querySelector("script")) return;
+
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute(
+      "data-telegram-login",
+      process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? ""
+    );
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-auth-url", "/api/auth/telegram/callback");
+    script.setAttribute("data-request-access", "write");
+    script.async = true;
+    container.appendChild(script);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,10 +47,6 @@ export function LoginForm() {
 
     router.push("/dashboard");
     router.refresh();
-  }
-
-  function handleOAuth(provider: "yandex" | "vk") {
-    window.location.href = `/api/auth/${provider}`;
   }
 
   return (
@@ -116,7 +130,7 @@ export function LoginForm() {
 
       <button
         type="button"
-        onClick={() => handleOAuth("yandex")}
+        onClick={() => { window.location.href = "/api/auth/yandex"; }}
         className={cn(
           "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
           "hover:bg-muted transition-colors flex items-center justify-center gap-2"
@@ -126,26 +140,9 @@ export function LoginForm() {
         Continue with Yandex ID
       </button>
 
-      <button
-        type="button"
-        onClick={() => handleOAuth("vk")}
-        className={cn(
-          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
-          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
-        )}
-      >
-        <VKIcon className="h-4 w-4" />
-        Continue with VK
-      </button>
+      {/* Telegram Login Widget — renders its own button */}
+      <div ref={telegramRef} className="flex justify-center" />
     </form>
-  );
-}
-
-function VKIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="#0077FF" aria-hidden="true">
-      <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.391 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.864-.525-2.05-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C5.023 11.488 4.400 9.37 4.400 8.953c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.78.677.864 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.715c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.814-.542 1.254-1.406 2.15-3.574 2.15-3.574.119-.254.322-.491.762-.491h1.744c.525 0 .643.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.78 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.745-.576.745z" />
-    </svg>
   );
 }
 

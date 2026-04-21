@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-
 
 export function RegisterForm() {
   const router = useRouter();
@@ -14,6 +13,24 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const telegramRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = telegramRef.current;
+    if (!container || container.querySelector("script")) return;
+
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute(
+      "data-telegram-login",
+      process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? ""
+    );
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-auth-url", "/api/auth/telegram/callback");
+    script.setAttribute("data-request-access", "write");
+    script.async = true;
+    container.appendChild(script);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,10 +56,6 @@ export function RegisterForm() {
 
     setSuccess(true);
     setLoading(false);
-  }
-
-  function handleOAuth(provider: "yandex" | "vk") {
-    window.location.href = `/api/auth/${provider}`;
   }
 
   if (success) {
@@ -144,25 +157,26 @@ export function RegisterForm() {
 
       <button
         type="button"
-        onClick={() => handleOAuth("yandex")}
+        onClick={() => { window.location.href = "/api/auth/yandex"; }}
         className={cn(
           "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
           "hover:bg-muted transition-colors flex items-center justify-center gap-2"
         )}
       >
+        <YandexIcon className="h-4 w-4" />
         Continue with Yandex ID
       </button>
 
-      <button
-        type="button"
-        onClick={() => handleOAuth("vk")}
-        className={cn(
-          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
-          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
-        )}
-      >
-        Continue with VK
-      </button>
+      {/* Telegram Login Widget — renders its own button */}
+      <div ref={telegramRef} className="flex justify-center" />
     </form>
+  );
+}
+
+function YandexIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="#FC3F1D" aria-hidden="true">
+      <path d="M2.04 12C2.04 6.48 6.5 2 12 2s9.96 4.48 9.96 10S17.5 22 12 22 2.04 17.52 2.04 12zm11.24 5.5h2.04V6.5H13.5c-2.6 0-3.98 1.31-3.98 3.25 0 1.67.82 2.6 2.24 3.52l-2.56 4.23H11.4l2.38-3.96.66.43c.55.35.84.7.84 1.37v2.16zm0-4.6l-.6-.38c-1.1-.7-1.6-1.3-1.6-2.4 0-1.1.77-1.82 2.2-1.82v4.6z" />
+    </svg>
   );
 }
