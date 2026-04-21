@@ -1,10 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useTransition, useState } from "react";
 import { AddFoodDialog } from "./AddFoodDialog";
+import { AISuggestionCard } from "./AISuggestionCard";
 import { deleteFoodEntry } from "@/app/dashboard/log/actions";
 import { cn } from "@/lib/utils";
+import type { UserGoals } from "@/app/dashboard/profile/actions";
 
 export interface NutritionEntry {
   id: string;
@@ -17,9 +19,17 @@ export interface NutritionEntry {
   created_at: string;
 }
 
+interface UserProfileMin {
+  primary_goal?: string | null;
+  dietary_restrictions?: string[];
+  eating_disorder_flag?: boolean;
+}
+
 interface NutritionLogClientProps {
   date: string;
   entries: NutritionEntry[];
+  goals: UserGoals;
+  userProfile: UserProfileMin;
 }
 
 const MEALS = [
@@ -29,8 +39,10 @@ const MEALS = [
   { key: "snacks", label: "Snacks" },
 ] as const;
 
-export function NutritionLogClient({ date, entries }: NutritionLogClientProps) {
+export function NutritionLogClient({ date, entries, goals, userProfile }: NutritionLogClientProps) {
   const router = useRouter();
+  // triggerKey bumps every time an entry is added, causing AISuggestionCard to re-fetch
+  const [suggestionTrigger, setSuggestionTrigger] = useState(entries.length > 0 ? 1 : 0);
 
   const totals = entries.reduce(
     (acc, e) => ({
@@ -42,6 +54,17 @@ export function NutritionLogClient({ date, entries }: NutritionLogClientProps) {
     { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
   );
 
+  const dayTotals = {
+    current_kcal: Math.round(totals.calories),
+    target_kcal: goals.daily_calorie_target,
+    current_protein_g: Math.round(totals.protein_g),
+    target_protein_g: goals.protein_target_g,
+    current_carbs_g: Math.round(totals.carbs_g),
+    target_carbs_g: goals.carbs_target_g,
+    current_fat_g: Math.round(totals.fat_g),
+    target_fat_g: goals.fat_target_g,
+  };
+
   function navigateDate(offset: number) {
     const d = new Date(date + "T00:00:00");
     d.setDate(d.getDate() + offset);
@@ -50,6 +73,10 @@ export function NutritionLogClient({ date, entries }: NutritionLogClientProps) {
 
   function handleDateInput(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.value) router.push(`/dashboard/log?date=${e.target.value}`);
+  }
+
+  function handleEntryAdded() {
+    setSuggestionTrigger((k) => k + 1);
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -100,6 +127,15 @@ export function NutritionLogClient({ date, entries }: NutritionLogClientProps) {
         <MacroCard label="Fat" value={totals.fat_g} unit="g" />
       </div>
 
+      {/* AI suggestion card — shown when today and has entries */}
+      {isToday && (
+        <AISuggestionCard
+          dayTotals={dayTotals}
+          userProfile={userProfile}
+          triggerKey={suggestionTrigger}
+        />
+      )}
+
       {/* Meal sections */}
       <div className="space-y-4">
         {MEALS.map(({ key, label }) => {
@@ -113,6 +149,7 @@ export function NutritionLogClient({ date, entries }: NutritionLogClientProps) {
               calories={mealCals}
               entries={mealEntries}
               date={date}
+              onEntryAdded={handleEntryAdded}
             />
           );
         })}
@@ -129,12 +166,14 @@ function MealSection({
   calories,
   entries,
   date,
+  onEntryAdded,
 }: {
   mealKey: string;
   label: string;
   calories: number;
   entries: NutritionEntry[];
   date: string;
+  onEntryAdded: () => void;
 }) {
   return (
     <div className="rounded-xl border border-parchment-200 bg-parchment-100 overflow-hidden">
@@ -146,7 +185,7 @@ function MealSection({
           )}
         </div>
 
-        <AddFoodDialog date={date} defaultMeal={mealKey}>
+        <AddFoodDialog date={date} defaultMeal={mealKey} onAdded={onEntryAdded}>
           <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bark-200 hover:bg-parchment-200 hover:text-bark-300 transition-colors">
             <PlusIcon className="h-3.5 w-3.5" />
             Add food

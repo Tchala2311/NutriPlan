@@ -10,7 +10,8 @@ export async function addFoodEntry(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const entry = {
+  const photoUrl = formData.get("photo_url");
+  const entry: Record<string, unknown> = {
     user_id: user.id,
     logged_date: formData.get("logged_date") as string,
     meal_type: formData.get("meal_type") as string,
@@ -20,6 +21,7 @@ export async function addFoodEntry(formData: FormData) {
     carbs_g: Number(formData.get("carbs_g") ?? 0),
     fat_g: Number(formData.get("fat_g") ?? 0),
   };
+  if (photoUrl) entry.photo_url = photoUrl as string;
 
   const { error } = await supabase.from("nutrition_logs").insert(entry);
   if (error) throw new Error(error.message);

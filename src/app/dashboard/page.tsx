@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUserGoals } from "./profile/actions";
+import { WaterWidget } from "@/components/dashboard/WaterWidget";
 
 export const metadata: Metadata = { title: "Dashboard — NutriPlan" };
 
@@ -17,13 +18,26 @@ export default async function DashboardPage() {
     "there";
 
   const today = new Date().toISOString().split("T")[0];
+  const dayStart = `${today}T00:00:00.000Z`;
+  const dayEnd   = `${today}T23:59:59.999Z`;
 
-  const [{ data: entries }, goals] = await Promise.all([
+  const [{ data: entries }, goals, { data: waterRows }, { data: goalsRow }] = await Promise.all([
     supabase
       .from("nutrition_logs")
       .select("calories, protein_g, carbs_g, fat_g")
       .eq("logged_date", today),
     getUserGoals(),
+    supabase
+      .from("water_logs")
+      .select("amount_ml")
+      .eq("user_id", user!.id)
+      .gte("logged_at", dayStart)
+      .lte("logged_at", dayEnd),
+    supabase
+      .from("user_goals")
+      .select("water_target_ml")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
   ]);
 
   const totals = (entries ?? []).reduce(
@@ -37,6 +51,8 @@ export default async function DashboardPage() {
   );
 
   const hasEntries = (entries ?? []).length > 0;
+  const waterTotalMl = (waterRows ?? []).reduce((s, r) => s + (r.amount_ml ?? 0), 0);
+  const waterTargetMl = (goalsRow as { water_target_ml?: number } | null)?.water_target_ml ?? 2000;
 
   const statCards = [
     {
@@ -77,7 +93,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat cards with progress vs target */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statCards.map((card) => {
           const pct = card.value !== null ? Math.min(100, Math.round((card.value / card.target) * 100)) : 0;
           const over = card.value !== null && card.value > card.target;
@@ -118,6 +134,11 @@ export default async function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Water widget */}
+      <div className="mb-8">
+        <WaterWidget initialTotalMl={waterTotalMl} targetMl={waterTargetMl} />
       </div>
 
       {/* Quick actions */}

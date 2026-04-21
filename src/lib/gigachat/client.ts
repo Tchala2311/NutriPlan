@@ -20,6 +20,8 @@ import {
   PROMPT_MEAL_PLAN_RU,
   PROMPT_SWAP_SLOT_RU,
   PROMPT_RECIPE_DETAIL_RU,
+  PROMPT_FOOD_PHOTO_RU,
+  PROMPT_FOOD_SUGGESTION_RU,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from "./prompts";
@@ -368,6 +370,113 @@ export async function swapMealSlot(
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.swap_slot.краткий);
   const json = extractJson(raw);
   return JSON.parse(json) as MealRecipeRaw;
+}
+
+// ── Photo food recognition ────────────────────────────────────────────────────
+
+export interface FoodPhotoItem {
+  food_name: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  portion: string;
+}
+
+export interface FoodPhotoResult {
+  items: FoodPhotoItem[];
+  error?: string;
+}
+
+/**
+ * Analyse a food photo using GigaChat vision.
+ * imageBase64 should be a raw base64 string (no data URI prefix).
+ * mimeType defaults to "image/jpeg".
+ */
+export async function getFoodPhotoAnalysis(
+  imageBase64: string,
+  mimeType = "image/jpeg"
+): Promise<FoodPhotoResult> {
+  const token = process.env.GIGACHAT_TOKEN;
+  if (!token) throw new Error("GIGACHAT_TOKEN env var is not set");
+
+  const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+
+  const res = await fetch(GIGACHAT_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "GigaChat-Max",
+      max_tokens: MAX_TOKENS.food_photo.краткий,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: PROMPT_FOOD_PHOTO_RU },
+            { type: "image_url", image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GigaChat vision error ${res.status}: ${body}`);
+  }
+
+  const data = await res.json();
+  const raw = data.choices[0].message.content as string;
+  const json = extractJson(raw);
+  return JSON.parse(json) as FoodPhotoResult;
+}
+
+// ── Post-log AI suggestion ────────────────────────────────────────────────────
+
+/**
+ * Returns a short nudge after the user logs food, or empty string if no nudge needed.
+ */
+export async function getFoodSuggestion(
+  user: UserProfile,
+  dayTotals: {
+    current_kcal: number;
+    target_kcal: number;
+    current_protein_g: number;
+    target_protein_g: number;
+    current_carbs_g: number;
+    target_carbs_g: number;
+    current_fat_g: number;
+    target_fat_g: number;
+  }
+): Promise<string> {
+  const pct = (cur: number, tgt: number) =>
+    tgt > 0 ? Math.round((cur / tgt) * 100) : 0;
+
+  const extra: Record<string, string> = {
+    current_kcal: String(dayTotals.current_kcal),
+    target_kcal: String(dayTotals.target_kcal),
+    pct_kcal: String(pct(dayTotals.current_kcal, dayTotals.target_kcal)),
+    current_protein_g: String(dayTotals.current_protein_g),
+    target_protein_g: String(dayTotals.target_protein_g),
+    pct_protein: String(pct(dayTotals.current_protein_g, dayTotals.target_protein_g)),
+    current_carbs_g: String(dayTotals.current_carbs_g),
+    target_carbs_g: String(dayTotals.target_carbs_g),
+    current_fat_g: String(dayTotals.current_fat_g),
+    target_fat_g: String(dayTotals.target_fat_g),
+  };
+
+  const vars = buildVars(user, {}, extra);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars);
+  const userMsg = interpolate(PROMPT_FOOD_SUGGESTION_RU, vars);
+  const result = await callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens("food_suggestion", user.tone_mode ?? "краткий")
+  );
+  return result.trim();
 }
 
 export async function getRecipeDetail(
