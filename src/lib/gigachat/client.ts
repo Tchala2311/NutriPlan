@@ -2,9 +2,13 @@
  * GigaChat API client for NutriPlan.
  * GigaChat API is compatible with the OpenAI chat completions format.
  *
- * Required env var: GIGACHAT_TOKEN (Bearer token from Sber OAuth)
+ * Required env vars:
+ *   GIGACHAT_AUTH_KEY  — base64-encoded "clientId:clientSecret" for OAuth auto-refresh (preferred)
+ *   GIGACHAT_TOKEN     — static Bearer token (fallback, expires in ~30 min)
  */
 
+import { randomUUID } from "crypto";
+import sharp from "sharp";
 import {
   SYSTEM_PROMPT_RU,
   PROMPT_ONBOARDING_RU,
@@ -28,6 +32,80 @@ import {
 
 const GIGACHAT_API_URL =
   "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
+const GIGACHAT_FILES_URL =
+  "https://gigachat.devices.sberbank.ru/api/v1/files";
+const GIGACHAT_OAUTH_URL =
+  "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
+
+// ─── Token cache ──────────────────────────────────────────────────────────────
+
+let _tokenCache: { value: string; expiresAt: number } | null = null;
+
+/**
+ * Returns a valid GigaChat Bearer token, refreshing via OAuth if needed.
+ * Caches the token in memory until 60 s before expiry.
+ */
+async function getToken(): Promise<string> {
+  if (_tokenCache && Date.now() < _tokenCache.expiresAt - 60_000) {
+    return _tokenCache.value;
+  }
+
+  const authKey = process.env.GIGACHAT_AUTH_KEY;
+  if (authKey) {
+    const res = await fetch(GIGACHAT_OAUTH_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${authKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        RqUID: randomUUID(),
+      },
+      body: "scope=GIGACHAT_API_PERS",
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`GigaChat OAuth error ${res.status}: ${body}`);
+    }
+    const data = await res.json();
+    // expires_at is a Unix ms timestamp from GigaChat
+    _tokenCache = { value: data.access_token as string, expiresAt: data.expires_at as number };
+    return _tokenCache.value;
+  }
+
+  // Fallback: static token set externally
+  const token = process.env.GIGACHAT_TOKEN;
+  if (!token) throw new Error("Set GIGACHAT_AUTH_KEY or GIGACHAT_TOKEN env var");
+  return token;
+}
+
+// ─── Image upload ─────────────────────────────────────────────────────────────
+
+/**
+ * Resize image to max 1024 px on either dimension, convert to JPEG,
+ * upload to GigaChat files API, and return the file id.
+ */
+async function uploadImageFile(imageBuffer: Buffer, token: string): Promise<string> {
+  // Resize to ≤ 1024 px (GigaChat vision limit)
+  const resized = await sharp(imageBuffer)
+    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  const form = new FormData();
+  form.append("file", new Blob([resized.buffer as ArrayBuffer], { type: "image/jpeg" }), "photo.jpg");
+  form.append("purpose", "general");
+
+  const res = await fetch(GIGACHAT_FILES_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`GigaChat file upload error ${res.status}: ${body}`);
+  }
+  const data = await res.json();
+  return data.id as string;
+}
 
 export type ToneMode = "краткий" | "подробный";
 
@@ -100,8 +178,7 @@ async function callGigaChat(
   userPrompt: string,
   maxTokens: number
 ): Promise<string> {
-  const token = process.env.GIGACHAT_TOKEN;
-  if (!token) throw new Error("GIGACHAT_TOKEN env var is not set");
+  const token = await getToken();
 
   const res = await fetch(GIGACHAT_API_URL, {
     method: "POST",
@@ -320,12 +397,18 @@ export interface WeekPlanRaw {
   days: DayPlanRaw[];
 }
 
-/** Attempt to extract JSON from a GigaChat response that may include extra text. */
+/**
+ * Attempt to extract JSON from a GigaChat response.
+ * Strips markdown code fences (```json ... ```) before searching for {…}.
+ */
 function extractJson(raw: string): string {
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
+  // Strip markdown code fences
+  const fenceStripped = raw.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
+  const source = fenceStripped.length > 0 ? fenceStripped : raw;
+  const start = source.indexOf("{");
+  const end = source.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("No JSON object found in response");
-  return raw.slice(start, end + 1);
+  return source.slice(start, end + 1);
 }
 
 export async function generateWeeklyMealPlan(
@@ -389,18 +472,17 @@ export interface FoodPhotoResult {
 }
 
 /**
- * Analyse a food photo using GigaChat vision.
- * imageBase64 should be a raw base64 string (no data URI prefix).
- * mimeType defaults to "image/jpeg".
+ * Analyse a food photo using GigaChat-Max vision.
+ * Resizes the image to ≤1024 px, uploads it via the files API,
+ * then sends a chat completion using attachments[] (GigaChat format).
  */
 export async function getFoodPhotoAnalysis(
-  imageBase64: string,
-  mimeType = "image/jpeg"
+  imageBuffer: Buffer,
+  // mimeType kept for API compatibility but image is always converted to JPEG internally
+  _mimeType = "image/jpeg"
 ): Promise<FoodPhotoResult> {
-  const token = process.env.GIGACHAT_TOKEN;
-  if (!token) throw new Error("GIGACHAT_TOKEN env var is not set");
-
-  const dataUrl = `data:${mimeType};base64,${imageBase64}`;
+  const token = await getToken();
+  const fileId = await uploadImageFile(imageBuffer, token);
 
   const res = await fetch(GIGACHAT_API_URL, {
     method: "POST",
@@ -414,10 +496,8 @@ export async function getFoodPhotoAnalysis(
       messages: [
         {
           role: "user",
-          content: [
-            { type: "text", text: PROMPT_FOOD_PHOTO_RU },
-            { type: "image_url", image_url: { url: dataUrl } },
-          ],
+          content: PROMPT_FOOD_PHOTO_RU,
+          attachments: [fileId],
         },
       ],
     }),

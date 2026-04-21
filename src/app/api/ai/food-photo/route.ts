@@ -26,8 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const base64 = buffer.toString("base64");
 
-  const result = await getFoodPhotoAnalysis(base64, file.type);
+  const result = await getFoodPhotoAnalysis(buffer, file.type);
   return NextResponse.json(result);
 }
