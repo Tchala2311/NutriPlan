@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getUserGoals } from "./profile/actions";
 
 export const metadata: Metadata = { title: "Dashboard — NutriPlan" };
 
@@ -17,10 +18,13 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: entries } = await supabase
-    .from("nutrition_logs")
-    .select("calories, protein_g, carbs_g, fat_g")
-    .eq("logged_date", today);
+  const [{ data: entries }, goals] = await Promise.all([
+    supabase
+      .from("nutrition_logs")
+      .select("calories, protein_g, carbs_g, fat_g")
+      .eq("logged_date", today),
+    getUserGoals(),
+  ]);
 
   const totals = (entries ?? []).reduce(
     (acc, e) => ({
@@ -35,10 +39,30 @@ export default async function DashboardPage() {
   const hasEntries = (entries ?? []).length > 0;
 
   const statCards = [
-    { label: "Calories today", value: hasEntries ? `${Math.round(totals.calories)}` : "—", unit: "kcal" },
-    { label: "Protein", value: hasEntries ? `${totals.protein_g.toFixed(1)}` : "—", unit: "g" },
-    { label: "Carbs", value: hasEntries ? `${totals.carbs_g.toFixed(1)}` : "—", unit: "g" },
-    { label: "Fats", value: hasEntries ? `${totals.fat_g.toFixed(1)}` : "—", unit: "g" },
+    {
+      label: "Calories today",
+      value: hasEntries ? Math.round(totals.calories) : null,
+      target: goals.daily_calorie_target,
+      unit: "kcal",
+    },
+    {
+      label: "Protein",
+      value: hasEntries ? Math.round(totals.protein_g) : null,
+      target: goals.protein_target_g,
+      unit: "g",
+    },
+    {
+      label: "Carbs",
+      value: hasEntries ? Math.round(totals.carbs_g) : null,
+      target: goals.carbs_target_g,
+      unit: "g",
+    },
+    {
+      label: "Fats",
+      value: hasEntries ? Math.round(totals.fat_g) : null,
+      target: goals.fat_target_g,
+      unit: "g",
+    },
   ];
 
   return (
@@ -52,27 +76,48 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Live stat cards */}
+      {/* Stat cards with progress vs target */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-parchment-200 bg-parchment-100 p-4"
-          >
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {card.label}
-            </p>
-            <p className="mt-1.5 text-2xl font-semibold text-bark-300">
-              {card.value}
-              {hasEntries && (
-                <span className="ml-1 text-sm font-normal text-muted-foreground">{card.unit}</span>
+        {statCards.map((card) => {
+          const pct = card.value !== null ? Math.min(100, Math.round((card.value / card.target) * 100)) : 0;
+          const over = card.value !== null && card.value > card.target;
+          return (
+            <div
+              key={card.label}
+              className="rounded-xl border border-parchment-200 bg-parchment-100 p-4"
+            >
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {card.label}
+              </p>
+              {card.value !== null ? (
+                <>
+                  <p className={`mt-1.5 text-2xl font-semibold ${over ? "text-amber-600" : "text-bark-300"}`}>
+                    {card.value}
+                    <span className="ml-0.5 text-sm font-normal text-muted-foreground">
+                      {" "}/ {card.target} {card.unit}
+                    </span>
+                  </p>
+                  {/* Progress bar */}
+                  <div className="mt-2 h-1.5 rounded-full bg-parchment-200 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${over ? "bg-amber-400" : "bg-sage-300"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{pct}% of target</p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1.5 text-2xl font-semibold text-bark-300">
+                    —
+                    <span className="ml-1 text-sm font-normal text-muted-foreground">/ {card.target} {card.unit}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">No entries yet today</p>
+                </>
               )}
-            </p>
-            {!hasEntries && (
-              <p className="mt-0.5 text-xs text-muted-foreground">No entries yet today</p>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Quick actions */}
