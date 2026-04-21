@@ -17,6 +17,9 @@ import {
   PROMPT_OPTIMISATION_TIP_RU,
   PROMPT_MEAL_SUBSTITUTION_RU,
   PROMPT_FREE_QUESTION_RU,
+  PROMPT_MEAL_PLAN_RU,
+  PROMPT_SWAP_SLOT_RU,
+  PROMPT_RECIPE_DETAIL_RU,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from "./prompts";
@@ -286,4 +289,100 @@ export async function getFreeAnswer(
   const system = interpolate(SYSTEM_PROMPT_RU, vars);
   const userMsg = interpolate(PROMPT_FREE_QUESTION_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("free_question", user.tone_mode ?? "краткий"));
+}
+
+// ── Meal planner helpers ──────────────────────────────────────────────────────
+
+export interface MealRecipeRaw {
+  title: string;
+  prep_min: number;
+  kcal: number;
+  p: number;
+  c: number;
+  f: number;
+  ingredients: string[];
+  steps: string[];
+  tags: string[];
+  substitutions: Array<{ original: string; substitute: string; reason: string }>;
+}
+
+export interface DayPlanRaw {
+  date: string;
+  breakfast: MealRecipeRaw;
+  lunch: MealRecipeRaw;
+  dinner: MealRecipeRaw;
+  snacks: MealRecipeRaw;
+}
+
+export interface WeekPlanRaw {
+  days: DayPlanRaw[];
+}
+
+/** Attempt to extract JSON from a GigaChat response that may include extra text. */
+function extractJson(raw: string): string {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("No JSON object found in response");
+  return raw.slice(start, end + 1);
+}
+
+export async function generateWeeklyMealPlan(
+  user: UserProfile & { avoided_ingredients?: string[] },
+  weekStart: string, // "YYYY-MM-DD" Monday
+  weekEnd: string    // "YYYY-MM-DD" Sunday
+): Promise<WeekPlanRaw> {
+  const extra: Record<string, string> = {
+    week_start: weekStart,
+    week_end: weekEnd,
+  };
+  const vars = buildVars(user as unknown as UserProfile, {}, extra);
+  const system = "Ты профессиональный диетолог, отвечаешь только валидным JSON.";
+  const userMsg = interpolate(PROMPT_MEAL_PLAN_RU, vars);
+  const raw = await callGigaChat(system, userMsg, MAX_TOKENS.meal_plan.краткий);
+  const json = extractJson(raw);
+  return JSON.parse(json) as WeekPlanRaw;
+}
+
+export async function swapMealSlot(
+  user: UserProfile,
+  mealType: string,
+  mealTypeRu: string,
+  existingMealTitles: string[],
+  targetKcal: number,
+  targetP: number,
+  targetC: number,
+  targetF: number
+): Promise<MealRecipeRaw> {
+  const extra: Record<string, string> = {
+    meal_type: mealType,
+    meal_type_ru: mealTypeRu,
+    existing_meals: existingMealTitles.length > 0 ? existingMealTitles.join(", ") : "—",
+    target_kcal: String(targetKcal),
+    target_p: String(targetP),
+    target_c: String(targetC),
+    target_f: String(targetF),
+  };
+  const vars = buildVars(user, {}, extra);
+  const system = "Ты профессиональный диетолог, отвечаешь только валидным JSON.";
+  const userMsg = interpolate(PROMPT_SWAP_SLOT_RU, vars);
+  const raw = await callGigaChat(system, userMsg, MAX_TOKENS.swap_slot.краткий);
+  const json = extractJson(raw);
+  return JSON.parse(json) as MealRecipeRaw;
+}
+
+export async function getRecipeDetail(
+  user: UserProfile,
+  recipeTitle: string,
+  ingredientsList: string
+): Promise<{ detailed_steps: string[]; tips: string[]; substitutions: Array<{ original: string; substitute: string; reason: string }> }> {
+  const extra: Record<string, string> = {
+    recipe_title: recipeTitle,
+    ingredients_list: ingredientsList,
+  };
+  const vars = buildVars(user, {}, extra);
+  const system = "Ты профессиональный шеф-повар и диетолог, отвечаешь только валидным JSON.";
+  const userMsg = interpolate(PROMPT_RECIPE_DETAIL_RU, vars);
+  const raw = await callGigaChat(system, userMsg, MAX_TOKENS.recipe_detail.краткий);
+  const json = extractJson(raw);
+  return JSON.parse(json);
 }
