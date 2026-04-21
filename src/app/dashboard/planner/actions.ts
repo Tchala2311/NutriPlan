@@ -19,6 +19,7 @@ export interface RecipeSummary {
   ingredients: string[];
   instructions: string[];
   dietary_tags: string[];
+  stores: string[];
   substitutions: Array<{ original: string; substitute: string; reason: string }>;
 }
 
@@ -31,6 +32,12 @@ export interface MealPlan {
   id: string;
   week_start_date: string;
   slots: Record<string, Record<string, MealSlot>>;
+  training_schedule: Record<string, string>; // date → "зал" | "отдых"
+}
+
+export interface MealCompletion {
+  slot_date: string;
+  meal_type: string;
 }
 
 /** Derive Monday of a given date's week. */
@@ -42,22 +49,23 @@ function getWeekStart(dateStr?: string): string {
   return d.toISOString().split("T")[0];
 }
 
-/** Fetch the meal plan for a given week, along with all recipes referenced. */
+/** Fetch the meal plan for a given week, along with all recipes and completions. */
 export async function getMealPlan(weekStart?: string): Promise<{
   plan: MealPlan | null;
   recipes: Record<string, RecipeSummary>;
   savedRecipeIds: string[];
+  completions: MealCompletion[];
 }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { plan: null, recipes: {}, savedRecipeIds: [] };
+  if (!user) return { plan: null, recipes: {}, savedRecipeIds: [], completions: [] };
 
   const ws = getWeekStart(weekStart);
 
   const [planResult, savedResult] = await Promise.all([
     supabase
       .from("meal_plans")
-      .select("id, week_start_date, slots")
+      .select("id, week_start_date, slots, training_schedule")
       .eq("user_id", user.id)
       .eq("week_start_date", ws)
       .maybeSingle(),
@@ -69,9 +77,22 @@ export async function getMealPlan(weekStart?: string): Promise<{
 
   const savedRecipeIds = (savedResult.data ?? []).map((r) => r.recipe_id);
 
-  if (!planResult.data) return { plan: null, recipes: {}, savedRecipeIds };
+  if (!planResult.data) return { plan: null, recipes: {}, savedRecipeIds, completions: [] };
 
   const plan = planResult.data as MealPlan;
+  if (!plan.training_schedule) plan.training_schedule = {};
+
+  // Fetch completions for this plan
+  const { data: completionsData } = await supabase
+    .from("meal_completions")
+    .select("slot_date, meal_type")
+    .eq("meal_plan_id", plan.id)
+    .eq("user_id", user.id);
+
+  const completions: MealCompletion[] = (completionsData ?? []).map((c) => ({
+    slot_date: c.slot_date,
+    meal_type: c.meal_type,
+  }));
 
   // Collect all recipe IDs from slots
   const recipeIds = new Set<string>();
@@ -81,16 +102,54 @@ export async function getMealPlan(weekStart?: string): Promise<{
     }
   }
 
-  if (recipeIds.size === 0) return { plan, recipes: {}, savedRecipeIds };
+  if (recipeIds.size === 0) return { plan, recipes: {}, savedRecipeIds, completions };
 
   const { data: recipes } = await supabase
     .from("recipes")
-    .select("id, title, prep_time_min, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, ingredients, instructions, dietary_tags, substitutions")
+    .select("id, title, prep_time_min, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, ingredients, instructions, dietary_tags, stores, substitutions")
     .in("id", [...recipeIds]);
 
   const recipesMap = Object.fromEntries((recipes ?? []).map((r) => [r.id, r as RecipeSummary]));
 
-  return { plan, recipes: recipesMap, savedRecipeIds };
+  return { plan, recipes: recipesMap, savedRecipeIds, completions };
+}
+
+/** Toggle a meal slot completion (check-off). */
+export async function toggleMealCompletion(
+  planId: string,
+  date: string,
+  mealType: string
+): Promise<{ success: boolean; nowCompleted: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, nowCompleted: false };
+
+  // Check if completion exists
+  const { data: existing } = await supabase
+    .from("meal_completions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("meal_plan_id", planId)
+    .eq("slot_date", date)
+    .eq("meal_type", mealType)
+    .maybeSingle();
+
+  if (existing) {
+    // Remove completion
+    const { error } = await supabase
+      .from("meal_completions")
+      .delete()
+      .eq("id", existing.id);
+    revalidatePath("/dashboard/planner");
+    return { success: !error, nowCompleted: false };
+  } else {
+    // Add completion
+    const { error } = await supabase
+      .from("meal_completions")
+      .insert({ user_id: user.id, meal_plan_id: planId, slot_date: date, meal_type: mealType });
+    revalidatePath("/dashboard/planner");
+    return { success: !error, nowCompleted: true };
+  }
 }
 
 /** Toggle pin/unpin for a specific slot. */

@@ -22,24 +22,25 @@ export default async function MealPlannerPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="font-display text-2xl font-bold text-bark-300">Планировщик питания</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Планируйте приёмы пищи на неделю вперёд.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Планируйте приёмы пищи на 4 недели вперёд.</p>
         </div>
         <UpgradePrompt
           feature="Планировщик питания"
-          description="Составляйте меню на неделю вперёд с умными рецептами на основе ваших целей и ограничений."
+          description="Составляйте меню на 4 недели вперёд с ИИ-рецептами, списком покупок и трекером приёмов пищи."
         />
       </div>
     );
   }
 
   const weekStart = getWeekStart();
-  const { plan, recipes, savedRecipeIds } = await getMealPlan(weekStart);
+  const { plan, recipes, savedRecipeIds, completions } = await getMealPlan(weekStart);
 
   return (
     <MealPlannerClient
       initialPlan={plan}
       initialRecipes={recipes}
       initialSavedIds={savedRecipeIds}
+      initialCompletions={completions}
       weekStart={weekStart}
     />
   );
