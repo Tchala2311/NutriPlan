@@ -64,7 +64,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
         <div className="flex justify-between items-baseline mb-1">
           <span className={`text-2xl font-semibold ${over ? "text-sky-600" : "text-bark-300"}`}>
             {totalMl}
-            <span className="ml-0.5 text-sm font-normal text-muted-foreground"> / {targetMl} ml</span>
+            <span className="ml-0.5 text-sm font-normal text-muted-foreground"> / {targetMl} мл</span>
           </span>
           <span className="text-xs text-muted-foreground">
             {glassCount} {glassCount === 1 ? "стакан" : glassCount >= 2 && glassCount <= 4 ? "стакана" : "стаканов"}
@@ -89,7 +89,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
             disabled={loading}
             className="rounded-lg border border-parchment-200 bg-white px-3 py-1.5 text-xs font-medium text-bark-300 hover:bg-parchment-200 disabled:opacity-50 transition-colors"
           >
-            +{ml} ml
+            +{ml} мл
           </button>
         ))}
 
@@ -100,7 +100,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
             min="1"
             max="2000"
             step="1"
-            placeholder="ml"
+            placeholder="мл"
             value={customMl}
             onChange={(e) => setCustomMl(e.target.value)}
             className="w-16 rounded-lg border border-parchment-200 bg-white px-2 py-1.5 text-xs text-bark-300 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"

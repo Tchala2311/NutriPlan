@@ -133,7 +133,7 @@ export function GoalSettingsForm({ initial }: Props) {
                   className="w-full rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
                   required
                 />
-                <span className="text-xs text-muted-foreground shrink-0">g</span>
+                <span className="text-xs text-muted-foreground shrink-0">г</span>
               </div>
             </div>
           ))}

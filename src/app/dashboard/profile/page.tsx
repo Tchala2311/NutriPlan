@@ -69,7 +69,9 @@ export default async function ProfilePage() {
                 <span className="inline-flex items-center rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-semibold text-sage-700">
                   Premium
                 </span>
-                <span className="text-xs text-muted-foreground capitalize">{sub?.status}</span>
+                <span className="text-xs text-muted-foreground">
+                  {sub?.status === "active" ? "активна" : sub?.status === "trialing" ? "пробный" : sub?.status === "cancelled" ? "отменена" : sub?.status ?? ""}
+                </span>
               </div>
               {periodEnd && (
                 <p className="text-sm text-muted-foreground">

@@ -178,7 +178,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
                         )}
                       >
                         <span className="font-medium">{item.food_name}</span>
-                        <span className="ml-1.5 text-[10px] opacity-70">{item.calories} kcal · {item.portion}</span>
+                        <span className="ml-1.5 text-[10px] opacity-70">{item.calories} ккал · {item.portion}</span>
                       </button>
                     ))}
                   </div>
