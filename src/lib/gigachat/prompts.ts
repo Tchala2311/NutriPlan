@@ -4,6 +4,9 @@
  * Compatible with GigaChat API (OpenAI-format: system + user messages).
  */
 
+// Type for week recipe context in food photo analysis
+type WeekRecipe = { id: string; title: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; ingredients: string[] };
+
 export const SYSTEM_PROMPT_RU = `Ты — NutriPlan, персональный ИИ-помощник по питанию. Ты помогаешь пользователям понять свои пищевые привычки и принимать обоснованные решения в области питания.
 
 Основные правила:
@@ -308,7 +311,7 @@ export const PROMPT_RECIPE_DETAIL_RU = `Ты — шеф-повар и дието
  *  - Hidden calorie detection (масло, соусы, заправки)
  *  - Calibrated confidence with explicit uncertainty reasons
  */
-export function buildFoodPhotoPrompt(weekRecipes?: Array<{ id: string; title: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; ingredients: string[] }>): string {
+export function buildFoodPhotoPrompt(weekRecipes?: WeekRecipe[]): string {
   const recipesBlock = weekRecipes && weekRecipes.length > 0
     ? `\n## План питания на неделю (для сопоставления с фото)\n${weekRecipes
         .map(

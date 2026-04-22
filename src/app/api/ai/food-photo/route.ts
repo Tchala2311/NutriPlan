@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getFoodPhotoAnalysis } from "@/lib/gigachat/client";
+import { getFoodPhotoAnalysis, type WeekRecipeContext } from "@/lib/gigachat/client";
 
 export const runtime = "nodejs";
 // Max 4 MB upload
@@ -25,10 +25,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unsupported image format" }, { status: 415 });
   }
 
+  // Optional: week recipes JSON for recipe matching
+  let weekRecipes: WeekRecipeContext[] | undefined;
+  const recipesRaw = formData.get("weekRecipes");
+  if (typeof recipesRaw === "string" && recipesRaw) {
+    try {
+      weekRecipes = JSON.parse(recipesRaw) as WeekRecipeContext[];
+    } catch {
+      // ignore malformed recipes context
+    }
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
-    const result = await getFoodPhotoAnalysis(buffer, file.type);
+    const result = await getFoodPhotoAnalysis(buffer, file.type, weekRecipes);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
