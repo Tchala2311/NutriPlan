@@ -9,6 +9,16 @@
 
 import { randomUUID } from "crypto";
 import sharp from "sharp";
+
+// GigaChat endpoints use Sberbank CA certs not in the default Node trust store.
+// NODE_TLS_REJECT_UNAUTHORIZED=0 must be set in the environment (see .env.local).
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+  console.warn(
+    "[gigachat] NODE_TLS_REJECT_UNAUTHORIZED is not set to 0. " +
+    "GigaChat requests may fail with certificate errors. " +
+    "Add NODE_TLS_REJECT_UNAUTHORIZED=0 to .env.local"
+  );
+}
 import {
   SYSTEM_PROMPT_RU,
   PROMPT_ONBOARDING_RU,
@@ -24,8 +34,9 @@ import {
   PROMPT_MEAL_PLAN_RU,
   PROMPT_SWAP_SLOT_RU,
   PROMPT_RECIPE_DETAIL_RU,
-  PROMPT_FOOD_PHOTO_RU,
   PROMPT_FOOD_SUGGESTION_RU,
+  PROMPT_ESTIMATE_INGREDIENT_RU,
+  buildFoodPhotoPrompt,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from "./prompts";
@@ -189,7 +200,7 @@ async function callGigaChat(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "GigaChat-Pro",
+      model: "GigaChat",
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
@@ -440,7 +451,6 @@ function sanitizeNumbers(obj: unknown, numericKeys: Set<string>): unknown {
   return obj;
 }
 
-const FOOD_PHOTO_NUMERIC_KEYS = new Set(["calories", "protein_g", "carbs_g", "fat_g"]);
 const MEAL_NUMERIC_KEYS = new Set(["prep_min", "kcal", "p", "c", "f"]);
 
 export async function generateWeeklyMealPlan(
@@ -501,30 +511,56 @@ export async function swapMealSlot(
 
 export interface FoodPhotoItem {
   food_name: string;
+  cooking_method?: string;
   calories: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
   portion: string;
+  weight_g?: number;
+  weight_confidence?: "measured" | "visual_high" | "visual_medium" | "visual_low";
+  is_hidden_calorie_source?: boolean;
+  weight_was_estimated?: boolean;
+}
+
+export interface WeekRecipeContext {
+  id: string;
+  title: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  ingredients: string[];
 }
 
 export interface FoodPhotoResult {
   items: FoodPhotoItem[];
+  matched_recipe_id?: string | null;
+  dish_type?: string;
+  recognition_confidence?: "high" | "medium" | "low";
+  uncertainty_reasons?: string[];
+  apology?: string | null;
+  total_calories_estimate?: number;
   error?: string;
 }
 
+const FOOD_PHOTO_EXTENDED_NUMERIC_KEYS = new Set([
+  "calories", "protein_g", "carbs_g", "fat_g", "weight_g", "total_calories_estimate",
+]);
+
 /**
- * Analyse a food photo using GigaChat-Max vision.
- * Resizes the image to ≤1024 px, uploads it via the files API,
- * then sends a chat completion using attachments[] (GigaChat format).
+ * Analyse a food photo using GigaChat-2-Max vision.
+ * Optionally accepts week recipe context for recipe matching.
  */
 export async function getFoodPhotoAnalysis(
   imageBuffer: Buffer,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _mimeType = "image/jpeg"
+  _mimeType = "image/jpeg",
+  weekRecipes?: WeekRecipeContext[]
 ): Promise<FoodPhotoResult> {
   const token = await getToken();
   const fileId = await uploadImageFile(imageBuffer, token);
+  const prompt = buildFoodPhotoPrompt(weekRecipes);
 
   const res = await fetch(GIGACHAT_API_URL, {
     method: "POST",
@@ -538,7 +574,7 @@ export async function getFoodPhotoAnalysis(
       messages: [
         {
           role: "user",
-          content: PROMPT_FOOD_PHOTO_RU,
+          content: prompt,
           attachments: [fileId],
         },
       ],
@@ -554,7 +590,36 @@ export async function getFoodPhotoAnalysis(
   const raw = data.choices[0].message.content as string;
   const json = extractJson(raw);
   const parsed = JSON.parse(json);
-  return sanitizeNumbers(parsed, FOOD_PHOTO_NUMERIC_KEYS) as FoodPhotoResult;
+  return sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoResult;
+}
+
+/**
+ * Estimate nutrition for a custom ingredient by name and optional weight.
+ * Uses GigaChat text model (Lite).
+ */
+export async function estimateIngredientNutrition(
+  ingredientName: string,
+  weightG?: number
+): Promise<FoodPhotoItem> {
+  const isEstimated = !weightG;
+  const prompt = PROMPT_ESTIMATE_INGREDIENT_RU
+    .replace("{{ingredient_name}}", ingredientName)
+    .replace("{{weight_g}}", weightG ? String(weightG) : "стандартная порция")
+    .replace(
+      "{{estimated_weight_note}}",
+      isEstimated ? " (вес не указан — оцени стандартную порцию)" : ""
+    );
+
+  const raw = await callGigaChat(
+    "Ты — диетолог. Отвечаешь только валидным JSON.",
+    prompt,
+    300
+  );
+  const json = extractJson(raw);
+  const parsed = JSON.parse(json);
+  const result = sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoItem;
+  if (isEstimated) result.weight_was_estimated = true;
+  return result;
 }
 
 // ── Post-log AI suggestion ────────────────────────────────────────────────────
