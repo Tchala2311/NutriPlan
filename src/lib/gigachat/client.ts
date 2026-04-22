@@ -91,7 +91,9 @@ async function uploadImageFile(imageBuffer: Buffer, token: string): Promise<stri
     .toBuffer();
 
   const form = new FormData();
-  form.append("file", new Blob([resized.buffer as ArrayBuffer], { type: "image/jpeg" }), "photo.jpg");
+  // Use the Buffer directly — resized.buffer is the pooled ArrayBuffer and may
+  // contain bytes outside this Buffer's range; passing the Buffer itself is correct.
+  form.append("file", new Blob([resized], { type: "image/jpeg" }), "photo.jpg");
   form.append("purpose", "general");
 
   const res = await fetch(GIGACHAT_FILES_URL, {

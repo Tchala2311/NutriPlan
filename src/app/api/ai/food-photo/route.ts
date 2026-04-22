@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const result = await getFoodPhotoAnalysis(buffer, file.type);
-  return NextResponse.json(result);
+  try {
+    const result = await getFoodPhotoAnalysis(buffer, file.type);
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[food-photo] GigaChat error:", message);
+    return NextResponse.json({ error: "Failed to analyse photo", detail: message }, { status: 502 });
+  }
 }
