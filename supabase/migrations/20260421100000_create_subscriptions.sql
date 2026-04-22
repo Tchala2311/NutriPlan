@@ -9,6 +9,7 @@ create table if not exists subscriptions (
   current_period_end         timestamptz,
   yookassa_subscription_id   text,
   yookassa_payment_method_id text,
+  is_founder                 boolean not null default false,
   created_at                 timestamptz not null default now(),
   updated_at                 timestamptz not null default now(),
   unique(user_id),

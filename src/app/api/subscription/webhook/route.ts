@@ -47,6 +47,17 @@ export async function POST(req: Request) {
 
   const supabase = await createClient();
 
+  // Never overwrite founder accounts via billing webhooks
+  const { data: existing } = await supabase
+    .from("subscriptions")
+    .select("is_founder")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.is_founder) {
+    console.log(`[webhook] Skipping update for founder account ${userId}`);
+    return NextResponse.json({ ok: true });
+  }
+
   if (event.event === "payment.succeeded" && payment.status === "succeeded") {
     const periodEnd = new Date();
     periodEnd.setDate(periodEnd.getDate() + SUBSCRIPTION_PERIOD_DAYS);

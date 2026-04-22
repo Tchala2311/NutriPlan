@@ -16,6 +16,7 @@ export interface Subscription {
   current_period_end: string | null;
   yookassa_subscription_id: string | null;
   yookassa_payment_method_id: string | null;
+  is_founder: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +49,7 @@ export async function getUserSubscription(): Promise<Subscription | null> {
       current_period_end: null,
       yookassa_subscription_id: null,
       yookassa_payment_method_id: null,
+      is_founder: false,
       created_at: "",
       updated_at: "",
     };
@@ -63,6 +65,8 @@ export async function getUserSubscription(): Promise<Subscription | null> {
 export async function isPremium(): Promise<boolean> {
   const sub = await getUserSubscription();
   if (!sub) return false;
+  // Founder accounts have permanent premium access — never check expiry
+  if (sub.is_founder && sub.plan === "premium") return true;
   if (sub.plan !== "premium") return false;
   if (sub.status !== "active") return false;
   if (sub.current_period_end) {
