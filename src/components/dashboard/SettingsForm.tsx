@@ -12,8 +12,6 @@ interface SettingsFormProps {
   periodEnd: string | null;
 }
 
-const CATALOG_DAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-
 export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: SettingsFormProps) {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -21,19 +19,12 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
-  const [trainingDays, setTrainingDays] = useState<Set<number>>(
-    new Set(initial.training_days ?? [0, 2, 4, 5])
-  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaved(false);
     setSaveError(null);
     const formData = new FormData(e.currentTarget);
-    // Add training days from state to FormData (they're controlled inputs)
-    trainingDays.forEach((day) => {
-      formData.append("training_days", String(day));
-    });
     startTransition(async () => {
       try {
         await saveSettings(formData);
@@ -137,9 +128,6 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
             />
           </div>
         </Section>
-
-        {/* ── Training days ── */}
-        <TrainingDaysSection trainingDays={trainingDays} onChange={setTrainingDays} />
 
         {/* Save button */}
         <div className="flex items-center gap-3">
@@ -323,59 +311,6 @@ function RadioCard({
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
     </label>
-  );
-}
-
-function TrainingDaysSection({
-  trainingDays,
-  onChange,
-}: {
-  trainingDays: Set<number>;
-  onChange: (days: Set<number>) => void;
-}) {
-  function toggle(day: number) {
-    const next = new Set(trainingDays);
-    if (next.has(day)) {
-      next.delete(day);
-    } else {
-      next.add(day);
-    }
-    onChange(next);
-  }
-
-  return (
-    <Section title="Дни тренировок">
-      <p className="text-xs text-muted-foreground mb-3">
-        Выберите дни, в которые вы тренируетесь. Планировщик питания использует эти дни для расчёта калорий.
-      </p>
-      <div className="flex gap-2 flex-wrap">
-        {CATALOG_DAYS_RU.map((label, idx) => {
-          const active = trainingDays.has(idx);
-          return (
-            <label key={idx} className="cursor-pointer select-none">
-              <input
-                type="checkbox"
-                name="training_days"
-                value={String(idx)}
-                checked={active}
-                onChange={() => toggle(idx)}
-                className="sr-only"
-              />
-              <span
-                className={cn(
-                  "inline-flex items-center justify-center w-10 h-10 rounded-full border text-sm font-semibold transition-colors",
-                  active
-                    ? "bg-bark-300 border-bark-300 text-white"
-                    : "border-parchment-200 bg-white text-bark-200 hover:border-bark-200"
-                )}
-              >
-                {label}
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    </Section>
   );
 }
 
