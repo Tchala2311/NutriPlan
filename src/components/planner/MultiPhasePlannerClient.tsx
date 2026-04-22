@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo, useCallback, useTransition } from "react";
+import { useState, useMemo, useCallback, useTransition, useEffect, useRef } from "react";
 import {
   Dumbbell, Moon, CheckCircle2, Circle, Loader2,
   ShoppingCart, LayoutGrid, List, Package, ChevronDown,
   Target, Flame, ChevronLeft, ChevronRight,
+  ExternalLink, Copy, Check, Link2, X,
 } from "lucide-react";
 import {
   PHASES, MEAL_TYPES, MEAL_LABEL_RU, DAY_NAMES_RU,
@@ -99,6 +100,20 @@ function scaleKcal(templateKcal: number, config: UserPlanConfig | null): number 
 function completionKey(day: number, meal_type: string): string {
   return `${day}-${meal_type}`;
 }
+
+// ── Moscow shops ─────────────────────────────────────────────────────────────
+
+const MOSCOW_SHOPS = [
+  { key: "pyaterochka", label: "Пятёрочка",   chipColor: "bg-red-50 text-red-500 border-red-200",     activeColor: "bg-red-500 text-white border-red-500" },
+  { key: "magnit",      label: "Магнит",       chipColor: "bg-rose-50 text-rose-500 border-rose-200",  activeColor: "bg-rose-500 text-white border-rose-500" },
+  { key: "perekrestok", label: "Перекрёсток",  chipColor: "bg-green-50 text-green-600 border-green-200", activeColor: "bg-green-600 text-white border-green-600" },
+  { key: "vkusvill",    label: "ВкусВилл",     chipColor: "bg-emerald-50 text-emerald-600 border-emerald-200", activeColor: "bg-emerald-600 text-white border-emerald-600" },
+  { key: "lenta",       label: "Лента",        chipColor: "bg-blue-50 text-blue-500 border-blue-200",  activeColor: "bg-blue-500 text-white border-blue-500" },
+  { key: "auchan",      label: "Ашан",         chipColor: "bg-orange-50 text-orange-500 border-orange-200", activeColor: "bg-orange-500 text-white border-orange-500" },
+  { key: "lavka",       label: "Яндекс Лавка", chipColor: "bg-yellow-50 text-yellow-600 border-yellow-200", activeColor: "bg-yellow-500 text-white border-yellow-500" },
+  { key: "ozon",        label: "Ozon Fresh",   chipColor: "bg-sky-50 text-sky-500 border-sky-200",     activeColor: "bg-sky-500 text-white border-sky-500" },
+  { key: "rynok",       label: "Рынок",        chipColor: "bg-stone-50 text-stone-500 border-stone-200", activeColor: "bg-stone-600 text-white border-stone-600" },
+] as const;
 
 // ── Main component ───────────────────────────────────────────────────────────
 
@@ -792,13 +807,15 @@ function MealCard({
         {meal.name}
       </p>
 
-      <div className="mt-auto">
+      <div className="mt-auto space-y-0.5">
         {meal.kcal != null && (
-          <p className="text-2xs text-stone-400">{meal.kcal} ккал</p>
+          <p className="text-2xs text-stone-400 font-medium">{meal.kcal} ккал</p>
         )}
-        {meal.protein_g != null && (
-          <p className="text-2xs text-stone-300">Б {meal.protein_g}г</p>
-        )}
+        <p className="text-2xs text-stone-300 leading-tight">
+          {meal.protein_g != null && `Б${meal.protein_g} `}
+          {meal.carbs_g != null && `У${meal.carbs_g} `}
+          {meal.fat_g != null && `Ж${meal.fat_g}`}
+        </p>
       </div>
     </div>
   );
@@ -849,9 +866,11 @@ function MealCardMobile({
           {meal.kcal != null && (
             <p className="text-xs font-medium text-bark-200">{meal.kcal} ккал</p>
           )}
-          {meal.protein_g != null && (
-            <p className="text-2xs text-stone-400">Б {meal.protein_g}г</p>
-          )}
+          <p className="text-2xs text-stone-400 leading-tight">
+            {meal.protein_g != null && `Б${meal.protein_g} `}
+            {meal.carbs_g != null && `У${meal.carbs_g} `}
+            {meal.fat_g != null && `Ж${meal.fat_g}`}
+          </p>
         </div>
       </div>
     </div>
@@ -1001,14 +1020,58 @@ interface ShoppingViewProps {
   globalWeek: number;
 }
 
-function ShoppingView({ items }: ShoppingViewProps) {
+function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
   const [activeWindow, setActiveWindow] = useState<"all" | "A" | "B">("all");
   const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [selectedShop, setSelectedShop] = useState<string | null>(null);
+
+  // shop assignments: itemKey → shopKey  (persisted per-week)
+  const [shopAssignments, setShopAssignments] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem(`np_shops_${globalWeek}`) ?? "{}"); } catch { return {}; }
+  });
+
+  // ingredient links: itemKey → url  (persisted per-week)
+  const [links, setLinks] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem(`np_links_${globalWeek}`) ?? "{}"); } catch { return {}; }
+  });
+
+  const [assigningFor, setAssigningFor] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<string | null>(null);
+  const [linkDraft, setLinkDraft] = useState("");
+  const [copied, setCopied] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Persist shop assignments
+  useEffect(() => {
+    localStorage.setItem(`np_shops_${globalWeek}`, JSON.stringify(shopAssignments));
+  }, [shopAssignments, globalWeek]);
+
+  // Persist links
+  useEffect(() => {
+    localStorage.setItem(`np_links_${globalWeek}`, JSON.stringify(links));
+  }, [links, globalWeek]);
+
+  // Close shop picker on outside click
+  useEffect(() => {
+    if (!assigningFor) return;
+    function onDown(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setAssigningFor(null);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [assigningFor]);
 
   const filtered = useMemo(() => {
-    if (activeWindow === "all") return items;
-    return items.filter((i) => i.shopping_window === activeWindow);
-  }, [items, activeWindow]);
+    let base = activeWindow === "all" ? items : items.filter((i) => i.shopping_window === activeWindow);
+    if (selectedShop) {
+      base = base.filter((i) => shopAssignments[`${i.shopping_window}-${i.item_name}`] === selectedShop);
+    }
+    return base;
+  }, [items, activeWindow, selectedShop, shopAssignments]);
 
   const byCategory = useMemo(() => {
     const map: Map<string, ShoppingItem[]> = new Map();
@@ -1028,12 +1091,77 @@ function ShoppingView({ items }: ShoppingViewProps) {
     });
   }
 
+  function assignShop(itemKey: string, shopKey: string | null) {
+    setShopAssignments((prev) => {
+      const next = { ...prev };
+      if (shopKey === null) delete next[itemKey]; else next[itemKey] = shopKey;
+      return next;
+    });
+    setAssigningFor(null);
+  }
+
+  function saveLink(itemKey: string, url: string) {
+    setLinks((prev) => {
+      const next = { ...prev };
+      if (!url.trim()) delete next[itemKey]; else next[itemKey] = url.trim();
+      return next;
+    });
+    setEditingLink(null);
+  }
+
+  function copyShopList() {
+    const shopLabel = MOSCOW_SHOPS.find((s) => s.key === selectedShop)?.label ?? selectedShop ?? "";
+    const lines = [`Список покупок — ${shopLabel}`, ""];
+    for (const [cat, catItems] of byCategory.entries()) {
+      lines.push(`${cat}`);
+      for (const item of catItems) {
+        const qty = item.quantity_per_person ? ` — ${item.quantity_per_person}` : "";
+        const url = links[`${item.shopping_window}-${item.item_name}`];
+        lines.push(`• ${item.item_name}${qty}${url ? ` (${url})` : ""}`);
+      }
+      lines.push("");
+    }
+    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
   const totalItems = filtered.length;
   const checkedCount = [...filtered].filter((i) => checked.has(`${i.shopping_window}-${i.item_name}`)).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
+    <div className="space-y-4" ref={containerRef}>
+      {/* ── Shop selector strip ───────────────────────────────────────── */}
+      <div>
+        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-2 px-1">Магазин</p>
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          <button
+            onClick={() => setSelectedShop(null)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+              selectedShop === null
+                ? "bg-bark-300 text-white border-bark-300"
+                : "bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300"
+            }`}
+          >
+            Все
+          </button>
+          {MOSCOW_SHOPS.map((shop) => (
+            <button
+              key={shop.key}
+              onClick={() => setSelectedShop(selectedShop === shop.key ? null : shop.key)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+                selectedShop === shop.key ? shop.activeColor : "bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300"
+              }`}
+            >
+              {shop.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Window filter + copy + progress ──────────────────────────── */}
+      <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 bg-parchment-100 rounded-xl p-1">
           {[
             { key: "all", label: "Вся неделя" },
@@ -1054,6 +1182,20 @@ function ShoppingView({ items }: ShoppingViewProps) {
           ))}
         </div>
 
+        {selectedShop && (
+          <button
+            onClick={copyShopList}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+              copied
+                ? "bg-sage-50 border-sage-200 text-sage-600"
+                : "bg-parchment-50 border-parchment-200 text-stone-500 hover:text-bark-300"
+            }`}
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Скопировано" : "Скопировать список"}
+          </button>
+        )}
+
         {totalItems > 0 && (
           <div className="ml-auto flex items-center gap-2 text-xs text-stone-400">
             <div className="w-16 h-1.5 bg-parchment-200 rounded-full overflow-hidden">
@@ -1067,10 +1209,16 @@ function ShoppingView({ items }: ShoppingViewProps) {
         )}
       </div>
 
+      {/* ── Item list ─────────────────────────────────────────────────── */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-parchment-300 bg-parchment-50 p-12 text-center">
           <ShoppingCart className="mx-auto h-10 w-10 text-parchment-300 mb-4" />
-          <p className="text-sm text-muted-foreground">Список покупок пуст</p>
+          <p className="text-sm text-muted-foreground">
+            {selectedShop ? "Нет товаров для этого магазина" : "Список покупок пуст"}
+          </p>
+          {selectedShop && (
+            <p className="mt-1 text-xs text-stone-400">Назначьте товары магазину, нажав «—» рядом с ними</p>
+          )}
         </div>
       ) : (
         <div className="space-y-5">
@@ -1090,44 +1238,169 @@ function ShoppingView({ items }: ShoppingViewProps) {
                   </span>
                 </div>
 
-                <div className="rounded-2xl border border-parchment-200 bg-white divide-y divide-parchment-100 overflow-hidden">
-                  {categoryItems.map((item) => {
+                <div className="rounded-2xl border border-parchment-200 bg-white overflow-hidden">
+                  {categoryItems.map((item, idx) => {
                     const itemKey = `${item.shopping_window}-${item.item_name}`;
                     const isChecked = checked.has(itemKey);
+                    const assignedShopKey = shopAssignments[itemKey];
+                    const assignedShopDef = MOSCOW_SHOPS.find((s) => s.key === assignedShopKey);
+                    const itemLink = links[itemKey];
+                    const isEditingThisLink = editingLink === itemKey;
+                    const isAssigningThis = assigningFor === itemKey;
+
                     return (
-                      <button
+                      <div
                         key={itemKey}
-                        onClick={() => toggleCheck(itemKey)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-parchment-50 active:bg-parchment-100 transition-colors"
+                        className={idx > 0 ? "border-t border-parchment-100" : ""}
                       >
-                        <div className={`h-5 w-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                          isChecked ? "bg-sage-400 border-sage-400" : "border-parchment-300"
-                        }`}>
-                          {isChecked && (
-                            <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <polyline points="2,6 5,9 10,3" />
-                            </svg>
+                        {/* Main row */}
+                        <div className={`flex items-center gap-2 px-4 py-3 ${isChecked ? "opacity-55" : ""}`}>
+                          {/* Check circle */}
+                          <button
+                            onClick={() => toggleCheck(itemKey)}
+                            className="flex-shrink-0"
+                          >
+                            <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isChecked ? "bg-sage-400 border-sage-400" : "border-parchment-300 hover:border-sage-300"
+                            }`}>
+                              {isChecked && (
+                                <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <polyline points="2,6 5,9 10,3" />
+                                </svg>
+                              )}
+                            </div>
+                          </button>
+
+                          {/* Name */}
+                          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                            <span className={`text-sm truncate ${isChecked ? "line-through text-stone-400" : "text-bark-300"}`}>
+                              {item.item_name}
+                            </span>
+                            {itemLink && !isEditingThisLink && (
+                              <a
+                                href={itemLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-shrink-0 text-sage-400 hover:text-sage-500 transition-colors"
+                                title={itemLink}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Quantity */}
+                          {item.quantity_per_person && (
+                            <span className="text-xs text-stone-400 flex-shrink-0 hidden sm:inline">
+                              {item.quantity_per_person}
+                            </span>
                           )}
+
+                          {/* Window badge */}
+                          <span className={`text-2xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium hidden sm:inline ${
+                            item.shopping_window === "A"
+                              ? "bg-sage-50 text-sage-500"
+                              : "bg-amber-50 text-amber-500"
+                          }`}>
+                            {item.shopping_window === "A" ? "1–3" : "4–7"}
+                          </span>
+
+                          {/* Link button */}
+                          <button
+                            onClick={() => {
+                              if (isEditingThisLink) {
+                                setEditingLink(null);
+                              } else {
+                                setLinkDraft(itemLink ?? "");
+                                setEditingLink(itemKey);
+                                setAssigningFor(null);
+                              }
+                            }}
+                            className={`flex-shrink-0 p-1 rounded-lg transition-colors ${
+                              itemLink
+                                ? "text-sage-400 hover:text-sage-500"
+                                : "text-stone-300 hover:text-stone-400"
+                            }`}
+                            title="Ссылка на товар"
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                          </button>
+
+                          {/* Shop badge + picker */}
+                          <div className="relative flex-shrink-0">
+                            <button
+                              onClick={() => {
+                                setAssigningFor(isAssigningThis ? null : itemKey);
+                                setEditingLink(null);
+                              }}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-2xs font-medium transition-colors ${
+                                assignedShopDef
+                                  ? assignedShopDef.chipColor
+                                  : "border-parchment-200 bg-parchment-50 text-stone-400 hover:text-bark-300"
+                              }`}
+                              title="Выбрать магазин"
+                            >
+                              {assignedShopDef ? assignedShopDef.label : "—"}
+                            </button>
+                            {isAssigningThis && (
+                              <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-parchment-200 rounded-xl shadow-lg p-1.5 min-w-[150px]">
+                                <button
+                                  onClick={() => assignShop(itemKey, null)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-stone-400 hover:bg-parchment-50 rounded-lg"
+                                >
+                                  — Не назначен
+                                </button>
+                                {MOSCOW_SHOPS.map((shop) => (
+                                  <button
+                                    key={shop.key}
+                                    onClick={() => assignShop(itemKey, shop.key)}
+                                    className={`w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-parchment-50 ${
+                                      assignedShopKey === shop.key ? "font-semibold text-bark-300" : "text-stone-500"
+                                    }`}
+                                  >
+                                    {shop.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <span className={`flex-1 text-sm ${isChecked ? "line-through text-stone-400" : "text-bark-300"}`}>
-                          {item.item_name}
-                        </span>
-
-                        {item.quantity_per_person && (
-                          <span className="text-xs text-stone-400 flex-shrink-0">
-                            {item.quantity_per_person}
-                          </span>
+                        {/* Link editor row */}
+                        {isEditingThisLink && (
+                          <div className="px-4 py-2.5 bg-parchment-50 border-t border-parchment-100 flex items-center gap-2">
+                            <Link2 className="h-3.5 w-3.5 text-stone-400 flex-shrink-0" />
+                            <input
+                              autoFocus
+                              type="url"
+                              value={linkDraft}
+                              onChange={(e) => setLinkDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveLink(itemKey, linkDraft);
+                                if (e.key === "Escape") setEditingLink(null);
+                              }}
+                              placeholder="https://..."
+                              className="flex-1 text-xs bg-transparent border-none outline-none text-bark-300 placeholder:text-stone-300"
+                            />
+                            <button
+                              onClick={() => saveLink(itemKey, linkDraft)}
+                              className="flex-shrink-0 p-1 rounded-lg bg-sage-400 text-white hover:bg-sage-500 transition-colors"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            {itemLink && (
+                              <button
+                                onClick={() => saveLink(itemKey, "")}
+                                className="flex-shrink-0 p-1 rounded-lg text-stone-400 hover:text-red-400 transition-colors"
+                                title="Удалить ссылку"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
                         )}
-
-                        <span className={`text-2xs px-2 py-0.5 rounded-full flex-shrink-0 font-medium ${
-                          item.shopping_window === "A"
-                            ? "bg-sage-50 text-sage-500"
-                            : "bg-amber-50 text-amber-500"
-                        }`}>
-                          {item.shopping_window === "A" ? "Дни 1–3" : "Дни 4–7"}
-                        </span>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
