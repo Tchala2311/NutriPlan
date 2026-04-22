@@ -88,6 +88,7 @@ export async function saveSettings(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/planner");
 }
 
 export async function deleteAccount() {

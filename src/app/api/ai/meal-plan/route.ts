@@ -150,7 +150,7 @@ export async function POST(req: Request) {
 
   // Derive phase from request body (optional; defaults to phase 1)
   const globalWeekNum: number = body.global_week ?? 1;
-  const { phase: planPhase, weekInPhase } = fromGlobalWeek(Math.max(1, Math.min(8, globalWeekNum)));
+  const { phase: planPhase } = fromGlobalWeek(Math.max(1, Math.min(8, globalWeekNum)));
 
   // Build goal-specific prompt
   const promptParams: MealPlanPromptParams = {

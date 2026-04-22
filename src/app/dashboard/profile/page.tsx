@@ -70,7 +70,7 @@ export default async function ProfilePage() {
                   Premium
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {sub?.status === "active" ? "активна" : sub?.status === "trialing" ? "пробный" : sub?.status === "cancelled" ? "отменена" : sub?.status ?? ""}
+                  {sub?.status === "active" ? "активна" : sub?.status === "cancelled" ? "отменена" : sub?.status === "pending" ? "ожидание" : sub?.status ?? ""}
                 </span>
               </div>
               {periodEnd && (

@@ -30,6 +30,10 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
     setSaved(false);
     setSaveError(null);
     const formData = new FormData(e.currentTarget);
+    // Add training days from state to FormData (they're controlled inputs)
+    trainingDays.forEach((day) => {
+      formData.append("training_days", String(day));
+    });
     startTransition(async () => {
       try {
         await saveSettings(formData);
