@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
-export const metadata: Metadata = { title: "Personalise your plan — NutriPlan" };
+export const metadata: Metadata = { title: "Настройте план — NutriPlan" };
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
           <span className="font-display text-2xl font-bold text-bark-300">NutriPlan</span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Tell us about your goals — we&apos;ll build your personalised plan in seconds.
+          Расскажите о целях — составим персональный план за 30 секунд.
         </p>
       </div>
 

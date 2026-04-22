@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserGoals } from "./profile/actions";
 import { WaterWidget } from "@/components/dashboard/WaterWidget";
 
-export const metadata: Metadata = { title: "Dashboard — NutriPlan" };
+export const metadata: Metadata = { title: "Главная — NutriPlan" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   const firstName =
     (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??
     user?.email?.split("@")[0] ??
-    "there";
+    "вас";
 
   const today = new Date().toISOString().split("T")[0];
   const dayStart = `${today}T00:00:00.000Z`;
@@ -56,28 +56,28 @@ export default async function DashboardPage() {
 
   const statCards = [
     {
-      label: "Calories today",
+      label: "Калории сегодня",
       value: hasEntries ? Math.round(totals.calories) : null,
       target: goals.daily_calorie_target,
-      unit: "kcal",
+      unit: "ккал",
     },
     {
-      label: "Protein",
+      label: "Белки",
       value: hasEntries ? Math.round(totals.protein_g) : null,
       target: goals.protein_target_g,
-      unit: "g",
+      unit: "г",
     },
     {
-      label: "Carbs",
+      label: "Углеводы",
       value: hasEntries ? Math.round(totals.carbs_g) : null,
       target: goals.carbs_target_g,
-      unit: "g",
+      unit: "г",
     },
     {
-      label: "Fats",
+      label: "Жиры",
       value: hasEntries ? Math.round(totals.fat_g) : null,
       target: goals.fat_target_g,
-      unit: "g",
+      unit: "г",
     },
   ];
 
@@ -85,10 +85,10 @@ export default async function DashboardPage() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-bark-300">
-          Welcome back, {firstName}
+          С возвращением, {firstName}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Here&apos;s your nutrition overview for today.
+          Питание сегодня.
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{pct}% of target</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{pct}% от цели</p>
                 </>
               ) : (
                 <>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
                     —
                     <span className="ml-1 text-sm font-normal text-muted-foreground">/ {card.target} {card.unit}</span>
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">No entries yet today</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Записей пока нет</p>
                 </>
               )}
             </div>
@@ -151,10 +151,10 @@ export default async function DashboardPage() {
             <span className="rounded-lg bg-bark-300 p-2">
               <LogIcon className="h-4 w-4 text-primary-foreground" />
             </span>
-            <h2 className="font-semibold text-bark-300 text-sm">Log food</h2>
+            <h2 className="font-semibold text-bark-300 text-sm">Записать приём пищи</h2>
           </div>
           <p className="text-xs text-muted-foreground">
-            Track your meals and macros for today.
+            Отслеживайте блюда и макросы за сегодня.
           </p>
         </Link>
 
@@ -166,10 +166,10 @@ export default async function DashboardPage() {
             <span className="rounded-lg bg-sage-300 p-2">
               <ProfileIcon className="h-4 w-4 text-primary-foreground" />
             </span>
-            <h2 className="font-semibold text-bark-300 text-sm">Profile & Goals</h2>
+            <h2 className="font-semibold text-bark-300 text-sm">Профиль и цели</h2>
           </div>
           <p className="text-xs text-muted-foreground">
-            View your account and set nutrition targets.
+            Аккаунт и цели по нутриентам.
           </p>
         </Link>
       </div>

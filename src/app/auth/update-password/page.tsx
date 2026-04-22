@@ -15,7 +15,7 @@ export default function UpdatePasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError("Пароли не совпадают.");
       return;
     }
     setLoading(true);
@@ -38,8 +38,8 @@ export default function UpdatePasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">Set new password</h1>
-          <p className="text-sm text-muted-foreground">Choose a strong password for your account.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Новый пароль</h1>
+          <p className="text-sm text-muted-foreground">Придумайте надёжный пароль для аккаунта.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -51,7 +51,7 @@ export default function UpdatePasswordPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium text-foreground">
-              New password
+              Новый пароль
             </label>
             <input
               id="password"
@@ -71,7 +71,7 @@ export default function UpdatePasswordPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="confirm" className="text-sm font-medium text-foreground">
-              Confirm password
+              Подтвердите пароль
             </label>
             <input
               id="confirm"
@@ -97,7 +97,7 @@ export default function UpdatePasswordPage() {
               "hover:bg-primary/90 transition-colors disabled:opacity-60"
             )}
           >
-            {loading ? "Updating…" : "Update password"}
+            {loading ? "Сохраняем…" : "Сохранить пароль"}
           </button>
         </form>
       </div>

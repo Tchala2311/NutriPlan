@@ -10,65 +10,65 @@ export const ONBOARDING_STORAGE_KEY = "nutriplan_onboarding";
 /* ── Option lists ── */
 
 const HEALTH_GOAL_OPTIONS = [
-  { value: "weight_loss", label: "Lose weight" },
-  { value: "muscle_gain", label: "Build muscle" },
-  { value: "maintenance", label: "Maintain weight" },
-  { value: "disease_management", label: "Manage a health condition" },
-  { value: "general_wellness", label: "Improve general wellness" },
-  { value: "improve_energy", label: "More energy" },
-  { value: "better_sleep", label: "Better sleep" },
-  { value: "reduce_stress", label: "Reduce stress" },
+  { value: "weight_loss", label: "Похудеть" },
+  { value: "muscle_gain", label: "Набрать мышцы" },
+  { value: "maintenance", label: "Поддержать вес" },
+  { value: "disease_management", label: "Управление здоровьем" },
+  { value: "general_wellness", label: "Здоровый образ жизни" },
+  { value: "improve_energy", label: "Больше энергии" },
+  { value: "better_sleep", label: "Лучший сон" },
+  { value: "reduce_stress", label: "Снизить стресс" },
 ];
 
 const PRIMARY_GOAL_OPTIONS = [
-  { value: "weight_loss", label: "Weight loss" },
-  { value: "muscle_gain", label: "Muscle gain" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "disease_management", label: "Disease management" },
-  { value: "general_wellness", label: "General wellness" },
+  { value: "weight_loss", label: "Похудение" },
+  { value: "muscle_gain", label: "Набор мышц" },
+  { value: "maintenance", label: "Поддержание веса" },
+  { value: "disease_management", label: "Управление здоровьем" },
+  { value: "general_wellness", label: "Здоровый образ жизни" },
 ];
 
 const DIETARY_OPTIONS = [
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "vegan", label: "Vegan" },
-  { value: "gluten_free", label: "Gluten-free" },
-  { value: "dairy_free", label: "Dairy-free" },
-  { value: "halal", label: "Halal" },
-  { value: "kosher", label: "Kosher" },
-  { value: "low_carb", label: "Low-carb" },
-  { value: "keto", label: "Keto" },
-  { value: "paleo", label: "Paleo" },
+  { value: "vegetarian", label: "Вегетарианство" },
+  { value: "vegan", label: "Веганство" },
+  { value: "gluten_free", label: "Без глютена" },
+  { value: "dairy_free", label: "Без лактозы" },
+  { value: "halal", label: "Халяль" },
+  { value: "kosher", label: "Кошерное" },
+  { value: "low_carb", label: "Низкоуглеводное" },
+  { value: "keto", label: "Кето" },
+  { value: "paleo", label: "Палео" },
 ];
 
 const ALLERGEN_OPTIONS = [
-  { value: "peanuts", label: "Peanuts" },
-  { value: "tree_nuts", label: "Tree nuts" },
-  { value: "milk", label: "Milk / Dairy" },
-  { value: "eggs", label: "Eggs" },
-  { value: "wheat", label: "Wheat / Gluten" },
-  { value: "soy", label: "Soy" },
-  { value: "fish", label: "Fish" },
-  { value: "shellfish", label: "Shellfish" },
-  { value: "sesame", label: "Sesame" },
+  { value: "peanuts", label: "Арахис" },
+  { value: "tree_nuts", label: "Орехи" },
+  { value: "milk", label: "Молоко / Лактоза" },
+  { value: "eggs", label: "Яйца" },
+  { value: "wheat", label: "Пшеница / Глютен" },
+  { value: "soy", label: "Соя" },
+  { value: "fish", label: "Рыба" },
+  { value: "shellfish", label: "Морепродукты" },
+  { value: "sesame", label: "Кунжут" },
 ];
 
 const MEDICAL_OPTIONS = [
-  { value: "diabetes", label: "Diabetes (Type 1 or 2)" },
-  { value: "hypertension", label: "Hypertension / High blood pressure" },
-  { value: "high_cholesterol", label: "High cholesterol" },
-  { value: "kidney_disease", label: "Kidney disease" },
-  { value: "celiac", label: "Celiac disease" },
-  { value: "ibs", label: "IBS / Digestive disorders" },
-  { value: "eating_disorder", label: "Eating disorder (past or present)" },
-  { value: "heart_disease", label: "Heart disease" },
+  { value: "diabetes", label: "Диабет (1 или 2 тип)" },
+  { value: "hypertension", label: "Гипертония / Высокое давление" },
+  { value: "high_cholesterol", label: "Высокий холестерин" },
+  { value: "kidney_disease", label: "Болезни почек" },
+  { value: "celiac", label: "Целиакия" },
+  { value: "ibs", label: "СРК / Расстройства пищеварения" },
+  { value: "eating_disorder", label: "Расстройство пищевого поведения" },
+  { value: "heart_disease", label: "Болезни сердца" },
 ];
 
 const ACTIVITY_OPTIONS = [
-  { value: "sedentary", label: "Sedentary", sub: "Little or no exercise" },
-  { value: "light", label: "Light", sub: "1–3 days/week" },
-  { value: "moderate", label: "Moderate", sub: "3–5 days/week" },
-  { value: "active", label: "Active", sub: "6–7 days/week" },
-  { value: "very_active", label: "Very active", sub: "Hard exercise daily" },
+  { value: "sedentary", label: "Сидячий", sub: "Минимум движения" },
+  { value: "light", label: "Лёгкий", sub: "1–3 дня в неделю" },
+  { value: "moderate", label: "Умеренный", sub: "3–5 дней в неделю" },
+  { value: "active", label: "Активный", sub: "6–7 дней в неделю" },
+  { value: "very_active", label: "Очень активный", sub: "Интенсивные тренировки ежедневно" },
 ];
 
 const ACTIVITY_MULTIPLIERS: Record<string, number> = {
@@ -173,7 +173,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
         />
       ))}
       <span className="ml-2 text-xs text-muted-foreground">
-        Step {current + 1} of {total}
+        Шаг {current + 1} из {total}
       </span>
     </div>
   );
@@ -295,7 +295,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
         await saveOnboarding(form);
         // saveOnboarding redirects to /dashboard on success
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+        setError(e instanceof Error ? e.message : "Что-то пошло не так. Попробуйте снова.");
       }
     });
   }
@@ -308,10 +308,10 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {step === 0 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            What are your goals?
+            Каковы ваши цели?
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Select everything that applies.
+            Выберите всё подходящее.
           </p>
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -326,7 +326,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           </div>
 
           <div className="mb-5">
-            <p className="text-sm font-medium text-foreground mb-3">Primary focus</p>
+            <p className="text-sm font-medium text-foreground mb-3">Основной приоритет</p>
             <div className="space-y-2">
               {PRIMARY_GOAL_OPTIONS.map((opt) => (
                 <label
@@ -355,12 +355,12 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           {/* Optional TDEE inputs */}
           <details className="mb-8">
             <summary className="text-sm font-medium text-bark-200 cursor-pointer hover:text-bark-300 transition-colors mb-3">
-              + Add body stats for calorie estimate (optional)
+              + Добавить параметры тела для расчёта калорий (необязательно)
             </summary>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Age
+                  Возраст
                 </label>
                 <input
                   type="number"
@@ -368,7 +368,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   max={120}
                   value={tdee.age}
                   onChange={(e) => setTdee((t) => ({ ...t, age: e.target.value }))}
-                  placeholder="e.g. 30"
+                  placeholder="Напр. 30"
                   className={cn(
                     "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -377,7 +377,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Weight (kg)
+                  Вес (кг)
                 </label>
                 <input
                   type="number"
@@ -385,7 +385,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   max={300}
                   value={tdee.weight_kg}
                   onChange={(e) => setTdee((t) => ({ ...t, weight_kg: e.target.value }))}
-                  placeholder="e.g. 75"
+                  placeholder="Напр. 75"
                   className={cn(
                     "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -394,7 +394,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Height (cm)
+                  Рост (см)
                 </label>
                 <input
                   type="number"
@@ -402,7 +402,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   max={250}
                   value={tdee.height_cm}
                   onChange={(e) => setTdee((t) => ({ ...t, height_cm: e.target.value }))}
-                  placeholder="e.g. 175"
+                  placeholder="Напр. 175"
                   className={cn(
                     "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
                     "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -411,7 +411,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Sex
+                  Пол
                 </label>
                 <select
                   value={tdee.sex}
@@ -423,14 +423,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                   )}
                 >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
+                  <option value="">Выбрать</option>
+                  <option value="male">Мужской</option>
+                  <option value="female">Женский</option>
                 </select>
               </div>
               <div className="col-span-2">
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Activity level
+                  Уровень активности
                 </label>
                 <div className="flex gap-1 flex-wrap">
                   {ACTIVITY_OPTIONS.map((opt) => (
@@ -464,7 +464,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               "hover:bg-primary/90 transition-colors disabled:opacity-40"
             )}
           >
-            Continue
+            Продолжить
           </button>
         </div>
       )}
@@ -473,14 +473,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {step === 1 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            Any dietary preferences?
+            Предпочтения в питании?
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Optional — skip if nothing applies.
+            Необязательно — пропустите, если нет ограничений.
           </p>
 
           <div className="mb-5">
-            <p className="text-sm font-medium text-foreground mb-3">Dietary style</p>
+            <p className="text-sm font-medium text-foreground mb-3">Тип питания</p>
             <div className="flex flex-wrap gap-2">
               {DIETARY_OPTIONS.map((opt) => (
                 <MultiSelectChip
@@ -494,7 +494,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           </div>
 
           <div className="mb-5">
-            <p className="text-sm font-medium text-foreground mb-3">Allergens</p>
+            <p className="text-sm font-medium text-foreground mb-3">Аллергены</p>
             <div className="flex flex-wrap gap-2">
               {ALLERGEN_OPTIONS.map((opt) => (
                 <MultiSelectChip
@@ -509,8 +509,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <div className="mb-8">
             <label className="text-sm font-medium text-foreground block mb-1.5">
-              Other ingredients to avoid{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              Другие нежелательные ингредиенты{" "}
+              <span className="font-normal text-muted-foreground">(необязательно)</span>
             </label>
             <input
               type="text"
@@ -518,7 +518,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               onChange={(e) =>
                 setForm((p) => ({ ...p, avoided_ingredients: e.target.value }))
               }
-              placeholder="e.g. cilantro, mushrooms"
+              placeholder="Напр. кинза, грибы"
               className={cn(
                 "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
                 "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -532,7 +532,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               onClick={() => setStep(0)}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              Back
+              Назад
             </button>
             <button
               type="button"
@@ -542,7 +542,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 "hover:bg-primary/90 transition-colors"
               )}
             >
-              Continue
+              Продолжить
             </button>
           </div>
         </div>
@@ -552,16 +552,16 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {step === 2 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            Health background
+            Здоровье
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Helps us make safer recommendations. All information is private.
+            Помогает давать более безопасные рекомендации. Данные конфиденциальны.
           </p>
 
           <div className="mb-5">
             <p className="text-sm font-medium text-foreground mb-3">
-              Medical conditions{" "}
-              <span className="font-normal text-muted-foreground">(select all that apply)</span>
+              Заболевания{" "}
+              <span className="font-normal text-muted-foreground">(выберите все подходящие)</span>
             </p>
             <div className="flex flex-wrap gap-2">
               {MEDICAL_OPTIONS.map((opt) => (
@@ -577,14 +577,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <div className="mb-6">
             <label className="text-sm font-medium text-foreground block mb-1.5">
-              Current medications{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              Принимаемые препараты{" "}
+              <span className="font-normal text-muted-foreground">(необязательно)</span>
             </label>
             <textarea
               value={form.medications}
               onChange={(e) => setForm((p) => ({ ...p, medications: e.target.value }))}
               rows={2}
-              placeholder="e.g. Metformin, Lisinopril"
+              placeholder="Напр. Метформин, Лизиноприл"
               className={cn(
                 "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none",
                 "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
@@ -594,11 +594,10 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-8">
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-              NutriPlan provides nutritional information and meal planning tools for general
-              wellness purposes only. It is <strong>not a substitute</strong> for professional
-              medical advice, diagnosis, or treatment. Always consult a qualified healthcare
-              provider before making significant dietary changes, especially if you have a
-              medical condition.
+              NutriPlan предоставляет информацию о питании и инструменты для планирования меню
+              исключительно в целях общего оздоровления. Это <strong>не заменяет</strong> консультацию
+              врача, диагностику или лечение. Перед значительными изменениями в питании, особенно при
+              наличии заболеваний, проконсультируйтесь со специалистом.
             </p>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -610,7 +609,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 className="mt-0.5 accent-bark-300"
               />
               <span className="text-sm text-bark-300 font-medium">
-                I understand and agree that NutriPlan is not medical advice.
+                Я понимаю и согласен, что NutriPlan не является медицинской рекомендацией.
               </span>
             </label>
           </div>
@@ -621,7 +620,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               onClick={() => setStep(1)}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
-              Back
+              Назад
             </button>
             <button
               type="button"
@@ -635,7 +634,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 "hover:bg-primary/90 transition-colors disabled:opacity-40"
               )}
             >
-              See my plan
+              Показать план
             </button>
           </div>
         </div>
@@ -650,51 +649,50 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               <CheckIcon className="h-6 w-6 text-sage-400" />
             </div>
             <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-              Your personalised plan is ready
+              Ваш персональный план готов
             </h2>
             <p className="text-sm text-muted-foreground">
-              Based on your{" "}
-              <strong>{PRIMARY_GOAL_OPTIONS.find((o) => o.value === form.primary_goal)?.label ?? "goals"}</strong>{" "}
-              goal.
+              На основе вашей цели:{" "}
+              <strong>{PRIMARY_GOAL_OPTIONS.find((o) => o.value === form.primary_goal)?.label ?? "общее здоровье"}</strong>.
             </p>
           </div>
 
           {/* Macro targets */}
           <div className="rounded-xl border border-parchment-200 bg-white/60 p-5 mb-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-              Daily targets
+              Дневные цели
             </p>
             {macros ? (
               <div className="space-y-3">
                 <MacroBar
-                  label="Calories"
+                  label="Калории"
                   value={macros.calories}
-                  unit="kcal"
+                  unit="ккал"
                   color="bg-bark-300"
                 />
                 <MacroBar
-                  label="Protein"
+                  label="Белки"
                   value={macros.protein_g}
-                  unit="g"
+                  unit="г"
                   color="bg-sage-300"
                 />
                 <MacroBar
-                  label="Carbohydrates"
+                  label="Углеводы"
                   value={macros.carbs_g}
-                  unit="g"
+                  unit="г"
                   color="bg-amber-400"
                 />
                 <MacroBar
-                  label="Fat"
+                  label="Жиры"
                   value={macros.fat_g}
-                  unit="g"
+                  unit="г"
                   color="bg-rose-400"
                 />
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                Add your body stats on the first step to get calorie targets, or create an
-                account to set them manually.
+                Укажите параметры тела на первом шаге для расчёта калорий, или создайте аккаунт
+                для ручной настройки.
               </p>
             )}
           </div>
@@ -702,14 +700,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           {/* What's included teaser */}
           <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-6">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              What you&apos;ll get with an account
+              Что вы получите с аккаунтом
             </p>
             <ul className="space-y-2">
               {[
-                "AI-generated weekly meal plans matched to your goals",
-                "Nutrition log with macro tracking",
-                "Photo-based food recognition",
-                "Progress trends and insights",
+                "ИИ-планировщик недельного меню под ваши цели",
+                "Дневник питания с трекингом макросов",
+                "Распознавание блюд по фото",
+                "Графики прогресса и аналитика",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-bark-200">
                   <CheckIcon className="h-4 w-4 text-sage-300 shrink-0 mt-0.5" />
@@ -736,7 +734,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 "hover:bg-primary/90 transition-colors disabled:opacity-40 mb-3"
               )}
             >
-              {isPending ? "Saving…" : "Save my plan and go to dashboard"}
+              {isPending ? "Сохраняем…" : "Сохранить план и перейти в кабинет"}
             </button>
           ) : (
             /* Unauthenticated: CTA to register */
@@ -747,7 +745,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 "hover:bg-primary/90 transition-colors mb-3"
               )}
             >
-              Create your free account to save this plan
+              Создать бесплатный аккаунт для сохранения плана
             </Link>
           )}
 
@@ -756,7 +754,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
             onClick={() => setStep(2)}
             className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            Back
+            Назад
           </button>
         </div>
       )}

@@ -34,7 +34,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
       }
       setTotalMl((prev) => prev + ml);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to log water.");
+      setError(err instanceof Error ? err.message : "Не удалось записать воду.");
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
         <span className="rounded-lg bg-sky-500 p-1.5">
           <WaterDropIcon className="h-4 w-4 text-white" />
         </span>
-        <h2 className="font-semibold text-bark-300 text-sm">Water intake</h2>
+        <h2 className="font-semibold text-bark-300 text-sm">Потребление воды</h2>
       </div>
 
       {/* Progress */}
@@ -66,7 +66,9 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
             {totalMl}
             <span className="ml-0.5 text-sm font-normal text-muted-foreground"> / {targetMl} ml</span>
           </span>
-          <span className="text-xs text-muted-foreground">{glassCount} glass{glassCount !== 1 ? "es" : ""}</span>
+          <span className="text-xs text-muted-foreground">
+            {glassCount} {glassCount === 1 ? "стакан" : glassCount >= 2 && glassCount <= 4 ? "стакана" : "стаканов"}
+          </span>
         </div>
         <div className="h-1.5 rounded-full bg-parchment-200 overflow-hidden">
           <div
@@ -74,7 +76,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">{pct}% of daily target</p>
+        <p className="mt-1 text-xs text-muted-foreground">{pct}% от дневной нормы</p>
       </div>
 
       {/* Quick-log buttons */}

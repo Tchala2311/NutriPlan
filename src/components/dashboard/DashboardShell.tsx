@@ -13,12 +13,12 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: HomeIcon },
-  { label: "Nutrition Log", href: "/dashboard/log", icon: LogIcon },
-  { label: "Meal Planner", href: "/dashboard/planner", icon: PlannerIcon },
-  { label: "Recipes", href: "/dashboard/recipes", icon: RecipesIcon },
-  { label: "Profile & Goals", href: "/dashboard/profile", icon: ProfileIcon },
-  { label: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
+  { label: "Главная", href: "/dashboard", icon: HomeIcon },
+  { label: "Дневник питания", href: "/dashboard/log", icon: LogIcon },
+  { label: "Планировщик", href: "/dashboard/planner", icon: PlannerIcon },
+  { label: "Рецепты", href: "/dashboard/recipes", icon: RecipesIcon },
+  { label: "Профиль и цели", href: "/dashboard/profile", icon: ProfileIcon },
+  { label: "Настройки", href: "/dashboard/settings", icon: SettingsIcon },
 ];
 
 interface DashboardShellProps {
@@ -83,7 +83,7 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
 
         {/* Sidebar footer */}
         <div className="border-t border-parchment-200 px-3 py-3">
-          <p className="px-3 text-xs text-muted-foreground">NutriPlan — AI Nutrition</p>
+          <p className="px-3 text-xs text-muted-foreground">NutriPlan — ИИ-питание</p>
         </div>
       </aside>
 
@@ -98,7 +98,7 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
               "focus:outline-none focus:ring-2 focus:ring-ring",
               "lg:hidden"
             )}
-            aria-label="Open sidebar"
+            aria-label="Открыть меню"
           >
             <MenuIcon className="h-5 w-5" />
           </button>

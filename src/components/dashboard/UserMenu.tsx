@@ -76,7 +76,7 @@ export function UserMenu({ email, avatarUrl }: UserMenuProps) {
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              {loading ? "Signing out…" : "Sign out"}
+              {loading ? "Выходим…" : "Выйти"}
             </button>
           </div>
         </>

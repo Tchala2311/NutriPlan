@@ -78,7 +78,7 @@ export function AISuggestionCard({ dayTotals, userProfile, triggerKey }: AISugge
       <SparklesIcon className="h-4 w-4 text-sage-500 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         {loading ? (
-          <p className="text-sm text-muted-foreground animate-pulse">Getting AI suggestion…</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Получаем совет ИИ…</p>
         ) : (
           <p className="text-sm text-bark-300">{suggestion}</p>
         )}
@@ -88,7 +88,7 @@ export function AISuggestionCard({ dayTotals, userProfile, triggerKey }: AISugge
           type="button"
           onClick={() => setDismissed(true)}
           className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-bark-300 transition-colors"
-          aria-label="Dismiss suggestion"
+          aria-label="Скрыть совет"
         >
           <XIcon className="h-3.5 w-3.5" />
         </button>

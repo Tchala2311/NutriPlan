@@ -33,10 +33,10 @@ interface NutritionLogClientProps {
 }
 
 const MEALS = [
-  { key: "breakfast", label: "Breakfast" },
-  { key: "lunch", label: "Lunch" },
-  { key: "dinner", label: "Dinner" },
-  { key: "snacks", label: "Snacks" },
+  { key: "breakfast", label: "Завтрак" },
+  { key: "lunch", label: "Обед" },
+  { key: "dinner", label: "Ужин" },
+  { key: "snacks", label: "Перекусы" },
 ] as const;
 
 export function NutritionLogClient({ date, entries, goals, userProfile }: NutritionLogClientProps) {
@@ -81,14 +81,14 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
 
   const today = new Date().toISOString().split("T")[0];
   const isToday = date === today;
-  const displayLabel = isToday ? "Today" : formatDisplayDate(date);
+  const displayLabel = isToday ? "Сегодня" : formatDisplayDate(date);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header + date nav */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-bark-300">Nutrition Log</h1>
+          <h1 className="font-display text-2xl font-bold text-bark-300">Дневник питания</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{displayLabel}</p>
         </div>
 
@@ -96,7 +96,7 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
           <button
             onClick={() => navigateDate(-1)}
             className={navBtnCls}
-            aria-label="Previous day"
+            aria-label="Предыдущий день"
           >
             <ChevronLeftIcon className="h-4 w-4" />
           </button>
@@ -111,7 +111,7 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
           <button
             onClick={() => navigateDate(1)}
             className={navBtnCls}
-            aria-label="Next day"
+            aria-label="Следующий день"
             disabled={isToday}
           >
             <ChevronRightIcon className="h-4 w-4" />
@@ -121,10 +121,10 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
 
       {/* Daily macro summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <MacroCard label="Calories" value={totals.calories} unit="kcal" accent />
-        <MacroCard label="Protein" value={totals.protein_g} unit="g" />
-        <MacroCard label="Carbs" value={totals.carbs_g} unit="g" />
-        <MacroCard label="Fat" value={totals.fat_g} unit="g" />
+        <MacroCard label="Калории" value={totals.calories} unit="ккал" accent />
+        <MacroCard label="Белки" value={totals.protein_g} unit="г" />
+        <MacroCard label="Углеводы" value={totals.carbs_g} unit="г" />
+        <MacroCard label="Жиры" value={totals.fat_g} unit="г" />
       </div>
 
       {/* AI suggestion card — shown when today and has entries */}
@@ -181,20 +181,20 @@ function MealSection({
         <div className="flex items-center gap-2">
           <span className="font-medium text-bark-300 text-sm">{label}</span>
           {calories > 0 && (
-            <span className="text-xs text-muted-foreground">{calories} kcal</span>
+            <span className="text-xs text-muted-foreground">{calories} ккал</span>
           )}
         </div>
 
         <AddFoodDialog date={date} defaultMeal={mealKey} onAdded={onEntryAdded}>
           <button className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-bark-200 hover:bg-parchment-200 hover:text-bark-300 transition-colors">
             <PlusIcon className="h-3.5 w-3.5" />
-            Add food
+            Добавить
           </button>
         </AddFoodDialog>
       </div>
 
       {entries.length === 0 ? (
-        <p className="px-4 py-4 text-sm text-muted-foreground">No entries yet.</p>
+        <p className="px-4 py-4 text-sm text-muted-foreground">Записей пока нет.</p>
       ) : (
         <ul className="divide-y divide-parchment-200">
           {entries.map((entry) => (
@@ -227,16 +227,16 @@ function FoodEntryRow({ entry }: { entry: NutritionEntry }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-bark-300 truncate">{entry.food_name}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          P {Number(entry.protein_g).toFixed(1)}g &middot; C {Number(entry.carbs_g).toFixed(1)}g &middot; F {Number(entry.fat_g).toFixed(1)}g
+          Б {Number(entry.protein_g).toFixed(1)}г · У {Number(entry.carbs_g).toFixed(1)}г · Ж {Number(entry.fat_g).toFixed(1)}г
         </p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-sm font-semibold text-bark-300">{entry.calories} kcal</span>
+        <span className="text-sm font-semibold text-bark-300">{entry.calories} ккал</span>
         <button
           onClick={handleDelete}
           disabled={isPending}
           className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-red-50 transition-colors"
-          aria-label="Delete entry"
+          aria-label="Удалить запись"
         >
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
@@ -299,7 +299,7 @@ function MacroCard({
 
 function formatDisplayDate(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString("ru-RU", {
     weekday: "long",
     month: "long",
     day: "numeric",

@@ -35,7 +35,7 @@ export function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Пароли не совпадают.");
       return;
     }
     setLoading(true);
@@ -61,9 +61,9 @@ export function RegisterForm() {
   if (success) {
     return (
       <div className="rounded-lg bg-sage-50 border border-sage-100 px-4 py-6 text-center">
-        <p className="text-sm font-medium text-sage-400">Check your inbox</p>
+        <p className="text-sm font-medium text-sage-400">Проверьте почту</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          We sent a confirmation link to <strong>{email}</strong>.
+          Отправили ссылку для подтверждения на <strong>{email}</strong>.
         </p>
       </div>
     );
@@ -79,7 +79,7 @@ export function RegisterForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-foreground">
-          Email
+          Электронная почта
         </label>
         <input
           id="email"
@@ -98,7 +98,7 @@ export function RegisterForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-sm font-medium text-foreground">
-          Password
+          Пароль
         </label>
         <input
           id="password"
@@ -112,13 +112,13 @@ export function RegisterForm() {
             "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
             "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
           )}
-          placeholder="Min. 8 characters"
+          placeholder="Мин. 8 символов"
         />
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="confirm" className="text-sm font-medium text-foreground">
-          Confirm password
+          Подтвердите пароль
         </label>
         <input
           id="confirm"
@@ -143,7 +143,7 @@ export function RegisterForm() {
           "hover:bg-primary/90 transition-colors disabled:opacity-60"
         )}
       >
-        {loading ? "Creating account…" : "Create account"}
+        {loading ? "Создаём аккаунт…" : "Создать аккаунт"}
       </button>
 
       <div className="relative">
@@ -151,7 +151,7 @@ export function RegisterForm() {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-parchment-100 px-2 text-muted-foreground">or</span>
+          <span className="bg-parchment-100 px-2 text-muted-foreground">или</span>
         </div>
       </div>
 
@@ -164,7 +164,7 @@ export function RegisterForm() {
         )}
       >
         <YandexIcon className="h-4 w-4" />
-        Continue with Yandex ID
+        Войти через Яндекс ID
       </button>
 
       {/* Telegram Login Widget — renders its own button */}

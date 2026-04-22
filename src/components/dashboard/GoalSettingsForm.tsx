@@ -4,9 +4,9 @@ import { useTransition, useState, useEffect } from "react";
 import { saveUserGoals, type UserGoals } from "@/app/dashboard/profile/actions";
 
 const GOAL_OPTIONS = [
-  { value: "weight_loss",  label: "Weight loss" },
-  { value: "muscle_gain",  label: "Muscle gain" },
-  { value: "maintenance",  label: "Maintenance" },
+  { value: "weight_loss",  label: "Похудение" },
+  { value: "muscle_gain",  label: "Набор мышц" },
+  { value: "maintenance",  label: "Поддержание" },
 ];
 
 const GOAL_DEFAULTS: Record<string, Omit<UserGoals, "primary_goal">> = {
@@ -60,7 +60,7 @@ export function GoalSettingsForm({ initial }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Primary goal */}
       <div>
-        <label className="block text-sm font-medium text-bark-300 mb-2">Primary goal</label>
+        <label className="block text-sm font-medium text-bark-300 mb-2">Основная цель</label>
         <div className="grid grid-cols-3 gap-2">
           {GOAL_OPTIONS.map((opt) => (
             <label
@@ -88,7 +88,7 @@ export function GoalSettingsForm({ initial }: Props) {
       {/* Daily calorie target */}
       <div>
         <label htmlFor="daily_calorie_target" className="block text-sm font-medium text-bark-300 mb-1">
-          Daily calorie target
+          Дневная норма калорий
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -103,18 +103,18 @@ export function GoalSettingsForm({ initial }: Props) {
             className="w-32 rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
             required
           />
-          <span className="text-sm text-muted-foreground">kcal / day</span>
+          <span className="text-sm text-muted-foreground">ккал / день</span>
         </div>
       </div>
 
       {/* Macros */}
       <div>
-        <p className="text-sm font-medium text-bark-300 mb-3">Daily macro targets</p>
+        <p className="text-sm font-medium text-bark-300 mb-3">Дневные цели по макросам</p>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { id: "protein_target_g", name: "protein_target_g", label: "Protein", value: protein, setter: setProtein },
-            { id: "carbs_target_g",   name: "carbs_target_g",   label: "Carbs",   value: carbs,   setter: setCarbs },
-            { id: "fat_target_g",     name: "fat_target_g",     label: "Fat",     value: fat,     setter: setFat },
+            { id: "protein_target_g", name: "protein_target_g", label: "Белки", value: protein, setter: setProtein },
+            { id: "carbs_target_g",   name: "carbs_target_g",   label: "Углеводы", value: carbs, setter: setCarbs },
+            { id: "fat_target_g",     name: "fat_target_g",     label: "Жиры",  value: fat,     setter: setFat },
           ].map((macro) => (
             <div key={macro.id}>
               <label htmlFor={macro.id} className="block text-xs font-medium text-muted-foreground mb-1">
@@ -141,9 +141,9 @@ export function GoalSettingsForm({ initial }: Props) {
 
         {/* Calorie estimate from macros */}
         <p className="mt-2 text-xs text-muted-foreground">
-          Estimated from macros:{" "}
+          Расчёт из макросов:{" "}
           <span className="font-medium text-bark-200">
-            {Math.round(protein * 4 + carbs * 4 + fat * 9)} kcal
+            {Math.round(protein * 4 + carbs * 4 + fat * 9)} ккал
           </span>
         </p>
       </div>
@@ -154,10 +154,10 @@ export function GoalSettingsForm({ initial }: Props) {
           disabled={isPending}
           className="rounded-lg bg-bark-300 px-5 py-2 text-sm font-semibold text-white hover:bg-bark-200 disabled:opacity-60 transition-colors"
         >
-          {isPending ? "Saving…" : "Save goals"}
+          {isPending ? "Сохраняем…" : "Сохранить цели"}
         </button>
         {saved && (
-          <span className="text-sm text-sage-300 font-medium">Saved</span>
+          <span className="text-sm text-sage-300 font-medium">Сохранено</span>
         )}
       </div>
     </form>

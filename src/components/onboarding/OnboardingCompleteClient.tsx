@@ -46,7 +46,7 @@ export function OnboardingCompleteClient() {
         router.replace("/dashboard");
       } catch (e) {
         setStatus("error");
-        setError(e instanceof Error ? e.message : "Something went wrong.");
+        setError(e instanceof Error ? e.message : "Что-то пошло не так.");
       }
     }
 
@@ -58,13 +58,13 @@ export function OnboardingCompleteClient() {
     return (
       <div className="min-h-screen bg-cream-100 flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-2xl border border-parchment-200 bg-parchment-100 p-8 text-center">
-          <p className="text-sm font-medium text-bark-300 mb-2">Could not save your plan</p>
+          <p className="text-sm font-medium text-bark-300 mb-2">Не удалось сохранить план</p>
           <p className="text-sm text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => router.push("/onboarding")}
             className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Try again
+            Попробовать снова
           </button>
         </div>
       </div>
@@ -76,7 +76,7 @@ export function OnboardingCompleteClient() {
       <div className="text-center">
         <SpinnerIcon className="h-8 w-8 text-sage-300 mx-auto mb-4 animate-spin" />
         <p className="text-sm text-muted-foreground">
-          {status === "saving" ? "Saving your plan…" : "Setting up your account…"}
+          {status === "saving" ? "Сохраняем план…" : "Настраиваем аккаунт…"}
         </p>
       </div>
     </div>

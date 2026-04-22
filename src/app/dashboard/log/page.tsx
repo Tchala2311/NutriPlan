@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserGoals } from "@/app/dashboard/profile/actions";
 import { NutritionLogClient } from "@/components/nutrition/NutritionLogClient";
 
-export const metadata: Metadata = { title: "Nutrition Log — NutriPlan" };
+export const metadata: Metadata = { title: "Дневник питания — NutriPlan" };
 
 export default async function NutritionLogPage({
   searchParams,

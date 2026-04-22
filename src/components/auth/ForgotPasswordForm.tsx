@@ -33,9 +33,9 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <div className="rounded-lg bg-sage-50 border border-sage-100 px-4 py-6 text-center">
-        <p className="text-sm font-medium text-sage-400">Reset link sent</p>
+        <p className="text-sm font-medium text-sage-400">Ссылка отправлена</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Check your inbox at <strong>{email}</strong>.
+          Проверьте почту: <strong>{email}</strong>.
         </p>
       </div>
     );
@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-foreground">
-          Email
+          Электронная почта
         </label>
         <input
           id="email"
@@ -76,7 +76,7 @@ export function ForgotPasswordForm() {
           "hover:bg-primary/90 transition-colors disabled:opacity-60"
         )}
       >
-        {loading ? "Sending…" : "Send reset link"}
+        {loading ? "Отправляем…" : "Отправить ссылку"}
       </button>
     </form>
   );

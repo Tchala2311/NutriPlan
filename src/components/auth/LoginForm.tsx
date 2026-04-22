@@ -59,7 +59,7 @@ export function LoginForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-foreground">
-          Email
+          Электронная почта
         </label>
         <input
           id="email"
@@ -81,13 +81,13 @@ export function LoginForm() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Password
+            Пароль
           </label>
           <Link
             href="/forgot-password"
             className="text-xs text-amber-300 hover:text-amber-400 hover:underline underline-offset-4"
           >
-            Forgot password?
+            Забыли пароль?
           </Link>
         </div>
         <input
@@ -116,7 +116,7 @@ export function LoginForm() {
           "disabled:cursor-not-allowed disabled:opacity-60"
         )}
       >
-        {loading ? "Signing in…" : "Sign in"}
+        {loading ? "Входим…" : "Войти"}
       </button>
 
       <div className="relative">
@@ -124,7 +124,7 @@ export function LoginForm() {
           <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-parchment-100 px-2 text-muted-foreground">or</span>
+          <span className="bg-parchment-100 px-2 text-muted-foreground">или</span>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function LoginForm() {
         )}
       >
         <YandexIcon className="h-4 w-4" />
-        Continue with Yandex ID
+        Войти через Яндекс ID
       </button>
 
       {/* Telegram Login Widget — renders its own button */}

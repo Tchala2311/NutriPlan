@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import type { FoodPhotoItem } from "@/lib/gigachat/client";
 
 const MEAL_LABELS: Record<string, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snacks: "Snacks",
+  breakfast: "Завтрак",
+  lunch: "Обед",
+  dinner: "Ужин",
+  snacks: "Перекусы",
 };
 
 interface AddFoodDialogProps {
@@ -75,7 +75,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
       const data = await res.json() as { items: FoodPhotoItem[]; error?: string };
       if (data.error || !data.items?.length) {
         setPhotoState("error");
-        setError(data.error ?? "Could not recognise food in this photo.");
+        setError(data.error ?? "Не удалось распознать еду на фото.");
         return;
       }
       setPhotoItems(data.items);
@@ -86,7 +86,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
       }
     } catch (err) {
       setPhotoState("error");
-      setError(err instanceof Error ? err.message : "Photo analysis failed.");
+      setError(err instanceof Error ? err.message : "Ошибка анализа фото.");
     }
   }
 
@@ -107,7 +107,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
         handleOpen(false);
         onAdded?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to save entry.");
+        setError(err instanceof Error ? err.message : "Не удалось сохранить запись.");
       }
     });
   }
@@ -122,10 +122,10 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
         <Dialog.Overlay className="fixed inset-0 z-40 bg-bark-500/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-parchment-50 border border-parchment-200 p-6 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 max-h-[90vh] overflow-y-auto">
           <Dialog.Title className="font-display text-lg font-semibold text-bark-300 mb-1">
-            Add food to {MEAL_LABELS[defaultMeal] ?? defaultMeal}
+            Добавить в {MEAL_LABELS[defaultMeal] ?? defaultMeal}
           </Dialog.Title>
           <Dialog.Description className="text-sm text-muted-foreground mb-5">
-            Take a photo for instant analysis, or enter details manually.
+            Сфотографируйте блюдо для мгновенного анализа или введите данные вручную.
           </Dialog.Description>
 
           {/* Photo upload area */}
@@ -150,7 +150,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
               )}
             >
               <CameraIcon className="h-4 w-4 shrink-0" />
-              {photoState === "uploading" ? "Analysing photo…" : "Analyse photo with AI"}
+              {photoState === "uploading" ? "Анализируем фото…" : "Анализировать фото через ИИ"}
             </button>
 
             {/* Photo preview thumbnail */}
@@ -159,12 +159,12 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photoUrl}
-                  alt="Food photo preview"
+                  alt="Предпросмотр фото"
                   className="h-16 w-16 rounded-lg object-cover border border-parchment-200 shrink-0"
                 />
                 {photoState === "done" && photoItems.length > 1 && (
                   <div className="flex-1 space-y-1">
-                    <p className="text-xs font-medium text-bark-200">Detected items — tap to fill form:</p>
+                    <p className="text-xs font-medium text-bark-200">Распознано — нажмите для заполнения:</p>
                     {photoItems.map((item, i) => (
                       <button
                         key={i}
@@ -185,7 +185,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
                 )}
                 {photoState === "done" && photoItems.length === 1 && (
                   <p className="text-xs text-sage-400 mt-1">
-                    Detected: <span className="font-medium text-bark-300">{photoItems[0].food_name}</span> — form prefilled.
+                    Распознано: <span className="font-medium text-bark-300">{photoItems[0].food_name}</span> — форма заполнена.
                   </p>
                 )}
               </div>
@@ -198,14 +198,14 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
 
             <div>
               <label className="block text-xs font-medium text-bark-200 mb-1" htmlFor="food_name">
-                Food name
+                Название блюда
               </label>
               <input
                 id="food_name"
                 name="food_name"
                 type="text"
                 required
-                placeholder="e.g. Grilled chicken breast"
+                placeholder="Напр. Куриная грудка на гриле"
                 defaultValue={pv.food_name ?? ""}
                 key={`name-${selectedPhotoItem}`}
                 className={inputCls}
@@ -214,7 +214,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
 
             <div>
               <label className="block text-xs font-medium text-bark-200 mb-1" htmlFor="calories">
-                Calories (kcal)
+                Калории (ккал)
               </label>
               <input
                 id="calories"
@@ -233,7 +233,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-medium text-bark-200 mb-1" htmlFor="protein_g">
-                  Protein (g)
+                  Белки (г)
                 </label>
                 <input
                   id="protein_g"
@@ -249,7 +249,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
               </div>
               <div>
                 <label className="block text-xs font-medium text-bark-200 mb-1" htmlFor="carbs_g">
-                  Carbs (g)
+                  Углеводы (г)
                 </label>
                 <input
                   id="carbs_g"
@@ -265,7 +265,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
               </div>
               <div>
                 <label className="block text-xs font-medium text-bark-200 mb-1" htmlFor="fat_g">
-                  Fat (g)
+                  Жиры (г)
                 </label>
                 <input
                   id="fat_g"
@@ -286,11 +286,11 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
             <div className="flex justify-end gap-2 pt-1">
               <Dialog.Close asChild>
                 <button type="button" className={secondaryBtnCls} disabled={isPending}>
-                  Cancel
+                  Отмена
                 </button>
               </Dialog.Close>
               <button type="submit" className={primaryBtnCls} disabled={isPending || photoState === "uploading"}>
-                {isPending ? "Saving…" : "Add entry"}
+                {isPending ? "Сохраняем…" : "Добавить"}
               </button>
             </div>
           </form>
