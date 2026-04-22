@@ -444,15 +444,23 @@ const MEAL_NUMERIC_KEYS = new Set(["prep_min", "kcal", "p", "c", "f"]);
 export async function generateWeeklyMealPlan(
   user: UserProfile & { avoided_ingredients?: string[] },
   weekStart: string, // "YYYY-MM-DD" Monday
-  weekEnd: string    // "YYYY-MM-DD" Sunday
+  weekEnd: string,   // "YYYY-MM-DD" Sunday
+  promptOverride?: string // pre-filled goal-specific prompt; skips interpolation if provided
 ): Promise<WeekPlanRaw> {
-  const extra: Record<string, string> = {
-    week_start: weekStart,
-    week_end: weekEnd,
-  };
-  const vars = buildVars(user as unknown as UserProfile, {}, extra);
   const system = "Ты профессиональный диетолог, отвечаешь только валидным JSON.";
-  const userMsg = interpolate(PROMPT_MEAL_PLAN_RU, vars);
+  let userMsg: string;
+
+  if (promptOverride) {
+    userMsg = promptOverride;
+  } else {
+    const extra: Record<string, string> = {
+      week_start: weekStart,
+      week_end: weekEnd,
+    };
+    const vars = buildVars(user as unknown as UserProfile, {}, extra);
+    userMsg = interpolate(PROMPT_MEAL_PLAN_RU, vars);
+  }
+
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.meal_plan.краткий);
   const json = extractJson(raw);
   const parsed = JSON.parse(json);

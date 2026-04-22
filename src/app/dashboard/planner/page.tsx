@@ -7,6 +7,7 @@ import {
   type CatalogMeal,
   type ShoppingItem,
   type UserPlanConfig,
+  type UserGoalContext,
 } from "@/components/planner/MultiPhasePlannerClient";
 
 export const metadata: Metadata = { title: "Планировщик питания — NutriPlan" };
@@ -37,7 +38,7 @@ export default async function MealPlannerPage() {
   }
 
   // Load week 1 (Phase 1, Week 1) as initial data
-  const [mealsResult, completionsResult, shoppingResult, configResult] = await Promise.all([
+  const [mealsResult, completionsResult, shoppingResult, configResult, haResult] = await Promise.all([
     supabase
       .from("meals")
       .select("id, day, meal_type, name, description, kcal, protein_g, carbs_g, fat_g, is_batch")
@@ -60,6 +61,11 @@ export default async function MealPlannerPage() {
       .select("tdee_kcal, reference_tdee")
       .eq("user_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("health_assessments")
+      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   const initialMeals: CatalogMeal[] = (mealsResult.data ?? []) as CatalogMeal[];
@@ -69,12 +75,24 @@ export default async function MealPlannerPage() {
   const initialShopping: ShoppingItem[] = (shoppingResult.data ?? []) as ShoppingItem[];
   const initialConfig: UserPlanConfig | null = configResult.data ?? null;
 
+  const ha = haResult.data;
+  const goalContext: UserGoalContext = {
+    primaryGoal: ha?.primary_goal ?? "general_wellness",
+    secondaryGoals: ha?.secondary_goals ?? [],
+    dietaryRestrictions: ha?.dietary_restrictions ?? [],
+    allergens: ha?.allergens ?? [],
+    avoidedIngredients: ha?.avoided_ingredients ?? [],
+    medicalConditions: ha?.medical_conditions ?? [],
+    eatingDisorderFlag: ha?.eating_disorder_flag ?? false,
+  };
+
   return (
     <MultiPhasePlannerClient
       initialMeals={initialMeals}
       initialCompletions={initialCompletions}
       initialConfig={initialConfig}
       initialShopping={initialShopping}
+      goalContext={goalContext}
     />
   );
 }

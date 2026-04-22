@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateWeeklyMealPlan, type MealRecipeRaw } from "@/lib/gigachat/client";
 import type { UserProfile } from "@/lib/gigachat/client";
+import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
+import { fromGlobalWeek } from "@/lib/planner/phases";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
 
@@ -121,10 +123,33 @@ export async function POST(req: Request) {
     }
   }
 
-  // Generate meal plan via GigaChat
+  // Derive phase from request body (optional; defaults to phase 1)
+  const globalWeekNum: number = body.global_week ?? 1;
+  const { phase: planPhase, weekInPhase } = fromGlobalWeek(Math.max(1, Math.min(8, globalWeekNum)));
+
+  // Build goal-specific prompt
+  const promptParams: MealPlanPromptParams = {
+    primaryGoal: userProfile.primary_goal ?? "general_wellness",
+    tdeeKcal: userProfile.tdee_kcal ?? 2000,
+    targetProteinG: userProfile.target_protein_g ?? 120,
+    targetCarbsG: userProfile.target_carbs_g ?? 200,
+    targetFatG: userProfile.target_fat_g ?? 70,
+    dietaryRestrictions: userProfile.dietary_restrictions ?? [],
+    allergens: userProfile.allergens ?? [],
+    avoidedIngredients: userProfile.avoided_ingredients ?? [],
+    medicalConditions: userProfile.medical_conditions ?? [],
+    eatingDisorderFlag: userProfile.eating_disorder_flag ?? false,
+    weekStart,
+    weekEnd,
+    phaseNumber: planPhase.number,
+    phaseName: planPhase.nameRu,
+  };
+  const goalPrompt = getMealPlanPrompt(promptParams);
+
+  // Generate meal plan via GigaChat (goal-specific prompt)
   let weekPlan;
   try {
-    weekPlan = await generateWeeklyMealPlan(userProfile, weekStart, weekEnd);
+    weekPlan = await generateWeeklyMealPlan(userProfile, weekStart, weekEnd, goalPrompt);
   } catch (err) {
     console.error("GigaChat meal plan error:", err);
     return NextResponse.json({ error: "AI generation failed" }, { status: 502 });

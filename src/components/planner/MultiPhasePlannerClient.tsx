@@ -8,9 +8,13 @@ import {
 } from "lucide-react";
 import {
   PHASES, MEAL_TYPES, MEAL_LABEL_RU, DAY_NAMES_RU,
-  isCatalogTrainingDay, toGlobalWeek, fromGlobalWeek,
+  isCatalogTrainingDay, toGlobalWeek,
   type MealType, type Phase,
 } from "@/lib/planner/phases";
+import {
+  getPhaseGuidance,
+  getPhaseCalorieTarget,
+} from "@/lib/planner/goal-prompts";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,11 +44,22 @@ export interface UserPlanConfig {
   reference_tdee: number;
 }
 
+export interface UserGoalContext {
+  primaryGoal: string;
+  secondaryGoals: string[];
+  dietaryRestrictions: string[];
+  allergens: string[];
+  avoidedIngredients: string[];
+  medicalConditions: string[];
+  eatingDisorderFlag: boolean;
+}
+
 interface MultiPhasePlannerClientProps {
   initialMeals: CatalogMeal[];
   initialCompletions: string[];  // "day-meal_type" keys
   initialConfig: UserPlanConfig | null;
   initialShopping: ShoppingItem[];
+  goalContext?: UserGoalContext;
 }
 
 type ViewMode = "schedule" | "list" | "shopping";
@@ -87,6 +102,7 @@ export function MultiPhasePlannerClient({
   initialCompletions,
   initialConfig,
   initialShopping,
+  goalContext,
 }: MultiPhasePlannerClientProps) {
   const [activePhase, setActivePhase] = useState<1 | 2 | 3 | 4>(1);
   const [activeWeekInPhase, setActiveWeekInPhase] = useState<1 | 2>(1);
@@ -278,7 +294,7 @@ export function MultiPhasePlannerClient({
       </div>
 
       {/* Phase info banner */}
-      <PhaseBanner phase={phase} config={initialConfig} />
+      <PhaseBanner phase={phase} config={initialConfig} goalContext={goalContext} />
 
       {/* Week sub-tabs */}
       <div className="flex items-center gap-2 mb-5">
@@ -321,6 +337,7 @@ export function MultiPhasePlannerClient({
           dayTotals={dayTotals}
           phase={phase}
           config={initialConfig}
+          goalContext={goalContext}
           onToggleCompletion={toggleCompletion}
         />
       ) : viewMode === "list" ? (
@@ -342,52 +359,71 @@ export function MultiPhasePlannerClient({
 
 // ── Phase Banner ─────────────────────────────────────────────────────────────
 
-function PhaseBanner({ phase, config }: { phase: Phase; config: UserPlanConfig | null }) {
-  const trainingKcal = scaleKcal(phase.calorie_target.training, config);
-  const restKcal = scaleKcal(phase.calorie_target.rest, config);
+function PhaseBanner({
+  phase,
+  config,
+  goalContext,
+}: {
+  phase: Phase;
+  config: UserPlanConfig | null;
+  goalContext?: UserGoalContext;
+}) {
+  const goal = goalContext?.primaryGoal ?? "general_wellness";
+  const edFlag = goalContext?.eatingDisorderFlag ?? false;
+
+  // Use goal-specific calorie targets, then scale by user TDEE
+  const goalCalorieTarget = getPhaseCalorieTarget(goal, phase.number);
+  const trainingKcal = scaleKcal(goalCalorieTarget.training, config);
+  const restKcal = scaleKcal(goalCalorieTarget.rest, config);
+
+  const guidance = getPhaseGuidance(goal, phase.number, edFlag);
 
   return (
     <div className="mb-5 rounded-2xl bg-gradient-to-r from-parchment-100 to-parchment-50 border border-parchment-200 p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
+      <div className="flex flex-col gap-3">
+        {/* Guidance text */}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
             <Target className="h-4 w-4 text-bark-200" />
             <span className="text-xs font-semibold text-bark-200 uppercase tracking-wide">
               Цель фазы
             </span>
           </div>
-          <p className="text-sm text-bark-300">{phase.goal}</p>
+          <p className="text-sm text-bark-300">{guidance}</p>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6">
-          {/* Training day target */}
-          <div className="text-center">
-            <div className="flex items-center gap-1 justify-center mb-0.5">
-              <Dumbbell className="h-3 w-3 text-vital-500" />
-              <span className="text-2xs text-stone-400 font-medium">Зал</span>
+        {/* Calorie targets — hidden when ED flag active */}
+        {!edFlag && (
+          <div className="flex items-center gap-4 sm:gap-6">
+            {/* Training day target */}
+            <div className="text-center">
+              <div className="flex items-center gap-1 justify-center mb-0.5">
+                <Dumbbell className="h-3 w-3 text-vital-500" />
+                <span className="text-2xs text-stone-400 font-medium">Зал</span>
+              </div>
+              <p className="text-lg font-bold text-bark-300">{trainingKcal.toLocaleString("ru")}</p>
+              <p className="text-2xs text-stone-400">ккал</p>
+              <p className="text-2xs text-stone-400 mt-0.5">
+                Б{phase.macros.training.protein_g} У{phase.macros.training.carbs_g} Ж{phase.macros.training.fat_g}
+              </p>
             </div>
-            <p className="text-lg font-bold text-bark-300">{trainingKcal.toLocaleString("ru")}</p>
-            <p className="text-2xs text-stone-400">ккал</p>
-            <p className="text-2xs text-stone-400 mt-0.5">
-              Б{phase.macros.training.protein_g} У{phase.macros.training.carbs_g} Ж{phase.macros.training.fat_g}
-            </p>
-          </div>
 
-          <ChevronRight className="h-4 w-4 text-parchment-300 hidden sm:block" />
+            <ChevronRight className="h-4 w-4 text-parchment-300 hidden sm:block" />
 
-          {/* Rest day target */}
-          <div className="text-center">
-            <div className="flex items-center gap-1 justify-center mb-0.5">
-              <Moon className="h-3 w-3 text-stone-400" />
-              <span className="text-2xs text-stone-400 font-medium">Отдых</span>
+            {/* Rest day target */}
+            <div className="text-center">
+              <div className="flex items-center gap-1 justify-center mb-0.5">
+                <Moon className="h-3 w-3 text-stone-400" />
+                <span className="text-2xs text-stone-400 font-medium">Отдых</span>
+              </div>
+              <p className="text-lg font-bold text-bark-300">{restKcal.toLocaleString("ru")}</p>
+              <p className="text-2xs text-stone-400">ккал</p>
+              <p className="text-2xs text-stone-400 mt-0.5">
+                Б{phase.macros.rest.protein_g} У{phase.macros.rest.carbs_g} Ж{phase.macros.rest.fat_g}
+              </p>
             </div>
-            <p className="text-lg font-bold text-bark-300">{restKcal.toLocaleString("ru")}</p>
-            <p className="text-2xs text-stone-400">ккал</p>
-            <p className="text-2xs text-stone-400 mt-0.5">
-              Б{phase.macros.rest.protein_g} У{phase.macros.rest.carbs_g} Ж{phase.macros.rest.fat_g}
-            </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -402,10 +438,11 @@ interface ScheduleViewProps {
   dayTotals: Record<number, { kcal: number; protein_g: number; carbs_g: number; fat_g: number }>;
   phase: Phase;
   config: UserPlanConfig | null;
+  goalContext?: UserGoalContext;
   onToggleCompletion: (day: number, meal_type: string) => void;
 }
 
-function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, config, onToggleCompletion }: ScheduleViewProps) {
+function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, config, goalContext, onToggleCompletion }: ScheduleViewProps) {
   // Group by day
   const byDay = useMemo(() => {
     const map: Record<number, Record<string, CatalogMeal>> = {};
@@ -493,26 +530,36 @@ function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, co
             {days.map((day) => {
               const totals = dayTotals[day] ?? { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
               const isTraining = isCatalogTrainingDay(day);
+              const goalCalTarget = getPhaseCalorieTarget(
+                goalContext?.primaryGoal ?? "general_wellness",
+                phase.number
+              );
               const target = scaleKcal(
-                isTraining ? phase.calorie_target.training : phase.calorie_target.rest,
+                isTraining ? goalCalTarget.training : goalCalTarget.rest,
                 config
               );
               const pct = target > 0 ? Math.min(Math.round((totals.kcal / target) * 100), 100) : 0;
               const inRange = pct >= 90 && pct <= 110;
 
+              const edFlag = goalContext?.eatingDisorderFlag ?? false;
+
               return (
                 <div key={day} className="rounded-xl bg-parchment-100 p-2 text-center">
-                  <p className={`text-sm font-semibold ${inRange ? "text-sage-500" : "text-bark-300"}`}>
-                    {Math.round(totals.kcal)}
-                  </p>
-                  <p className="text-2xs text-stone-400">/ {target.toLocaleString("ru")}</p>
-                  {/* Progress bar */}
-                  <div className="mt-1 h-1 bg-parchment-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${inRange ? "bg-sage-400" : "bg-amber-400"}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                  {!edFlag && (
+                    <>
+                      <p className={`text-sm font-semibold ${inRange ? "text-sage-500" : "text-bark-300"}`}>
+                        {Math.round(totals.kcal)}
+                      </p>
+                      <p className="text-2xs text-stone-400">/ {target.toLocaleString("ru")}</p>
+                      {/* Progress bar */}
+                      <div className="mt-1 h-1 bg-parchment-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${inRange ? "bg-sage-400" : "bg-amber-400"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="mt-1.5 space-y-0.5">
                     <p className="text-2xs text-stone-400">Б {Math.round(totals.protein_g)}г</p>
                     <p className="text-2xs text-stone-400">У {Math.round(totals.carbs_g)}г</p>
