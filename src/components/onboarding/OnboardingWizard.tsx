@@ -292,7 +292,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     setError(null);
     startTransition(async () => {
       try {
-        await saveOnboarding(form);
+        await saveOnboarding({
+          ...form,
+          weight_kg:      tdee.weight_kg ? parseFloat(tdee.weight_kg) : null,
+          height_cm:      tdee.height_cm ? parseInt(tdee.height_cm, 10) : null,
+          age:            tdee.age ? parseInt(tdee.age, 10) : null,
+          sex:            tdee.sex || null,
+          activity_level: tdee.activity_level || "moderate",
+        });
         // saveOnboarding redirects to /dashboard on success
       } catch (e) {
         setError(e instanceof Error ? e.message : "Что-то пошло не так. Попробуйте снова.");

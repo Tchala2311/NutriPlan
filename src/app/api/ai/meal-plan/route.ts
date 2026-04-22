@@ -5,6 +5,7 @@ import { generateWeeklyMealPlan, type MealRecipeRaw } from "@/lib/gigachat/clien
 import type { UserProfile } from "@/lib/gigachat/client";
 import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
 import { fromGlobalWeek } from "@/lib/planner/phases";
+import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
 
@@ -85,22 +86,46 @@ export async function POST(req: Request) {
 
   const { data: goals } = await supabase
     .from("user_goals")
-    .select("daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g")
+    .select("daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g, weight_kg, height_cm, age, sex, activity_level")
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Auto-compute TDEE + macros from stored biometrics; fall back to stored targets.
+  const primaryGoal = ha?.primary_goal ?? "general_wellness";
+  let tdeeKcal      = goals?.daily_calorie_target ?? 2000;
+  let proteinG      = goals?.protein_target_g     ?? 120;
+  let carbsG        = goals?.carbs_target_g       ?? 200;
+  let fatG          = goals?.fat_target_g         ?? 70;
+
+  if (goals) {
+    const computedTDEE = calculateTDEE({
+      weight_kg:      goals.weight_kg      ?? undefined,
+      height_cm:      goals.height_cm      ?? undefined,
+      age:            goals.age            ?? undefined,
+      sex:            (goals.sex ?? undefined) as "male" | "female" | undefined,
+      activity_level: goals.activity_level ?? "moderate",
+    });
+    if (computedTDEE) {
+      const m = calculateMacros(computedTDEE, primaryGoal);
+      tdeeKcal = m.daily_calorie_target;
+      proteinG = m.protein_target_g;
+      carbsG   = m.carbs_target_g;
+      fatG     = m.fat_target_g;
+    }
+  }
+
   const userProfile: UserProfile & { avoided_ingredients?: string[] } = {
-    primary_goal: ha?.primary_goal ?? "general_wellness",
+    primary_goal: primaryGoal,
     secondary_goals: ha?.secondary_goals ?? [],
     dietary_restrictions: ha?.dietary_restrictions ?? [],
     allergens: ha?.allergens ?? [],
     avoided_ingredients: ha?.avoided_ingredients ?? [],
     medical_conditions: ha?.medical_conditions ?? [],
     eating_disorder_flag: ha?.eating_disorder_flag ?? false,
-    tdee_kcal: goals?.daily_calorie_target ?? 2000,
-    target_protein_g: goals?.protein_target_g ?? 120,
-    target_carbs_g: goals?.carbs_target_g ?? 200,
-    target_fat_g: goals?.fat_target_g ?? 70,
+    tdee_kcal:        tdeeKcal,
+    target_protein_g: proteinG,
+    target_carbs_g:   carbsG,
+    target_fat_g:     fatG,
   };
 
   // Load existing plan to respect pinned slots

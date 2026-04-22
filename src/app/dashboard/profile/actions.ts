@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
 
 export type UserGoals = {
   primary_goal: "weight_loss" | "muscle_gain" | "maintenance" | null;
@@ -9,13 +10,21 @@ export type UserGoals = {
   protein_target_g: number;
   carbs_target_g: number;
   fat_target_g: number;
+  // Biometrics (optional — drive auto TDEE calculation)
+  weight_kg?: number | null;
+  height_cm?: number | null;
+  age?: number | null;
+  sex?: "male" | "female" | null;
+  activity_level?: string | null;
 };
 
-/** Default macro targets per goal type */
+/** Default macro targets per goal type — used when biometrics absent */
 const GOAL_DEFAULTS: Record<string, Omit<UserGoals, "primary_goal">> = {
-  weight_loss:  { daily_calorie_target: 1800, protein_target_g: 150, carbs_target_g: 160, fat_target_g: 60 },
-  muscle_gain:  { daily_calorie_target: 2800, protein_target_g: 200, carbs_target_g: 300, fat_target_g: 80 },
-  maintenance:  { daily_calorie_target: 2200, protein_target_g: 160, carbs_target_g: 240, fat_target_g: 70 },
+  weight_loss:        { daily_calorie_target: 1800, protein_target_g: 150, carbs_target_g: 160, fat_target_g: 60 },
+  muscle_gain:        { daily_calorie_target: 2800, protein_target_g: 200, carbs_target_g: 300, fat_target_g: 80 },
+  maintenance:        { daily_calorie_target: 2200, protein_target_g: 160, carbs_target_g: 240, fat_target_g: 70 },
+  disease_management: { daily_calorie_target: 2000, protein_target_g: 130, carbs_target_g: 220, fat_target_g: 67 },
+  general_wellness:   { daily_calorie_target: 2000, protein_target_g: 125, carbs_target_g: 250, fat_target_g: 56 },
 };
 
 export async function getUserGoals(): Promise<UserGoals> {
@@ -26,11 +35,23 @@ export async function getUserGoals(): Promise<UserGoals> {
   // 1. Try user_goals table
   const { data: goals } = await supabase
     .from("user_goals")
-    .select("primary_goal, daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g")
+    .select("primary_goal, daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g, weight_kg, height_cm, age, sex, activity_level")
     .eq("user_id", user.id)
     .maybeSingle();
 
   if (goals) {
+    // Recompute from biometrics when available; otherwise use stored values.
+    const tdee = calculateTDEE({
+      weight_kg:      goals.weight_kg      ?? undefined,
+      height_cm:      goals.height_cm      ?? undefined,
+      age:            goals.age            ?? undefined,
+      sex:            (goals.sex ?? undefined) as "male" | "female" | undefined,
+      activity_level: goals.activity_level ?? "moderate",
+    });
+    if (tdee) {
+      const computed = calculateMacros(tdee, goals.primary_goal ?? "general_wellness");
+      return { ...goals, ...computed } as UserGoals;
+    }
     return goals as UserGoals;
   }
 
@@ -178,13 +199,32 @@ export async function saveUserGoals(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  const primaryGoal = (formData.get("primary_goal") as string) || null;
+
+  // Parse biometrics (may be absent for users who skip them)
+  const weight_kg     = formData.get("weight_kg")     ? parseFloat(String(formData.get("weight_kg")))  : null;
+  const height_cm     = formData.get("height_cm")     ? parseInt(String(formData.get("height_cm")), 10) : null;
+  const age           = formData.get("age")           ? parseInt(String(formData.get("age")), 10)       : null;
+  const sex           = (formData.get("sex") as "male" | "female" | null) || null;
+  const activity_level = (formData.get("activity_level") as string) || "moderate";
+
+  // Auto-compute macros from biometrics; fall back to form values if absent
+  const bio    = { weight_kg: weight_kg ?? undefined, height_cm: height_cm ?? undefined, age: age ?? undefined, sex: sex ?? undefined, activity_level };
+  const tdee   = calculateTDEE(bio);
+  const macros = tdee ? calculateMacros(tdee, primaryGoal ?? "general_wellness") : null;
+
   const goals = {
-    user_id: user.id,
-    primary_goal: (formData.get("primary_goal") as string) || null,
-    daily_calorie_target: Number(formData.get("daily_calorie_target") ?? 2000),
-    protein_target_g: Number(formData.get("protein_target_g") ?? 150),
-    carbs_target_g: Number(formData.get("carbs_target_g") ?? 200),
-    fat_target_g: Number(formData.get("fat_target_g") ?? 65),
+    user_id:              user.id,
+    primary_goal:         primaryGoal,
+    weight_kg,
+    height_cm,
+    age,
+    sex,
+    activity_level,
+    daily_calorie_target: macros?.daily_calorie_target ?? Number(formData.get("daily_calorie_target") ?? 2000),
+    protein_target_g:     macros?.protein_target_g     ?? Number(formData.get("protein_target_g") ?? 150),
+    carbs_target_g:       macros?.carbs_target_g       ?? Number(formData.get("carbs_target_g") ?? 200),
+    fat_target_g:         macros?.fat_target_g         ?? Number(formData.get("fat_target_g") ?? 65),
   };
 
   const { error } = await supabase
