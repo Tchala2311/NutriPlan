@@ -117,8 +117,20 @@ export default async function ProfilePage() {
       </div>
 
       {/* Trends */}
-      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6">
+      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 mb-6">
         <TrendsSection trends={trends} goals={goals} />
+      </div>
+
+      {/* Settings shortcut — mobile only (Settings not in bottom nav) */}
+      <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 lg:hidden">
+        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-3">Ещё</h2>
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center justify-between text-sm font-medium text-bark-200 hover:text-bark-300 transition-colors py-1"
+        >
+          <span>Настройки приложения</span>
+          <span className="text-muted-foreground">→</span>
+        </Link>
       </div>
     </div>
   );

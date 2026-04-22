@@ -13,13 +13,16 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Главная", href: "/dashboard", icon: HomeIcon },
-  { label: "Дневник питания", href: "/dashboard/log", icon: LogIcon },
-  { label: "Планировщик", href: "/dashboard/planner", icon: PlannerIcon },
-  { label: "Рецепты", href: "/dashboard/recipes", icon: RecipesIcon },
-  { label: "Профиль и цели", href: "/dashboard/profile", icon: ProfileIcon },
-  { label: "Настройки", href: "/dashboard/settings", icon: SettingsIcon },
+  { label: "Главная",         href: "/dashboard",          icon: HomeIcon    },
+  { label: "Дневник питания", href: "/dashboard/log",      icon: LogIcon     },
+  { label: "Планировщик",    href: "/dashboard/planner",  icon: PlannerIcon },
+  { label: "Рецепты",        href: "/dashboard/recipes",  icon: RecipesIcon },
+  { label: "Профиль и цели", href: "/dashboard/profile",  icon: ProfileIcon },
+  { label: "Настройки",      href: "/dashboard/settings", icon: SettingsIcon },
 ];
+
+// 5 primary tabs for the mobile bottom nav — Settings lives in Profile page
+const BOTTOM_NAV_ITEMS: NavItem[] = NAV_ITEMS.slice(0, 5);
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -31,9 +34,14 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  function isActive(href: string) {
+    if (href === "/dashboard") return pathname === href;
+    return pathname.startsWith(href);
+  }
+
   return (
     <div className="flex min-h-screen bg-cream-100">
-      {/* Mobile overlay */}
+      {/* ── Mobile overlay (for hamburger / sidebar on lg+) ── */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-bark-500/30 backdrop-blur-sm lg:hidden"
@@ -41,7 +49,7 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
         />
       )}
 
-      {/* Sidebar */}
+      {/* ── Sidebar (desktop lg+ always visible; mobile: slide-in via hamburger) ── */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-parchment-100 border-r border-parchment-200",
@@ -61,7 +69,7 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
           {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -87,36 +95,80 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
         </div>
       </aside>
 
-      {/* Main area */}
+      {/* ── Main area ── */}
       <div className="flex flex-1 flex-col min-w-0">
-        {/* Top nav bar */}
+        {/* Top header */}
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b border-parchment-200 bg-parchment-50/80 backdrop-blur-sm px-4 lg:px-6">
+          {/* Hamburger — only shown on desktop to toggle sidebar (mobile uses bottom nav) */}
           <button
             onClick={() => setSidebarOpen(true)}
             className={cn(
               "rounded-lg p-2 text-bark-200 hover:bg-parchment-200 hover:text-bark-300 transition-colors",
               "focus:outline-none focus:ring-2 focus:ring-ring",
-              "lg:hidden"
+              "hidden lg:hidden" // sidebar always visible on lg; bottom nav handles mobile
             )}
             aria-label="Открыть меню"
           >
             <MenuIcon className="h-5 w-5" />
           </button>
 
-          {/* Brand visible on mobile only (desktop shows sidebar brand) */}
+          {/* Brand — visible on mobile (sidebar is hidden); hidden on desktop (sidebar shows brand) */}
           <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
             <LeafIcon className="h-5 w-5 text-sage-300" />
             <span className="font-display text-lg font-bold text-bark-300">NutriPlan</span>
           </Link>
 
-          <div className="ml-auto">
+          {/* Spacer so UserMenu stays right on desktop */}
+          <div className="hidden lg:block flex-1" />
+
+          <div className="ml-auto lg:ml-0">
             <UserMenu email={userEmail} avatarUrl={userAvatarUrl} />
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">{children}</main>
+        {/* Page content — extra bottom padding on mobile to clear the bottom nav */}
+        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-[5.5rem] lg:pb-6">
+          {children}
+        </main>
       </div>
+
+      {/* ── Mobile bottom tab navigation ── */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-parchment-100/95 backdrop-blur-md border-t border-parchment-200"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        aria-label="Основная навигация"
+      >
+        <div className="flex items-stretch justify-around">
+          {BOTTOM_NAV_ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 flex-1 min-h-[56px] px-1 py-2",
+                  "text-[10px] font-medium leading-none transition-colors",
+                  active ? "text-bark-300" : "text-stone-400"
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                <item.icon
+                  className={cn(
+                    "h-5 w-5 shrink-0 transition-transform duration-150",
+                    active && "scale-110"
+                  )}
+                />
+                <span className="truncate max-w-[60px] text-center">
+                  {/* Shorten labels for the compact bottom nav */}
+                  {item.label === "Дневник питания" ? "Дневник" :
+                   item.label === "Профиль и цели"  ? "Профиль" :
+                   item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
