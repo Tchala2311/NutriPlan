@@ -1,13 +1,8 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { Check, ChevronRight, Star, Zap, ShoppingCart, TrendingUp } from "lucide-react";
-import { LandingDemo } from "@/components/landing/LandingDemo";
-
-export const metadata: Metadata = {
-  title: "NutriPlan — Ешьте правильно, без стресса и таблиц",
-  description:
-    "AI-планировщик питания для российского рынка. Составьте персональное меню на неделю за 30 секунд. Начните бесплатно — 14 дней Про включены.",
-};
+import { LandingDemoClient as LandingDemo } from "@/components/landing/LandingDemoClient";
 
 // ── Feature cards ─────────────────────────────────────────
 const FEATURES = [

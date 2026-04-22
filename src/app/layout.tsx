@@ -65,10 +65,11 @@ const dmSans = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "NutriPlan",
+    default: "NutriPlan — Ешьте правильно, без стресса и таблиц",
     template: "%s | NutriPlan",
   },
-  description: "AI-powered personalised nutrition planning",
+  description:
+    "AI-планировщик питания для российского рынка. Составьте персональное меню на неделю за 30 секунд. Начните бесплатно — 14 дней Про включены.",
 };
 
 export default function RootLayout({
