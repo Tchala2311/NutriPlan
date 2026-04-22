@@ -52,6 +52,7 @@ type Props = { initial: UserGoals };
 export function GoalSettingsForm({ initial }: Props) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [goal, setGoal] = useState(initial.primary_goal ?? "");
 
   // Biometrics
@@ -88,10 +89,17 @@ export function GoalSettingsForm({ initial }: Props) {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    setError(null);
     startTransition(async () => {
-      await saveUserGoals(fd);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      try {
+        await saveUserGoals(fd);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to save goals";
+        setError(message);
+        console.error("Save error:", err);
+      }
     });
   }
 
@@ -315,6 +323,9 @@ export function GoalSettingsForm({ initial }: Props) {
         </button>
         {saved && (
           <span className="text-sm text-sage-300 font-medium">Сохранено</span>
+        )}
+        {error && (
+          <span className="text-sm text-red-500 font-medium">{error}</span>
         )}
       </div>
     </form>
