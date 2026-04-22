@@ -212,62 +212,97 @@ export function GoalSettingsForm({ initial }: Props) {
       {/* Calorie + macro targets */}
       <div>
         <p className="text-sm font-medium text-bark-300 mb-1">Дневные цели по КБЖУ</p>
-        {hasBiometrics && (
+        {hasBiometrics ? (
+          <p className="text-xs text-sage-400 font-medium mb-3">
+            Рассчитаны автоматически по параметрам тела (Mifflin-St Jeor + TDEE).
+          </p>
+        ) : (
           <p className="text-xs text-muted-foreground mb-3">
-            Рассчитаны по параметрам тела. Можно изменить вручную.
+            Заполните параметры тела выше для автоматического расчёта.
           </p>
         )}
 
-        <div className="mb-3">
-          <label htmlFor="daily_calorie_target" className="block text-xs font-medium text-muted-foreground mb-1">
-            Калории
-          </label>
-          <div className="flex items-center gap-2">
-            <input
-              id="daily_calorie_target"
-              name="daily_calorie_target"
-              type="number" min={500} max={10000} step={50}
-              value={calories}
-              onChange={(e) => setCalories(Number(e.target.value))}
-              className="w-32 rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
-              required
-            />
-            <span className="text-sm text-muted-foreground">ккал / день</span>
-          </div>
-        </div>
+        {hasBiometrics ? (
+          /* Read-only computed display when biometrics are available */
+          <>
+            <input type="hidden" name="daily_calorie_target" value={calories} />
+            <input type="hidden" name="protein_target_g"     value={protein} />
+            <input type="hidden" name="carbs_target_g"       value={carbs} />
+            <input type="hidden" name="fat_target_g"         value={fat} />
 
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { id: "protein_target_g", name: "protein_target_g", label: "Белки",    value: protein, setter: setProtein },
-            { id: "carbs_target_g",   name: "carbs_target_g",   label: "Углеводы", value: carbs,   setter: setCarbs },
-            { id: "fat_target_g",     name: "fat_target_g",     label: "Жиры",     value: fat,     setter: setFat },
-          ].map((macro) => (
-            <div key={macro.id}>
-              <label htmlFor={macro.id} className="block text-xs font-medium text-muted-foreground mb-1">
-                {macro.label}
+            <div className="rounded-lg border border-sage-200 bg-sage-50 px-4 py-3 mb-3 flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Калории</span>
+              <span className="text-lg font-bold text-bark-300">{calories} <span className="text-sm font-normal text-muted-foreground">ккал / день</span></span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Белки",    value: protein, unit: "г" },
+                { label: "Углеводы", value: carbs,   unit: "г" },
+                { label: "Жиры",     value: fat,     unit: "г" },
+              ].map((macro) => (
+                <div key={macro.label} className="rounded-lg border border-sage-200 bg-sage-50 px-3 py-2.5 text-center">
+                  <p className="text-xs text-muted-foreground mb-0.5">{macro.label}</p>
+                  <p className="text-base font-bold text-bark-300">{macro.value} <span className="text-xs font-normal text-muted-foreground">{macro.unit}</span></p>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          /* Editable inputs when no biometrics */
+          <>
+            <div className="mb-3">
+              <label htmlFor="daily_calorie_target" className="block text-xs font-medium text-muted-foreground mb-1">
+                Калории
               </label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <input
-                  id={macro.id}
-                  name={macro.name}
-                  type="number" min={10} max={1000} step={5}
-                  value={macro.value}
-                  onChange={(e) => macro.setter(Number(e.target.value))}
-                  className="w-full rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
+                  id="daily_calorie_target"
+                  name="daily_calorie_target"
+                  type="number" min={500} max={10000} step={50}
+                  value={calories}
+                  onChange={(e) => setCalories(Number(e.target.value))}
+                  className="w-32 rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
                   required
                 />
-                <span className="text-xs text-muted-foreground shrink-0">г</span>
+                <span className="text-sm text-muted-foreground">ккал / день</span>
               </div>
             </div>
-          ))}
-        </div>
 
-        <p className="mt-2 text-xs text-muted-foreground">
-          Расчёт из макросов:{" "}
-          <span className="font-medium text-bark-200">
-            {Math.round(protein * 4 + carbs * 4 + fat * 9)} ккал
-          </span>
-        </p>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { id: "protein_target_g", name: "protein_target_g", label: "Белки",    value: protein, setter: setProtein },
+                { id: "carbs_target_g",   name: "carbs_target_g",   label: "Углеводы", value: carbs,   setter: setCarbs },
+                { id: "fat_target_g",     name: "fat_target_g",     label: "Жиры",     value: fat,     setter: setFat },
+              ].map((macro) => (
+                <div key={macro.id}>
+                  <label htmlFor={macro.id} className="block text-xs font-medium text-muted-foreground mb-1">
+                    {macro.label}
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      id={macro.id}
+                      name={macro.name}
+                      type="number" min={10} max={1000} step={5}
+                      value={macro.value}
+                      onChange={(e) => macro.setter(Number(e.target.value))}
+                      className="w-full rounded-lg border border-parchment-300 bg-parchment-50 px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-bark-200"
+                      required
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">г</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-2 text-xs text-muted-foreground">
+              Расчёт из макросов:{" "}
+              <span className="font-medium text-bark-200">
+                {Math.round(protein * 4 + carbs * 4 + fat * 9)} ккал
+              </span>
+            </p>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
