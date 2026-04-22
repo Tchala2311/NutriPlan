@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.user_goals (
   id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id               UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  primary_goal          TEXT        CHECK (primary_goal IN ('weight_loss', 'muscle_gain', 'maintenance')),
+  primary_goal          TEXT        CHECK (primary_goal IS NULL OR primary_goal IN ('weight_loss', 'muscle_gain', 'maintenance', 'disease_management', 'general_wellness')),
   daily_calorie_target  INTEGER     NOT NULL DEFAULT 2000 CHECK (daily_calorie_target BETWEEN 500 AND 10000),
   protein_target_g      INTEGER     NOT NULL DEFAULT 150  CHECK (protein_target_g BETWEEN 10 AND 500),
   carbs_target_g        INTEGER     NOT NULL DEFAULT 200  CHECK (carbs_target_g BETWEEN 10 AND 1000),
