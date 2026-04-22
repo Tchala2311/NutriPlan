@@ -6,6 +6,16 @@ import { getMealPlan } from "@/app/dashboard/planner/actions";
 import type { RecipeSummary } from "@/app/dashboard/planner/actions";
 import { RecipesClient } from "@/components/planner/RecipesClient";
 
+/** Compute catalog week (1–8) from plan_start_date. */
+function computeCatalogWeek(planStartDate: string): number {
+  const start = new Date(planStartDate + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysElapsed = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
+  const week = Math.floor(daysElapsed / 7) + 1;
+  return Math.min(Math.max(week, 1), 8);
+}
+
 export const metadata: Metadata = { title: "Рецепты — NutriPlan" };
 
 export default async function RecipesPage() {
@@ -44,8 +54,63 @@ export default async function RecipesPage() {
       : Promise.resolve({ data: [] }),
   ]);
 
-  // Unique recipes from this week's plan, preserving insertion order
-  const weeklyRecipes: RecipeSummary[] = Object.values(mealPlanData.recipes);
+  // Unique recipes from this week's AI plan, preserving insertion order
+  let weeklyRecipes: RecipeSummary[] = Object.values(mealPlanData.recipes);
+  let isCatalogSource = false;
+  let catalogWeekLabel: string | undefined;
+
+  // Fallback: if AI plan has no recipes, show catalog meals for the current week (TES-103)
+  if (weeklyRecipes.length === 0 && user) {
+    const configResult = await supabase
+      .from("user_plan_config")
+      .select("plan_start_date")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const planStartDate = configResult.data?.plan_start_date as string | null | undefined;
+
+    if (planStartDate) {
+      const catalogWeek = computeCatalogWeek(planStartDate);
+      catalogWeekLabel = `Неделя ${catalogWeek} каталога`;
+
+      const { data: catalogMeals } = await supabase
+        .from("meals")
+        .select("id, name, kcal, protein_g, carbs_g, fat_g")
+        .eq("week", catalogWeek)
+        .order("day")
+        .order("meal_type");
+
+      if (catalogMeals && catalogMeals.length > 0) {
+        // Deduplicate by name (same dish appears across multiple days)
+        const seen = new Set<string>();
+        weeklyRecipes = catalogMeals
+          .filter((m) => {
+            if (seen.has(m.name)) return false;
+            seen.add(m.name);
+            return true;
+          })
+          .map((m) => ({
+            id: m.id as string,
+            title: m.name as string,
+            prep_time_min: null,
+            calories_per_serving: m.kcal as number | null,
+            protein_per_serving: m.protein_g as number | null,
+            carbs_per_serving: m.carbs_g as number | null,
+            fat_per_serving: m.fat_g as number | null,
+            calories_per_100g: null,
+            protein_per_100g: null,
+            carbs_per_100g: null,
+            fat_per_100g: null,
+            ingredients: [],
+            instructions: [],
+            dietary_tags: [],
+            stores: [],
+            substitutions: [],
+          }));
+        isCatalogSource = true;
+      }
+    }
+  }
 
   const savedRecipes = ((savedResult.data ?? []) as Array<{ saved_at: string; recipe: unknown }>)
     .filter((r) => r.recipe)
@@ -66,6 +131,8 @@ export default async function RecipesPage() {
         weeklyRecipes={weeklyRecipes}
         initialSavedRecipeIds={mealPlanData.savedRecipeIds}
         savedRecipes={savedRecipes}
+        isCatalogSource={isCatalogSource}
+        catalogWeekLabel={catalogWeekLabel}
       />
     </div>
   );

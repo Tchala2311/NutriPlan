@@ -214,6 +214,21 @@ export async function unsaveRecipe(recipeId: string): Promise<{ success: boolean
   return { success: !error };
 }
 
+/** Set or update the plan start date for catalog-week anchoring (TES-103). */
+export async function setPlanStartDate(date: string): Promise<{ success: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false };
+
+  const { error } = await supabase
+    .from("user_plan_config")
+    .upsert({ user_id: user.id, plan_start_date: date }, { onConflict: "user_id" });
+
+  revalidatePath("/dashboard/planner");
+  revalidatePath("/dashboard/recipes");
+  return { success: !error };
+}
+
 /** Log a recipe as a meal entry in nutrition_logs. */
 export async function logRecipeMeal(
   recipeId: string,

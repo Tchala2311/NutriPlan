@@ -62,7 +62,7 @@ export default async function MealPlannerPage() {
       .order("item_name"),
     supabase
       .from("user_plan_config")
-      .select("tdee_kcal, reference_tdee")
+      .select("tdee_kcal, reference_tdee, plan_start_date")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase

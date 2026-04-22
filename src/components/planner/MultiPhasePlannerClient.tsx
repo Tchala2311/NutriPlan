@@ -16,6 +16,15 @@ import {
   getPhaseGuidance,
   getPhaseCalorieTarget,
 } from "@/lib/planner/goal-prompts";
+import { setPlanStartDate } from "@/app/dashboard/planner/actions";
+
+function getThisMonday(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +52,7 @@ export interface ShoppingItem {
 export interface UserPlanConfig {
   tdee_kcal: number;
   reference_tdee: number;
+  plan_start_date?: string | null;
 }
 
 export interface UserGoalContext {
@@ -139,6 +149,22 @@ export function MultiPhasePlannerClient({
 
   const [loadingWeek, setLoadingWeek] = useState(false);
   const [, startTransition] = useTransition();
+
+  const [planStartDate, setPlanStartDateLocal] = useState<string | null>(
+    initialConfig?.plan_start_date ?? null
+  );
+  const [editingStartDate, setEditingStartDate] = useState(false);
+
+  // Auto-set plan_start_date to this week's Monday if not configured yet (TES-103)
+  useEffect(() => {
+    if (planStartDate === null) {
+      const monday = getThisMonday();
+      setPlanStartDate(monday).then(({ success }) => {
+        if (success) setPlanStartDateLocal(monday);
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const globalWeek = toGlobalWeek(activePhase, activeWeekInPhase);
   const isTrainingDay = (day: number) =>
@@ -247,6 +273,35 @@ export function MultiPhasePlannerClient({
           <p className="mt-0.5 text-sm text-muted-foreground">
             8 недель · 4 фазы · Российский рынок
           </p>
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
+            <span>Начало плана:</span>
+            {editingStartDate ? (
+              <input
+                type="date"
+                autoFocus
+                defaultValue={planStartDate ?? getThisMonday()}
+                className="px-1.5 py-0.5 rounded-md border border-parchment-200 bg-white text-bark-300 text-xs focus:outline-none focus:ring-1 focus:ring-bark-100"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) return;
+                  setPlanStartDate(val).then(({ success }) => {
+                    if (success) setPlanStartDateLocal(val);
+                  });
+                  setEditingStartDate(false);
+                }}
+                onBlur={() => setEditingStartDate(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setEditingStartDate(true)}
+                className="text-bark-200 hover:text-bark-300 underline underline-offset-2 transition-colors"
+              >
+                {planStartDate
+                  ? new Date(planStartDate + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+                  : "не задано"}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Weekly progress badge */}

@@ -24,6 +24,8 @@ interface RecipesClientProps {
   weeklyRecipes: RecipeSummary[];
   initialSavedRecipeIds: string[];
   savedRecipes: SavedRecipeRow[];
+  isCatalogSource?: boolean;
+  catalogWeekLabel?: string;
 }
 
 const ALL_TAGS = [
@@ -39,6 +41,8 @@ export function RecipesClient({
   weeklyRecipes,
   initialSavedRecipeIds,
   savedRecipes: initialSaved,
+  isCatalogSource = false,
+  catalogWeekLabel,
 }: RecipesClientProps) {
   const [tab, setTab] = useState<"week" | "saved">("week");
   const [savedIds, setSavedIds] = useState(new Set(initialSavedRecipeIds));
@@ -172,13 +176,21 @@ export function RecipesClient({
             <p className="mt-1 text-sm text-muted-foreground">Попробуйте другой запрос или фильтр.</p>
           </div>
         ) : (
-          <RecipeGrid
-            recipes={filteredWeekly}
-            savedIds={savedIds}
-            onOpen={openRecipe}
-            onSaveToggle={handleSaveToggle}
-            isPending={isPending}
-          />
+          <>
+            {isCatalogSource && catalogWeekLabel && (
+              <p className="mb-4 text-xs text-stone-400">
+                Показаны блюда каталога — <span className="font-medium text-bark-200">{catalogWeekLabel}</span>
+              </p>
+            )}
+            <RecipeGrid
+              recipes={filteredWeekly}
+              savedIds={savedIds}
+              onOpen={isCatalogSource ? () => {} : openRecipe}
+              onSaveToggle={handleSaveToggle}
+              isPending={isPending}
+              hideSaveButton={isCatalogSource}
+            />
+          </>
         )
       )}
 
@@ -242,6 +254,7 @@ interface RecipeGridProps {
   onSaveToggle: (recipeId: string, save: boolean) => void;
   isPending: boolean;
   showUnsaveButton?: boolean;
+  hideSaveButton?: boolean;
 }
 
 function RecipeGrid({
@@ -251,6 +264,7 @@ function RecipeGrid({
   onSaveToggle,
   isPending,
   showUnsaveButton = false,
+  hideSaveButton = false,
 }: RecipeGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -259,9 +273,9 @@ function RecipeGrid({
         return (
           <div
             key={recipe.id}
-            className="group relative rounded-2xl border border-parchment-200 bg-parchment-50 overflow-hidden
-              hover:border-parchment-300 hover:shadow-warm-md transition-all cursor-pointer"
-            onClick={() => onOpen(recipe)}
+            className={`group relative rounded-2xl border border-parchment-200 bg-parchment-50 overflow-hidden
+              hover:border-parchment-300 hover:shadow-warm-md transition-all ${hideSaveButton ? "" : "cursor-pointer"}`}
+            onClick={() => !hideSaveButton && onOpen(recipe)}
           >
             <div className="p-4">
               {recipe.dietary_tags?.length > 0 && (
@@ -313,31 +327,33 @@ function RecipeGrid({
               )}
             </div>
 
-            {/* Save / unsave button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onSaveToggle(recipe.id, !isSaved);
-              }}
-              disabled={isPending}
-              title={isSaved ? "Убрать из избранного" : "В избранное"}
-              className={`absolute top-3 right-3 p-1.5 rounded-lg transition-all
-                ${
-                  showUnsaveButton
-                    ? "opacity-100 bg-parchment-100 text-stone-300 hover:bg-destructive/10 hover:text-destructive"
-                    : isSaved
-                      ? "opacity-100 bg-sage-50 text-sage-400 border border-sage-200"
-                      : "opacity-0 group-hover:opacity-100 bg-parchment-100 text-stone-300 hover:bg-sage-50 hover:text-sage-400"
-                }`}
-            >
-              {showUnsaveButton ? (
-                <BookmarkX className="h-3.5 w-3.5" />
-              ) : isSaved ? (
-                <BookmarkCheck className="h-3.5 w-3.5" />
-              ) : (
-                <Bookmark className="h-3.5 w-3.5" />
-              )}
-            </button>
+            {/* Save / unsave button — hidden for catalog-source meals */}
+            {!hideSaveButton && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveToggle(recipe.id, !isSaved);
+                }}
+                disabled={isPending}
+                title={isSaved ? "Убрать из избранного" : "В избранное"}
+                className={`absolute top-3 right-3 p-1.5 rounded-lg transition-all
+                  ${
+                    showUnsaveButton
+                      ? "opacity-100 bg-parchment-100 text-stone-300 hover:bg-destructive/10 hover:text-destructive"
+                      : isSaved
+                        ? "opacity-100 bg-sage-50 text-sage-400 border border-sage-200"
+                        : "opacity-0 group-hover:opacity-100 bg-parchment-100 text-stone-300 hover:bg-sage-50 hover:text-sage-400"
+                  }`}
+              >
+                {showUnsaveButton ? (
+                  <BookmarkX className="h-3.5 w-3.5" />
+                ) : isSaved ? (
+                  <BookmarkCheck className="h-3.5 w-3.5" />
+                ) : (
+                  <Bookmark className="h-3.5 w-3.5" />
+                )}
+              </button>
+            )}
           </div>
         );
       })}
