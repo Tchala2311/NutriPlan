@@ -15,6 +15,7 @@ export type UserSettings = {
   units: "metric" | "imperial";
   language: "ru" | "en";
   notification_prefs: NotificationPrefs;
+  training_days: number[]; // catalog day indices: 0=Mon … 6=Sun
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -25,6 +26,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     water_reminder_interval_min: null,
     ai_suggestion_timing: "off",
   },
+  training_days: [0, 2, 4, 5], // Mon, Wed, Fri, Sat
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
@@ -36,7 +38,7 @@ export async function getUserSettings(): Promise<UserSettings> {
 
   const { data } = await supabase
     .from("user_settings")
-    .select("units, language, notification_prefs")
+    .select("units, language, notification_prefs, training_days")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -49,6 +51,9 @@ export async function getUserSettings(): Promise<UserSettings> {
       ...DEFAULT_SETTINGS.notification_prefs,
       ...(data.notification_prefs as Partial<NotificationPrefs>),
     },
+    training_days: Array.isArray(data.training_days) && data.training_days.length > 0
+      ? (data.training_days as number[])
+      : DEFAULT_SETTINGS.training_days,
   };
 }
 
@@ -61,6 +66,7 @@ export async function saveSettings(formData: FormData) {
 
   const mealTime = (formData.get("meal_reminder_time") as string) || null;
   const waterInterval = formData.get("water_reminder_interval_min");
+  const trainingDaysRaw = formData.getAll("training_days").map(Number);
 
   const settings = {
     user_id: user.id,
@@ -72,6 +78,7 @@ export async function saveSettings(formData: FormData) {
       ai_suggestion_timing:
         (formData.get("ai_suggestion_timing") as string) || "off",
     },
+    training_days: trainingDaysRaw.length > 0 ? trainingDaysRaw : [0, 2, 4, 5],
   };
 
   const { error } = await supabase

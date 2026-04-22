@@ -9,6 +9,7 @@ import {
   type UserPlanConfig,
   type UserGoalContext,
 } from "@/components/planner/MultiPhasePlannerClient";
+import { getUserSettings } from "@/app/dashboard/settings/actions";
 
 export const metadata: Metadata = { title: "Планировщик питания — NutriPlan" };
 
@@ -36,6 +37,9 @@ export default async function MealPlannerPage() {
   if (!user) {
     return null;
   }
+
+  const userSettings = await getUserSettings();
+  const trainingDays = userSettings.training_days;
 
   // Load week 1 (Phase 1, Week 1) as initial data
   const [mealsResult, completionsResult, shoppingResult, configResult, haResult] = await Promise.all([
@@ -93,6 +97,7 @@ export default async function MealPlannerPage() {
       initialConfig={initialConfig}
       initialShopping={initialShopping}
       goalContext={goalContext}
+      trainingDays={trainingDays}
     />
   );
 }

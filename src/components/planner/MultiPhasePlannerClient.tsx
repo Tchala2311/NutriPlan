@@ -60,6 +60,7 @@ interface MultiPhasePlannerClientProps {
   initialConfig: UserPlanConfig | null;
   initialShopping: ShoppingItem[];
   goalContext?: UserGoalContext;
+  trainingDays?: number[]; // catalog indices 0=Mon…6=Sun; falls back to DEFAULT_TRAINING_DAYS
 }
 
 type ViewMode = "schedule" | "list" | "shopping";
@@ -103,7 +104,12 @@ export function MultiPhasePlannerClient({
   initialConfig,
   initialShopping,
   goalContext,
+  trainingDays,
 }: MultiPhasePlannerClientProps) {
+  const trainingDaysSet = useMemo(
+    () => trainingDays ? new Set(trainingDays) : undefined,
+    [trainingDays]
+  );
   const [activePhase, setActivePhase] = useState<1 | 2 | 3 | 4>(1);
   const [activeWeekInPhase, setActiveWeekInPhase] = useState<1 | 2>(1);
   const [viewMode, setViewMode] = useState<ViewMode>("schedule");
@@ -338,6 +344,7 @@ export function MultiPhasePlannerClient({
           phase={phase}
           config={initialConfig}
           goalContext={goalContext}
+          trainingDaysSet={trainingDaysSet}
           onToggleCompletion={toggleCompletion}
         />
       ) : viewMode === "list" ? (
@@ -345,6 +352,7 @@ export function MultiPhasePlannerClient({
           meals={meals}
           completions={completions}
           batchMealNames={batchMealNames}
+          trainingDaysSet={trainingDaysSet}
           onToggleCompletion={toggleCompletion}
         />
       ) : (
@@ -439,10 +447,11 @@ interface ScheduleViewProps {
   phase: Phase;
   config: UserPlanConfig | null;
   goalContext?: UserGoalContext;
+  trainingDaysSet?: Set<number>;
   onToggleCompletion: (day: number, meal_type: string) => void;
 }
 
-function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, config, goalContext, onToggleCompletion }: ScheduleViewProps) {
+function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, config, goalContext, trainingDaysSet, onToggleCompletion }: ScheduleViewProps) {
   // Group by day
   const byDay = useMemo(() => {
     const map: Record<number, Record<string, CatalogMeal>> = {};
@@ -462,7 +471,7 @@ function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, co
           {/* Day headers */}
           <div className="grid grid-cols-7 gap-2 mb-3">
             {days.map((day) => {
-              const isTraining = isCatalogTrainingDay(day);
+              const isTraining = isCatalogTrainingDay(day, trainingDaysSet);
               return (
                 <div key={day} className="text-center">
                   <div className="py-1.5 rounded-lg text-stone-400">
@@ -529,7 +538,7 @@ function ScheduleView({ meals, completions, batchMealNames, dayTotals, phase, co
           <div className="grid grid-cols-7 gap-2">
             {days.map((day) => {
               const totals = dayTotals[day] ?? { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
-              const isTraining = isCatalogTrainingDay(day);
+              const isTraining = isCatalogTrainingDay(day, trainingDaysSet);
               const goalCalTarget = getPhaseCalorieTarget(
                 goalContext?.primaryGoal ?? "general_wellness",
                 phase.number
@@ -646,10 +655,11 @@ interface ListViewProps {
   meals: CatalogMeal[];
   completions: Set<string>;
   batchMealNames: Set<string>;
+  trainingDaysSet?: Set<number>;
   onToggleCompletion: (day: number, meal_type: string) => void;
 }
 
-function ListView({ meals, completions, batchMealNames, onToggleCompletion }: ListViewProps) {
+function ListView({ meals, completions, batchMealNames, trainingDaysSet, onToggleCompletion }: ListViewProps) {
   const sorted = useMemo(
     () => [...meals].sort((a, b) => a.day - b.day || MEAL_TYPES.indexOf(a.meal_type as MealType) - MEAL_TYPES.indexOf(b.meal_type as MealType)),
     [meals]
@@ -670,7 +680,7 @@ function ListView({ meals, completions, batchMealNames, onToggleCompletion }: Li
         const isDone = completions.has(key);
         const isBatch = batchMealNames.has(meal.name);
         const mealType = meal.meal_type as MealType;
-        const isTraining = isCatalogTrainingDay(meal.day);
+        const isTraining = isCatalogTrainingDay(meal.day, trainingDaysSet);
 
         return (
           <div

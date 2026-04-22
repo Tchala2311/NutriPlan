@@ -127,9 +127,11 @@ export function scaleCalories(
  */
 export const DEFAULT_TRAINING_DAYS = new Set([0, 2, 4, 5]); // Mon, Wed, Fri, Sat
 
-/** Catalog day index (0=Mon) → is training day. */
-export function isCatalogTrainingDay(day: number): boolean {
-  return DEFAULT_TRAINING_DAYS.has(day);
+/** Catalog day index (0=Mon) → is training day.
+ *  Pass a user-specific set to override the default schedule.
+ */
+export function isCatalogTrainingDay(day: number, userDays?: Set<number>): boolean {
+  return (userDays ?? DEFAULT_TRAINING_DAYS).has(day);
 }
 
 export type DayType = "training" | "rest";
