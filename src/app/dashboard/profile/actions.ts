@@ -227,16 +227,25 @@ export async function saveUserGoals(formData: FormData) {
     fat_target_g:         macros?.fat_target_g         ?? Number(formData.get("fat_target_g") ?? 65),
   };
 
-  // Upsert: try update first, then insert if no rows affected
-  const { error: updateError, count } = await supabase
+  // Upsert: check if row exists, then update or insert
+  const { data: existing, error: checkError } = await supabase
     .from("user_goals")
-    .update(goals)
-    .eq("user_id", user.id);
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (updateError) throw new Error(updateError.message);
+  if (checkError) throw new Error(checkError.message);
 
-  // If no rows updated, insert new row
-  if (!count) {
+  if (existing) {
+    // Row exists, update it
+    const { error: updateError } = await supabase
+      .from("user_goals")
+      .update(goals)
+      .eq("id", existing.id);
+
+    if (updateError) throw new Error(updateError.message);
+  } else {
+    // Row doesn't exist, insert new row
     const { error: insertError } = await supabase
       .from("user_goals")
       .insert([goals]);
