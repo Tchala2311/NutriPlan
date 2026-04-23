@@ -111,6 +111,28 @@ function completionKey(day: number, meal_type: string): string {
   return `${day}-${meal_type}`;
 }
 
+/** Calculate calendar date for a meal given its global week and day offset (0-6). */
+function getMealDate(globalWeek: number, dayInWeek: number, planStartDate: string | null): string | null {
+  if (!planStartDate) return null;
+  const startDate = new Date(planStartDate + "T00:00:00");
+  const startDay = startDate.getDay();
+  // Adjust startDate to the Monday of that week
+  const diff = startDay === 0 ? -6 : 1 - startDay;
+  startDate.setDate(startDate.getDate() + diff);
+  // Add weeks and days
+  startDate.setDate(startDate.getDate() + (globalWeek - 1) * 7 + dayInWeek);
+  return startDate.toISOString().split("T")[0];
+}
+
+/** Filter meals that are before the plan start date. */
+function filterMealsBeforeStart(meals: CatalogMeal[], globalWeek: number, planStartDate: string | null): CatalogMeal[] {
+  if (!planStartDate) return meals;
+  return meals.filter((meal) => {
+    const mealDate = getMealDate(globalWeek, meal.day, planStartDate);
+    return mealDate && mealDate >= planStartDate;
+  });
+}
+
 // ── Moscow shops ─────────────────────────────────────────────────────────────
 
 const MOSCOW_SHOPS = [
@@ -170,7 +192,8 @@ export function MultiPhasePlannerClient({
   const isTrainingDay = (day: number) =>
     trainingDays ? trainingDays.includes(day) : isCatalogTrainingDay(day);
   const phase = PHASES[activePhase - 1];
-  const meals = mealsCache[globalWeek] ?? [];
+  const rawMeals = mealsCache[globalWeek] ?? [];
+  const meals = filterMealsBeforeStart(rawMeals, globalWeek, planStartDate);
   const completions = completionsCache[globalWeek] ?? new Set<string>();
   const shopping = shoppingCache[globalWeek] ?? [];
 

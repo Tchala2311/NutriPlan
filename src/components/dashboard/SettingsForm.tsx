@@ -129,6 +129,43 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
           </div>
         </Section>
 
+        {/* ── Training Days ── */}
+        <Section title="Тренировочные дни">
+          <Field label="Дни тренировок в спортзале">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { day: 0, label: "Пн" },
+                { day: 1, label: "Вт" },
+                { day: 2, label: "Ср" },
+                { day: 3, label: "Чт" },
+                { day: 4, label: "Пт" },
+                { day: 5, label: "Сб" },
+                { day: 6, label: "Вс" },
+              ].map(({ day, label }) => (
+                <label key={day} className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name={`training_day_${day}`}
+                    value={String(day)}
+                    defaultChecked={initial.training_days.includes(day)}
+                    className="hidden peer"
+                  />
+                  <div
+                    className={cn(
+                      "flex-1 text-center py-2.5 rounded-lg border transition-colors font-medium text-sm",
+                      "peer-checked:border-bark-300 peer-checked:bg-bark-50 peer-checked:text-bark-300",
+                      "peer-unchecked:border-parchment-200 peer-unchecked:text-stone-400 hover:bg-parchment-200"
+                    )}
+                  >
+                    {label}
+                  </div>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Выберите дни, когда вы тренируетесь в спортзале</p>
+          </Field>
+        </Section>
+
         {/* Save button */}
         <div className="flex items-center gap-3">
           <button

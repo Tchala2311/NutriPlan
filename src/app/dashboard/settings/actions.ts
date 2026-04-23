@@ -64,15 +64,16 @@ export async function saveSettings(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  // Fetch current settings to preserve training_days (set in onboarding, not editable here)
-  const { data: currentSettings } = await supabase
-    .from("user_settings")
-    .select("training_days")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
   const mealTime = (formData.get("meal_reminder_time") as string) || null;
   const waterInterval = formData.get("water_reminder_interval_min");
+
+  // Extract training days from checkboxes
+  const trainingDays: number[] = [];
+  for (let i = 0; i < 7; i++) {
+    if (formData.has(`training_day_${i}`)) {
+      trainingDays.push(i);
+    }
+  }
 
   const settings = {
     user_id: user.id,
@@ -84,7 +85,7 @@ export async function saveSettings(formData: FormData) {
       ai_suggestion_timing:
         (formData.get("ai_suggestion_timing") as string) || "off",
     },
-    training_days: currentSettings?.training_days ?? [0, 2, 4, 5],
+    training_days: trainingDays.length > 0 ? trainingDays : [0, 2, 4, 5],
   };
 
   const { error } = await supabase
