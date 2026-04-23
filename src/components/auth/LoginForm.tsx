@@ -61,6 +61,7 @@ export function LoginForm() {
         <label htmlFor="email" className="text-sm font-medium text-foreground">
           Электронная почта
         </label>
+        <p className="text-xs text-muted-foreground">Используйте адрес электронной почты, а не имя пользователя</p>
         <input
           id="email"
           type="email"
