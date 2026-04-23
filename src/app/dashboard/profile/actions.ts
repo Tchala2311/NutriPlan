@@ -227,11 +227,22 @@ export async function saveUserGoals(formData: FormData) {
     fat_target_g:         macros?.fat_target_g         ?? Number(formData.get("fat_target_g") ?? 65),
   };
 
-  const { error } = await supabase
+  // Upsert: try update first, then insert if no rows affected
+  const { error: updateError, count } = await supabase
     .from("user_goals")
-    .upsert(goals, { onConflict: "user_id" });
+    .update(goals)
+    .eq("user_id", user.id);
 
-  if (error) throw new Error(error.message);
+  if (updateError) throw new Error(updateError.message);
+
+  // If no rows updated, insert new row
+  if (!count) {
+    const { error: insertError } = await supabase
+      .from("user_goals")
+      .insert([goals]);
+
+    if (insertError) throw new Error(insertError.message);
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");
