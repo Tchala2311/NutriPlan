@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getUserGoals } from "@/app/dashboard/profile/actions";
 import { NutritionLogClient } from "@/components/nutrition/NutritionLogClient";
 
@@ -15,7 +15,7 @@ export default async function NutritionLogPage({
   const date = params.date ?? today;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   const [{ data: entries }, goals, { data: assessment }] = await Promise.all([
     supabase

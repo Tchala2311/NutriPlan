@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getUserGoals } from "./profile/actions";
 import { WaterWidget } from "@/components/dashboard/WaterWidget";
 
 export const metadata: Metadata = { title: "Главная — NutriPlan" };
 
 export default async function DashboardPage() {
+  const { data: { user } } = await getUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const firstName =
     (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??

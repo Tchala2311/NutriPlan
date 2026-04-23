@@ -2,15 +2,12 @@ import type { Metadata } from "next";
 import { getUserSettings } from "./actions";
 import { getUserSubscription } from "@/lib/subscription";
 import { SettingsForm } from "@/components/dashboard/SettingsForm";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Настройки — NutriPlan" };
 
 export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   const [settings, sub] = await Promise.all([
     getUserSettings(),

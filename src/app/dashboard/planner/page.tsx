@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { isPremium } from "@/lib/subscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import {
   MultiPhasePlannerClient,
   type CatalogMeal,
@@ -32,7 +32,7 @@ export default async function MealPlannerPage() {
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   if (!user) {
     return null;

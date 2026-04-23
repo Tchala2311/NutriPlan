@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { isPremium } from "@/lib/subscription";
 import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getMealPlan } from "@/app/dashboard/planner/actions";
 import type { RecipeSummary } from "@/app/dashboard/planner/actions";
 import { RecipesClient } from "@/components/planner/RecipesClient";
@@ -36,10 +36,8 @@ export default async function RecipesPage() {
     );
   }
 
+  const { data: { user } } = await getUser();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const [mealPlanData, savedResult] = await Promise.all([
     getMealPlan(),

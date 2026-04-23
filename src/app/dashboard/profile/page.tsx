@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 import { GoalSettingsForm } from "@/components/dashboard/GoalSettingsForm";
 import { TrendsSection } from "@/components/dashboard/TrendsSection";
 import { getUserGoals, getTrendsData } from "./actions";
@@ -10,10 +10,7 @@ import { UpgradeButton } from "@/components/subscription/UpgradeButton";
 export const metadata: Metadata = { title: "Профиль и цели — NutriPlan" };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
 
   const email = user?.email ?? "";
   const fullName = user?.user_metadata?.full_name as string | undefined;

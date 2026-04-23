@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
-export async function createClient() {
+// cache() deduplicates calls within a single React render pass (one HTTP request).
+// All server components that call createClient() in the same request share one instance.
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -25,4 +28,11 @@ export async function createClient() {
       },
     }
   );
-}
+});
+
+// Cached getUser — one network call to Supabase auth per request, regardless of
+// how many server components call this.
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  return supabase.auth.getUser();
+});

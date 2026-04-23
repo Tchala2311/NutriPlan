@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
 
 export type UserGoals = {
@@ -29,7 +29,7 @@ const GOAL_DEFAULTS: Record<string, Omit<UserGoals, "primary_goal">> = {
 
 export async function getUserGoals(): Promise<UserGoals> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getUser();
   if (!user) throw new Error("Unauthorized");
 
   // 1. Try user_goals table
