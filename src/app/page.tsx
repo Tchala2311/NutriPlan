@@ -58,13 +58,21 @@ export default function LandingPage() {
             <span className="text-2xl">🥗</span>
             <span className="font-display text-xl font-semibold text-bark-300">NutriPlan</span>
           </div>
-          <Link
-            href="/onboarding"
-            className="inline-flex items-center gap-1.5 bg-bark-300 hover:bg-bark-400 text-cream-100 text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150"
-          >
-            Попробовать бесплатно
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-bark-300 hover:text-bark-400 transition-colors"
+            >
+              Вход
+            </Link>
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center gap-1.5 bg-bark-300 hover:bg-bark-400 text-cream-100 text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-150"
+            >
+              Попробовать бесплатно
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </header>
 
