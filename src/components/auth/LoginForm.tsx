@@ -6,11 +6,28 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
+function translateAuthError(message: string): string {
+  if (message.includes("Invalid login credentials") || message.includes("invalid_credentials"))
+    return "Неверный email или пароль.";
+  if (message.includes("Email not confirmed"))
+    return "__email_not_confirmed__";
+  if (message.includes("Too many requests"))
+    return "Слишком много попыток. Подождите немного и попробуйте снова.";
+  if (message.includes("User not found"))
+    return "Аккаунт с таким email не найден. Зарегистрируйтесь.";
+  if (message.includes("over_email_send_rate_limit"))
+    return "Слишком много писем отправлено. Попробуйте позже.";
+  return message;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const telegramRef = useRef<HTMLDivElement>(null);
 
@@ -35,12 +52,20 @@ export function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setEmailNotConfirmed(false);
+    setResendSuccess(false);
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setError(error.message);
+      const translated = translateAuthError(error.message);
+      if (translated === "__email_not_confirmed__") {
+        setEmailNotConfirmed(true);
+        setError(null);
+      } else {
+        setError(translated);
+      }
       setLoading(false);
       return;
     }
@@ -49,11 +74,38 @@ export function LoginForm() {
     router.refresh();
   }
 
+  async function handleResendConfirmation() {
+    setResendLoading(true);
+    const supabase = createClient();
+    await supabase.auth.resend({ type: "signup", email });
+    setResendLoading(false);
+    setResendSuccess(true);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {emailNotConfirmed && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 space-y-2">
+          <p className="font-medium">Email не подтверждён</p>
+          <p>Проверьте почту и перейдите по ссылке из письма. Если письмо не пришло — отправим снова.</p>
+          {resendSuccess ? (
+            <p className="text-green-700 font-medium">Письмо отправлено! Проверьте почту.</p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendConfirmation}
+              disabled={resendLoading}
+              className="underline underline-offset-2 font-medium disabled:opacity-50"
+            >
+              {resendLoading ? "Отправляем…" : "Отправить письмо повторно"}
+            </button>
+          )}
         </div>
       )}
 
