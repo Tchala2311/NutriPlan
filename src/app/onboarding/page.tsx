@@ -5,7 +5,11 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 export const metadata: Metadata = { title: "Настройте план — NutriPlan" };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,6 +26,9 @@ export default async function OnboardingPage() {
     if (assessment) redirect("/dashboard");
   }
 
+  const params = await searchParams;
+  const fromDashboard = params.from === "dashboard";
+
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col items-center justify-center px-4 py-12">
       {/* Brand header */}
@@ -34,6 +41,14 @@ export default async function OnboardingPage() {
           Расскажите о целях — составим персональный план за 30 секунд.
         </p>
       </div>
+
+      {fromDashboard && (
+        <div className="w-full max-w-lg mb-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <p className="text-sm text-blue-900">
+            ✓ Вы вошли! Завершите настройку профиля, чтобы перейти на панель управления.
+          </p>
+        </div>
+      )}
 
       <div className="w-full max-w-lg rounded-2xl border border-parchment-200 bg-parchment-100 p-8 shadow-sm">
         {/* isAuthenticated=true → submit saves directly to DB */}

@@ -24,7 +24,7 @@ export default async function DashboardLayout({
     .maybeSingle();
 
   if (!assessment) {
-    redirect("/onboarding");
+    redirect("/onboarding?from=dashboard");
   }
 
   const email = user.email ?? "";
