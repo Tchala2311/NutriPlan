@@ -295,7 +295,7 @@ export default function LandingPage() {
           </p>
           <div className="flex gap-5 text-xs text-stone-400">
             <Link href="/pricing" className="hover:text-bark-300 transition-colors">Тарифы</Link>
-            <Link href="/auth/login" className="hover:text-bark-300 transition-colors">Войти</Link>
+            <Link href="/login" className="hover:text-bark-300 transition-colors">Войти</Link>
             <Link href="/onboarding" className="hover:text-bark-300 transition-colors">Начать</Link>
           </div>
         </div>
