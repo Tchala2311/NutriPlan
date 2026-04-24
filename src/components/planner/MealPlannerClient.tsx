@@ -6,7 +6,7 @@ import {
   CheckCircle2, Circle, ShoppingCart, LayoutGrid, List, Dumbbell, Moon,
 } from "lucide-react";
 import type { MealPlan, MealSlot, RecipeSummary, MealCompletion } from "@/app/dashboard/planner/actions";
-import { togglePinSlot, toggleMealCompletion } from "@/app/dashboard/planner/actions";
+import { togglePinSlot, toggleMealCompletion, setMealBatchSpan } from "@/app/dashboard/planner/actions";
 import { RecipeDetailModal } from "./RecipeDetailModal";
 import { ShoppingListPanel } from "./ShoppingListPanel";
 
@@ -113,6 +113,8 @@ export function MealPlannerClient({
   const [modalRecipe, setModalRecipe] = useState<RecipeSummary | null>(null);
   const [modalMealType, setModalMealType] = useState<string>("breakfast");
   const [modalDate, setModalDate] = useState<string>("");
+  const [modalPlanId, setModalPlanId] = useState<string>("");
+  const [modalCurrentSpan, setModalCurrentSpan] = useState<number>(1);
 
   const currentWeekStart = offsetWeek(planGroupStart, activeWeekTab - 1);
   const plan = planCache[currentWeekStart] ?? null;
@@ -231,8 +233,13 @@ export function MealPlannerClient({
     setModalRecipe(recipe);
     setModalMealType(mealType);
     setModalDate(date);
+    if (plan) {
+      setModalPlanId(plan.id);
+      const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+      setModalCurrentSpan(slot?.days_span ?? 1);
+    }
     setModalOpen(true);
-  }, []);
+  }, [plan]);
 
   function handleSaveToggle(recipeId: string, saved: boolean) {
     setSavedIds((prev) => {
@@ -243,13 +250,37 @@ export function MealPlannerClient({
   }
 
   // Collect all recipes for the current week (for Recipes view + Shopping)
+  // For batch meals, only include on the first day of the span
   const weekRecipes: Array<{ recipe: RecipeSummary; mealType: MealType; date: string }> = [];
   if (plan) {
+    const batchMealSeen = new Set<string>(); // track (date-mealType) of batch meals already added
     for (const date of dates) {
       for (const mealType of MEAL_TYPES) {
+        const slotKey = `${date}-${mealType}`;
+        // Skip if this is a continuation of a batch meal from an earlier date
+        let isContinuation = false;
+        for (let dayOffset = 1; dayOffset < 7; dayOffset++) {
+          const prevDateIdx = dates.indexOf(date) - dayOffset;
+          if (prevDateIdx >= 0) {
+            const prevDate = dates[prevDateIdx];
+            const prevSlot = plan.slots[prevDate]?.[mealType] as MealSlot | undefined;
+            if (prevSlot) {
+              const prevSpan = prevSlot.days_span ?? 1;
+              if (dayOffset < prevSpan && prevSlot.recipe_id) {
+                isContinuation = true;
+                break;
+              }
+            }
+          }
+        }
+        if (isContinuation) continue;
+
         const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
         const recipe = slot?.recipe_id ? recipesCache[slot.recipe_id] : undefined;
-        if (recipe) weekRecipes.push({ recipe, mealType, date });
+        if (recipe) {
+          weekRecipes.push({ recipe, mealType, date });
+          batchMealSeen.add(slotKey);
+        }
       }
     }
   }
@@ -406,9 +437,16 @@ export function MealPlannerClient({
         date={modalDate}
         isSaved={modalRecipe ? savedIds.has(modalRecipe.id) : false}
         open={modalOpen}
+        planId={modalPlanId}
+        currentDaysSpan={modalCurrentSpan}
         onOpenChange={setModalOpen}
         onSaveToggle={handleSaveToggle}
         onLogged={() => {}}
+        onDaysSpanChange={(days) => {
+          startPinTransition(async () => {
+            await setMealBatchSpan(modalPlanId, modalDate, modalMealType, days);
+          });
+        }}
       />
     </div>
   );
@@ -434,6 +472,25 @@ function ScheduleView({
   plan, dates, recipes, today, completions, swappingSlot, completingSlot,
   onOpenRecipe, onTogglePin, onSwapSlot, onToggleCompletion,
 }: ScheduleViewProps) {
+  // Build a set of (date, mealType) pairs that are covered by batch meals
+  const batchCovered = new Set<string>();
+  for (const date of dates) {
+    for (const mealType of MEAL_TYPES) {
+      const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+      if (slot) {
+        const span = slot.days_span ?? 1;
+        const dateIdx = dates.indexOf(date);
+        // Mark future dates in this span as "covered" by this batch meal
+        for (let i = 1; i < span; i++) {
+          const futureDate = dates[dateIdx + i];
+          if (futureDate) {
+            batchCovered.add(`${futureDate}-${mealType}`);
+          }
+        }
+      }
+    }
+  }
+
   return (
     <>
       <div className="overflow-x-auto -mx-4 px-4 pb-4">
@@ -476,9 +533,17 @@ function ScheduleView({
               </p>
               <div className="grid grid-cols-7 gap-2">
                 {dates.map((date) => {
+                  const slotKey = `${date}-${mealType}`;
+                  const isCoveredByBatch = batchCovered.has(slotKey);
+
+                  if (isCoveredByBatch) {
+                    // This slot is covered by a batch meal from an earlier date
+                    return null;
+                  }
+
                   const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
                   const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
-                  const slotKey = `${date}-${mealType}`;
+                  const span = slot?.days_span ?? 1;
                   const isSwapping = swappingSlot === slotKey;
                   const isDone = completions.has(slotKey);
                   const isCompleting = completingSlot === slotKey;
@@ -499,8 +564,16 @@ function ScheduleView({
                       key={date}
                       className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-2 h-28 flex flex-col group cursor-pointer
                         hover:shadow-warm-sm transition-all ${isDone ? "opacity-70" : ""}`}
+                      style={{ gridColumn: `span ${span}` }}
                       onClick={() => onOpenRecipe(recipe, mealType, date)}
                     >
+                      {/* Batch span indicator */}
+                      {span > 1 && (
+                        <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-bark-300/20 text-bark-300">
+                          {span}д
+                        </div>
+                      )}
+
                       {/* Pin indicator */}
                       {slot.pinned && (
                         <Lock className="absolute top-1.5 right-1.5 h-2.5 w-2.5 text-amber-400" />
@@ -584,16 +657,44 @@ function ScheduleView({
           <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">Итого за день</p>
           <div className="grid grid-cols-7 gap-2">
             {dates.map((date) => {
-              const daySlots = plan.slots[date] ?? {};
               let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
+              const dateIdx = dates.indexOf(date);
+
               for (const mealType of MEAL_TYPES) {
-                const slot = daySlots[mealType] as MealSlot | undefined;
-                const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
-                totalKcal += recipe?.calories_per_serving ?? 0;
-                totalP += recipe?.protein_per_serving ?? 0;
-                totalC += recipe?.carbs_per_serving ?? 0;
-                totalF += recipe?.fat_per_serving ?? 0;
+                // Check if this date is covered by a batch meal from an earlier date
+                let isCoveredByBatch = false;
+                for (let dayOffset = 1; dayOffset < 7; dayOffset++) {
+                  const prevDateIdx = dateIdx - dayOffset;
+                  if (prevDateIdx >= 0) {
+                    const prevDate = dates[prevDateIdx];
+                    const prevSlot = plan.slots[prevDate]?.[mealType] as MealSlot | undefined;
+                    if (prevSlot) {
+                      const prevSpan = prevSlot.days_span ?? 1;
+                      if (dayOffset < prevSpan && prevSlot.recipe_id) {
+                        // This meal is covered by a batch meal from prevDate
+                        const recipe = prevSlot.recipe_id ? recipes[prevSlot.recipe_id] : undefined;
+                        totalKcal += recipe?.calories_per_serving ?? 0;
+                        totalP += recipe?.protein_per_serving ?? 0;
+                        totalC += recipe?.carbs_per_serving ?? 0;
+                        totalF += recipe?.fat_per_serving ?? 0;
+                        isCoveredByBatch = true;
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                // If not covered by batch, check this date's slot
+                if (!isCoveredByBatch) {
+                  const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+                  const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
+                  totalKcal += recipe?.calories_per_serving ?? 0;
+                  totalP += recipe?.protein_per_serving ?? 0;
+                  totalC += recipe?.carbs_per_serving ?? 0;
+                  totalF += recipe?.fat_per_serving ?? 0;
+                }
               }
+
               return (
                 <div key={date} className="rounded-xl bg-parchment-100 p-2 text-center">
                   <p className="text-sm font-semibold text-bark-300">{Math.round(totalKcal)}</p>

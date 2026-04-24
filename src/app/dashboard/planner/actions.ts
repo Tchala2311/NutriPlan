@@ -26,6 +26,7 @@ export interface RecipeSummary {
 export interface MealSlot {
   recipe_id: string;
   pinned: boolean;
+  days_span?: number; // Number of days this meal covers (default: 1)
 }
 
 export interface MealPlan {
@@ -176,6 +177,39 @@ export async function togglePinSlot(
   if (!slot) return { success: false };
 
   slots[date][mealType] = { ...slot, pinned: !slot.pinned };
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("meal_plans").update({ slots }).eq("id", planId);
+
+  revalidatePath("/dashboard/planner");
+  return { success: !error };
+}
+
+/** Set the days span for a batch meal. */
+export async function setMealBatchSpan(
+  planId: string,
+  date: string,
+  mealType: string,
+  daysSpan: number
+): Promise<{ success: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false };
+
+  const { data: plan } = await supabase
+    .from("meal_plans")
+    .select("slots")
+    .eq("id", planId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!plan) return { success: false };
+
+  const slots = plan.slots as Record<string, Record<string, MealSlot>>;
+  const slot = slots[date]?.[mealType];
+  if (!slot) return { success: false };
+
+  slots[date][mealType] = { ...slot, days_span: Math.max(1, Math.min(7, daysSpan)) };
 
   const admin = createAdminClient();
   const { error } = await admin.from("meal_plans").update({ slots }).eq("id", planId);

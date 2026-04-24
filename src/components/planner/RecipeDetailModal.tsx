@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Clock, Flame, Beef, Wheat, Droplets, Bookmark, BookmarkCheck, CheckCheck, X, Repeat2 } from "lucide-react";
 import type { RecipeSummary } from "@/app/dashboard/planner/actions";
@@ -12,9 +12,12 @@ interface RecipeDetailModalProps {
   date: string;
   isSaved: boolean;
   open: boolean;
+  planId?: string;
+  currentDaysSpan?: number;
   onOpenChange: (open: boolean) => void;
   onSaveToggle: (recipeId: string, saved: boolean) => void;
   onLogged: () => void;
+  onDaysSpanChange?: (days: number) => void;
 }
 
 const MEAL_LABEL: Record<string, string> = {
@@ -41,12 +44,20 @@ export function RecipeDetailModal({
   date,
   isSaved,
   open,
+  planId,
+  currentDaysSpan = 1,
   onOpenChange,
   onSaveToggle,
   onLogged,
+  onDaysSpanChange,
 }: RecipeDetailModalProps) {
   const [logged, setLogged] = useState(false);
+  const [daysSpan, setDaysSpan] = useState(currentDaysSpan);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setDaysSpan(currentDaysSpan);
+  }, [currentDaysSpan]);
 
   if (!recipe) return null;
 
@@ -198,6 +209,42 @@ export function RecipeDetailModal({
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Batch cooking span control */}
+          <div className="px-4 pt-3 pb-2 border-t border-parchment-200">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-bark-200 uppercase tracking-wide">
+                Блюдо на сколько дней?
+              </label>
+              <div className="flex items-center gap-2 bg-parchment-100 rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    const newSpan = Math.max(1, daysSpan - 1);
+                    setDaysSpan(newSpan);
+                    onDaysSpanChange?.(newSpan);
+                  }}
+                  disabled={daysSpan <= 1}
+                  className="px-2 py-1 rounded text-sm font-medium text-stone-500 disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="px-3 py-1 text-sm font-semibold text-bark-300 min-w-[2rem] text-center">
+                  {daysSpan}
+                </span>
+                <button
+                  onClick={() => {
+                    const newSpan = Math.min(7, daysSpan + 1);
+                    setDaysSpan(newSpan);
+                    onDaysSpanChange?.(newSpan);
+                  }}
+                  disabled={daysSpan >= 7}
+                  className="px-2 py-1 rounded text-sm font-medium text-stone-500 disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
 
