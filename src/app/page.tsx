@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Check, ChevronRight, Star, Zap, ShoppingCart, TrendingUp } from "lucide-react";
 import { LandingDemoClient as LandingDemo } from "@/components/landing/LandingDemoClient";
