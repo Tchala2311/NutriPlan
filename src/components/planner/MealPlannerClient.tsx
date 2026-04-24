@@ -526,128 +526,136 @@ function ScheduleView({
           </div>
 
           {/* Meal type rows */}
-          {MEAL_TYPES.map((mealType) => (
-            <div key={mealType} className="mb-3">
-              <p className={`text-2xs font-semibold uppercase tracking-wide mb-1.5 pl-1 ${MEAL_ACCENT[mealType]}`}>
-                {MEAL_LABEL[mealType]}
-              </p>
-              <div className="grid grid-cols-7 gap-2">
-                {dates.map((date) => {
-                  const slotKey = `${date}-${mealType}`;
-                  const isCoveredByBatch = batchCovered.has(slotKey);
+          {MEAL_TYPES.map((mealType) => {
+            // Build cells for this meal type, handling batch spans
+            const cells: React.ReactNode[] = [];
+            for (let i = 0; i < dates.length; i++) {
+              const date = dates[i];
+              const slotKey = `${date}-${mealType}`;
+              const isCoveredByBatch = batchCovered.has(slotKey);
 
-                  if (isCoveredByBatch) {
-                    // This slot is covered by a batch meal from an earlier date
-                    return null;
-                  }
+              if (isCoveredByBatch) {
+                // Skip this date—it's covered by a batch meal from earlier
+                continue;
+              }
 
-                  const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
-                  const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
-                  const span = slot?.days_span ?? 1;
-                  const isSwapping = swappingSlot === slotKey;
-                  const isDone = completions.has(slotKey);
-                  const isCompleting = completingSlot === slotKey;
+              const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+              const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
+              const span = slot?.days_span ?? 1;
+              const isSwapping = swappingSlot === slotKey;
+              const isDone = completions.has(slotKey);
+              const isCompleting = completingSlot === slotKey;
 
-                  if (!slot || !recipe) {
-                    return (
-                      <div
-                        key={date}
-                        className="rounded-xl border border-dashed border-parchment-200 bg-parchment-50 h-28 flex items-center justify-center"
-                      >
-                        <span className="text-2xs text-stone-300">—</span>
+              if (!slot || !recipe) {
+                cells.push(
+                  <div
+                    key={date}
+                    className="rounded-xl border border-dashed border-parchment-200 bg-parchment-50 h-28 flex items-center justify-center"
+                    style={{ gridColumn: `span ${span}` }}
+                  >
+                    <span className="text-2xs text-stone-300">—</span>
+                  </div>
+                );
+              } else {
+                cells.push(
+                  <div
+                    key={date}
+                    className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-2 h-28 flex flex-col group cursor-pointer
+                      hover:shadow-warm-sm transition-all ${isDone ? "opacity-70" : ""}`}
+                    style={{ gridColumn: `span ${span}` }}
+                    onClick={() => onOpenRecipe(recipe, mealType, date)}
+                  >
+                    {/* Batch span indicator */}
+                    {span > 1 && (
+                      <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-bark-300/20 text-bark-300">
+                        {span}д
                       </div>
-                    );
-                  }
+                    )}
 
-                  return (
-                    <div
-                      key={date}
-                      className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-2 h-28 flex flex-col group cursor-pointer
-                        hover:shadow-warm-sm transition-all ${isDone ? "opacity-70" : ""}`}
-                      style={{ gridColumn: `span ${span}` }}
-                      onClick={() => onOpenRecipe(recipe, mealType, date)}
+                    {/* Pin indicator */}
+                    {slot.pinned && (
+                      <Lock className="absolute top-1.5 right-1.5 h-2.5 w-2.5 text-amber-400" />
+                    )}
+
+                    {/* Completion checkmark */}
+                    <button
+                      className="absolute top-1.5 left-1.5 z-10"
+                      onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+                      disabled={isCompleting}
+                      title={isDone ? "Отметить как несъеденное" : "Отметить как съеденное"}
                     >
-                      {/* Batch span indicator */}
-                      {span > 1 && (
-                        <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-bark-300/20 text-bark-300">
-                          {span}д
-                        </div>
-                      )}
+                      {isCompleting
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin text-sage-400" />
+                        : isDone
+                          ? <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
+                          : <Circle className="h-3.5 w-3.5 text-parchment-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      }
+                    </button>
 
-                      {/* Pin indicator */}
-                      {slot.pinned && (
-                        <Lock className="absolute top-1.5 right-1.5 h-2.5 w-2.5 text-amber-400" />
-                      )}
+                    {/* Recipe title */}
+                    <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 ${isDone ? "line-through text-stone-400" : ""}`}>
+                      {recipe.title}
+                    </p>
 
-                      {/* Completion checkmark */}
-                      <button
-                        className="absolute top-1.5 left-1.5 z-10"
-                        onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
-                        disabled={isCompleting}
-                        title={isDone ? "Отметить как несъеденное" : "Отметить как съеденное"}
-                      >
-                        {isCompleting
-                          ? <Loader2 className="h-3.5 w-3.5 animate-spin text-sage-400" />
-                          : isDone
-                            ? <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
-                            : <Circle className="h-3.5 w-3.5 text-parchment-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        }
-                      </button>
-
-                      {/* Recipe title */}
-                      <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 ${isDone ? "line-through text-stone-400" : ""}`}>
-                        {recipe.title}
+                    {/* Macros */}
+                    <div className="mt-auto">
+                      <p className="text-2xs text-stone-400">
+                        {recipe.calories_per_serving != null ? `${Math.round(recipe.calories_per_serving)} ккал` : ""}
                       </p>
-
-                      {/* Macros */}
-                      <div className="mt-auto">
-                        <p className="text-2xs text-stone-400">
-                          {recipe.calories_per_serving != null ? `${Math.round(recipe.calories_per_serving)} ккал` : ""}
-                        </p>
-                        <p className="text-2xs text-stone-300">
-                          {recipe.protein_per_serving != null ? `Б ${Math.round(recipe.protein_per_serving)}г` : ""}
-                        </p>
-                      </div>
-
-                      {/* Hover actions */}
-                      <div
-                        className="absolute inset-0 rounded-xl bg-bark-400/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onTogglePin(date, mealType); }}
-                          title={slot.pinned ? "Открепить" : "Закрепить"}
-                          className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
-                        >
-                          {slot.pinned ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
-                        </button>
-                        {!slot.pinned && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onSwapSlot(date, mealType); }}
-                            disabled={isSwapping}
-                            title="Заменить блюдо"
-                            className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white disabled:opacity-50"
-                          >
-                            {isSwapping
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <RefreshCw className="h-3 w-3" />
-                            }
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
-                          title={completions.has(`${date}-${mealType}`) ? "Снять отметку" : "Отметить съеденным"}
-                          className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
-                        >
-                          <CheckCircle2 className="h-3 w-3" />
-                        </button>
-                      </div>
+                      <p className="text-2xs text-stone-300">
+                        {recipe.protein_per_serving != null ? `Б ${Math.round(recipe.protein_per_serving)}г` : ""}
+                      </p>
                     </div>
-                  );
-                })}
+
+                    {/* Hover actions */}
+                    <div
+                      className="absolute inset-0 rounded-xl bg-bark-400/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onTogglePin(date, mealType); }}
+                        title={slot.pinned ? "Открепить" : "Закрепить"}
+                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
+                      >
+                        {slot.pinned ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
+                      </button>
+                      {!slot.pinned && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onSwapSlot(date, mealType); }}
+                          disabled={isSwapping}
+                          title="Заменить блюдо"
+                          className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white disabled:opacity-50"
+                        >
+                          {isSwapping
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <RefreshCw className="h-3 w-3" />
+                          }
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+                        title={completions.has(`${date}-${mealType}`) ? "Снять отметку" : "Отметить съеденным"}
+                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+            }
+
+            return (
+              <div key={mealType} className="mb-3">
+                <p className={`text-2xs font-semibold uppercase tracking-wide mb-1.5 pl-1 ${MEAL_ACCENT[mealType]}`}>
+                  {MEAL_LABEL[mealType]}
+                </p>
+                <div className="grid grid-cols-7 gap-2">
+                  {cells}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
