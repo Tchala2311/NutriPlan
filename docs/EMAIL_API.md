@@ -1,8 +1,19 @@
 # Email API Documentation
 
-The NutriPlan application includes email sending capabilities via the Resend email service.
+The NutriPlan application includes email sending capabilities with dual modes:
+- **Development**: Mock email service (logs to console, no API key required)
+- **Production**: Resend service (real email delivery with API key)
 
-## Configuration
+## Quick Start (Development)
+
+No configuration needed. Emails are logged to console:
+
+```bash
+npm run dev
+# Email endpoints work immediately with mock service
+```
+
+## Production Configuration
 
 ### Prerequisites
 
@@ -11,18 +22,42 @@ The NutriPlan application includes email sending capabilities via the Resend ema
 
 ### Setup
 
-Add your Resend API key to `.env.local`:
+Add your Resend API key to `.env.local` or production environment:
 
 ```bash
 RESEND_API_KEY=re_your_api_key_here
 WORKFLOW_DOC_RECIPIENT=tsem7354@gmail.com
 ```
 
+Once configured, the email service automatically switches from mock to real Resend delivery.
+
+## Email Service Modes
+
+### Development Mode (Mock)
+- **Enabled**: When `RESEND_API_KEY` is not configured
+- **Behavior**: Logs emails to console, generates fake message IDs
+- **Use Case**: Local testing, CI/CD pipelines without external API access
+
+Console output example:
+```
+📧 [MOCK EMAIL]
+   From: noreply@nutriplan.app
+   To: user@example.com
+   Subject: Email Subject
+   HTML Length: 1234 chars
+   ID: mock_1234567890_abc123def45
+```
+
+### Production Mode (Resend)
+- **Enabled**: When `RESEND_API_KEY` is configured
+- **Behavior**: Sends real emails through Resend API
+- **Use Case**: Production deployments, real user communication
+
 ## API Endpoints
 
 ### POST `/api/email-send`
 
-Send a custom email using Resend.
+Send a custom email using the configured email service.
 
 **Request Body:**
 
@@ -42,17 +77,29 @@ Send a custom email using Resend.
 - `html` (required): HTML content of the email
 - `from` (optional): Sender email address (defaults to `noreply@nutriplan.app`)
 
-**Response:**
+**Response (Development Mode):**
 
 Success (200):
 ```json
 {
   "success": true,
-  "id": "message-id-123"
+  "id": "mock_1234567890_abc123def45",
+  "note": "Using mock email service (RESEND_API_KEY not configured)"
 }
 ```
 
-Error:
+**Response (Production Mode):**
+
+Success (200):
+```json
+{
+  "success": true,
+  "id": "message-id-from-resend-123"
+}
+```
+
+**Error Response:**
+
 ```json
 {
   "error": "Error message describing what went wrong"
@@ -89,14 +136,26 @@ Send the NutriPlan workflow documentation to an email address.
   - If not provided, uses `WORKFLOW_DOC_RECIPIENT` env variable
   - Defaults to `tsem7354@gmail.com`
 
-**Response:**
+**Response (Development Mode):**
 
 Success (200):
 ```json
 {
   "success": true,
-  "id": "message-id-123",
-  "message": "Workflow documentation sent to recipient@example.com"
+  "id": "mock_1234567890_abc123def45",
+  "message": "Workflow documentation sent to tsem7354@gmail.com",
+  "note": "Using mock email service (RESEND_API_KEY not configured). In production, configure RESEND_API_KEY to send real emails."
+}
+```
+
+**Response (Production Mode):**
+
+Success (200):
+```json
+{
+  "success": true,
+  "id": "message-id-from-resend-123",
+  "message": "Workflow documentation sent to tsem7354@gmail.com"
 }
 ```
 
@@ -110,6 +169,24 @@ curl -X POST http://localhost:3001/api/email-send/workflow-doc \
 
 ## Sending Workflow Documentation
 
+### Development Mode (Mock)
+
+No configuration needed. Emails are logged to console:
+
+```bash
+npm run dev
+# In another terminal:
+node scripts/send-workflow-doc.js
+
+# Output in dev server terminal:
+# 📧 [MOCK EMAIL]
+#    From: noreply@nutriplan.app
+#    To: tsem7354@gmail.com
+#    Subject: NutriPlan Development Workflow Documentation
+#    HTML Length: 12345 chars
+#    ID: mock_1234567890_abc123def45
+```
+
 ### Using the Script
 
 The `scripts/send-workflow-doc.js` script provides a convenient way to send the workflow documentation.
@@ -117,17 +194,20 @@ The `scripts/send-workflow-doc.js` script provides a convenient way to send the 
 **Usage:**
 
 ```bash
-# Send to default recipient (from WORKFLOW_DOC_RECIPIENT)
+# Development mode (no key needed, logs to console)
+npm run dev
+# In another terminal:
 node scripts/send-workflow-doc.js
 
-# Send to specific email
-node scripts/send-workflow-doc.js user@example.com
+# Production mode (with RESEND_API_KEY configured)
+node scripts/send-workflow-doc.js
+node scripts/send-workflow-doc.js user@example.com  # Send to specific email
 ```
 
 **Requirements:**
 
 - Development server must be running: `npm run dev`
-- `RESEND_API_KEY` must be configured in `.env.local`
+- For production delivery: `RESEND_API_KEY` must be configured in `.env.local`
 
 ### Using the API Directly
 
@@ -203,17 +283,51 @@ When deploying to production:
 
 ## Testing
 
-To test the email functionality locally:
+### Development Testing (Mock Mode)
+
+No Resend API key needed. Emails are logged to the dev server console:
 
 ```bash
-# Start the development server
+# Terminal 1: Start the development server
 npm run dev
 
-# In another terminal, send a test email
-node scripts/send-workflow-doc.js test@example.com
+# Terminal 2: Send test workflow doc (uses mock service)
+node scripts/send-workflow-doc.js
+
+# Watch dev server terminal output:
+# 📧 [MOCK EMAIL]
+#    From: noreply@nutriplan.app
+#    To: tsem7354@gmail.com
+#    Subject: NutriPlan Development Workflow Documentation
 ```
 
-Check your test email inbox (or spam folder) to verify the email was delivered successfully.
+### cURL Testing
+
+**Development Mode:**
+```bash
+curl -X POST http://localhost:3001/api/email-send/workflow-doc \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# Response:
+# {"success":true,"id":"mock_...","message":"...","note":"Using mock email service..."}
+```
+
+**Production Mode (with RESEND_API_KEY):**
+```bash
+curl -X POST http://localhost:3001/api/email-send/workflow-doc \
+  -H "Content-Type: application/json" \
+  -d '{"to":"tsem7354@gmail.com"}'
+
+# Response:
+# {"success":true,"id":"resend-message-id-...","message":"..."}
+```
+
+### Email Verification
+
+**Development:** Check dev server console for `📧 [MOCK EMAIL]` logs
+
+**Production:** Once `RESEND_API_KEY` is configured, check recipient inbox for delivered emails
 
 ## Support
 
