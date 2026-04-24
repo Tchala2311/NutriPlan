@@ -115,11 +115,8 @@ function completionKey(day: number, meal_type: string): string {
 function getMealDate(globalWeek: number, dayInWeek: number, planStartDate: string | null): string | null {
   if (!planStartDate) return null;
   const startDate = new Date(planStartDate + "T00:00:00");
-  const startDay = startDate.getDay();
-  // Adjust startDate to the Monday of that week
-  const diff = startDay === 0 ? -6 : 1 - startDay;
-  startDate.setDate(startDate.getDate() + diff);
-  // Add weeks and days
+  // Don't adjust to Monday - use the chosen start date as week 1, day 0
+  // Add weeks and days relative to the actual chosen start date
   startDate.setDate(startDate.getDate() + (globalWeek - 1) * 7 + dayInWeek);
   return startDate.toISOString().split("T")[0];
 }
