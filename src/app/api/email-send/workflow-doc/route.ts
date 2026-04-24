@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WORKFLOW_DOC_HTML } from "@/lib/workflow-doc";
-import { Resend } from "resend";
+import { sendEmail, isUsingMockEmail } from "@/lib/email-service";
 
 /**
  * POST /api/email-send/workflow-doc
@@ -11,53 +11,36 @@ import { Resend } from "resend";
  */
 export async function POST(req: NextRequest) {
   try {
-    // Check API key first
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json(
-        { error: "Email service not configured" },
-        { status: 500 }
-      );
-    }
-
     const body = await req.json();
     const to = body.to || process.env.WORKFLOW_DOC_RECIPIENT || "tsem7354@gmail.com";
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 }
-      );
-    }
-
-    // Initialize Resend with API key
-    const resend = new Resend(process.env.RESEND_API_KEY);
-
-    // Send email
-    const result = await resend.emails.send({
+    // Use centralized email service
+    const result = await sendEmail({
       from: "noreply@nutriplan.app",
       to,
       subject: "NutriPlan Development Workflow Documentation",
       html: WORKFLOW_DOC_HTML,
     });
 
-    if (result.error) {
-      console.error("Email send error:", result.error);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Failed to send email" },
-        { status: 500 }
+        { error: result.error },
+        { status: result.error?.includes("Invalid") ? 400 : 500 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        id: result.data?.id,
-        message: `Workflow documentation sent to ${to}`
-      },
-      { status: 200 }
-    );
+    const response: Record<string, unknown> = {
+      success: true,
+      id: result.id,
+      message: `Workflow documentation sent to ${to}`,
+    };
+
+    // Add debug info in development
+    if (isUsingMockEmail()) {
+      response.note = "Using mock email service (RESEND_API_KEY not configured). In production, configure RESEND_API_KEY to send real emails.";
+    }
+
+    return NextResponse.json(response, { status: 200 });
   } catch (error) {
     console.error("Email API error:", error);
     return NextResponse.json(
