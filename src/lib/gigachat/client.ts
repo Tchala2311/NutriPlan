@@ -36,6 +36,7 @@ import {
   PROMPT_RECIPE_DETAIL_RU,
   PROMPT_FOOD_SUGGESTION_RU,
   PROMPT_ESTIMATE_INGREDIENT_RU,
+  PROMPT_TASTE_PORTRAIT_RU,
   buildFoodPhotoPrompt,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
@@ -679,6 +680,35 @@ export async function getRecipeDetail(
   const system = "Ты профессиональный шеф-повар и диетолог, отвечаешь только валидным JSON.";
   const userMsg = interpolate(PROMPT_RECIPE_DETAIL_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.recipe_detail.краткий);
+  const json = extractJson(raw);
+  return JSON.parse(json);
+}
+
+export interface TastePortraitData {
+  taste_profile_summary: string;
+  preferred_cuisines: string[];
+  flavor_preferences: string[];
+  dietary_fit: string;
+  health_alignment: string;
+  top_rated_patterns: string[];
+  recommendations: string[];
+}
+
+export async function generateTastePortrait(
+  user: UserProfile,
+  mealHistoryDays: number,
+  mealHistoryText: string,
+  ratedDishesText: string
+): Promise<TastePortraitData> {
+  const extra: Record<string, string> = {
+    meal_history_days: String(mealHistoryDays),
+    meal_history: mealHistoryText,
+    rated_dishes: ratedDishesText,
+  };
+  const vars = buildVars(user, {}, extra);
+  const system = "Ты профессиональный диетолог и специалист по пищевому поведению, отвечаешь только валидным JSON.";
+  const userMsg = interpolate(PROMPT_TASTE_PORTRAIT_RU, vars);
+  const raw = await callGigaChat(system, userMsg, MAX_TOKENS.taste_portrait.краткий);
   const json = extractJson(raw);
   return JSON.parse(json);
 }
