@@ -810,6 +810,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          budget_preference: string | null
           created_at: string
           id: string
           language: string
@@ -820,6 +821,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          budget_preference?: string | null
           created_at?: string
           id?: string
           language?: string
@@ -830,6 +832,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          budget_preference?: string | null
           created_at?: string
           id?: string
           language?: string

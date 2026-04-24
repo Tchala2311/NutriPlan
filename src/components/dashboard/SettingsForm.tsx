@@ -114,6 +114,35 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
           </div>
         </Section>
 
+        {/* ── Budget Preference ── */}
+        <Section title="Бюджет на продукты">
+          <Field label="Предпочитаемый уровень бюджета">
+            <div className="flex gap-4">
+              <RadioCard
+                name="budget_preference"
+                value="low"
+                defaultChecked={initial.budget_preference === "low"}
+                label="Экономный"
+                description="Доступные ингредиенты"
+              />
+              <RadioCard
+                name="budget_preference"
+                value="moderate"
+                defaultChecked={initial.budget_preference === "moderate"}
+                label="Средний"
+                description="Баланс цены и качества"
+              />
+              <RadioCard
+                name="budget_preference"
+                value="high"
+                defaultChecked={initial.budget_preference === "high"}
+                label="Премиум"
+                description="Качественные ингредиенты"
+              />
+            </div>
+          </Field>
+        </Section>
+
         {/* ── Language ── */}
         <Section title="Язык / Language">
           <div className="flex gap-4">

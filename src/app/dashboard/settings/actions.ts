@@ -16,6 +16,7 @@ export type UserSettings = {
   language: "ru" | "en";
   notification_prefs: NotificationPrefs;
   training_days: number[]; // catalog day indices: 0=Mon … 6=Sun
+  budget_preference: "low" | "moderate" | "high";
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -27,6 +28,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     ai_suggestion_timing: "off",
   },
   training_days: [0, 2, 4, 5], // Mon, Wed, Fri, Sat
+  budget_preference: "moderate",
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
@@ -38,7 +40,7 @@ export async function getUserSettings(): Promise<UserSettings> {
 
   const { data } = await supabase
     .from("user_settings")
-    .select("units, language, notification_prefs, training_days")
+    .select("units, language, notification_prefs, training_days, budget_preference")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -54,6 +56,7 @@ export async function getUserSettings(): Promise<UserSettings> {
     training_days: Array.isArray(data.training_days) && data.training_days.length > 0
       ? (data.training_days as number[])
       : DEFAULT_SETTINGS.training_days,
+    budget_preference: (data.budget_preference as UserSettings["budget_preference"]) ?? DEFAULT_SETTINGS.budget_preference,
   };
 }
 
@@ -86,6 +89,7 @@ export async function saveSettings(formData: FormData) {
         (formData.get("ai_suggestion_timing") as string) || "off",
     },
     training_days: trainingDays.length > 0 ? trainingDays : [0, 2, 4, 5],
+    budget_preference: (formData.get("budget_preference") as string) || "moderate",
   };
 
   const { error } = await supabase

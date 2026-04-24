@@ -90,6 +90,12 @@ export async function POST(req: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("budget_preference")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   // Auto-compute TDEE + macros from stored biometrics; fall back to stored targets.
   const primaryGoal = ha?.primary_goal ?? "general_wellness";
   let tdeeKcal      = goals?.daily_calorie_target ?? 2000;
@@ -114,7 +120,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const userProfile: UserProfile & { avoided_ingredients?: string[] } = {
+  const userProfile: UserProfile & { avoided_ingredients?: string[]; budget_preference?: string } = {
     primary_goal: primaryGoal,
     secondary_goals: ha?.secondary_goals ?? [],
     dietary_restrictions: ha?.dietary_restrictions ?? [],
@@ -122,6 +128,7 @@ export async function POST(req: Request) {
     avoided_ingredients: ha?.avoided_ingredients ?? [],
     medical_conditions: ha?.medical_conditions ?? [],
     eating_disorder_flag: ha?.eating_disorder_flag ?? false,
+    budget_preference: settings?.budget_preference ?? "moderate",
     tdee_kcal:        tdeeKcal,
     target_protein_g: proteinG,
     target_carbs_g:   carbsG,
@@ -168,6 +175,7 @@ export async function POST(req: Request) {
     weekEnd,
     phaseNumber: planPhase.number,
     phaseName: planPhase.nameRu,
+    budgetPreference: (userProfile.budget_preference as "low" | "moderate" | "high") ?? "moderate",
   };
   const goalPrompt = getMealPlanPrompt(promptParams);
 
