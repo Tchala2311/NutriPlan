@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { saveSettings, deleteAccount } from "@/app/dashboard/settings/actions";
 import type { UserSettings } from "@/app/dashboard/settings/actions";
@@ -17,8 +17,13 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [trainingDays, setTrainingDays] = useState<Set<number>>(new Set(initial.training_days));
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    setTrainingDays(new Set(initial.training_days));
+  }, [initial.training_days]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -147,7 +152,16 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
                     type="checkbox"
                     name={`training_day_${day}`}
                     value={String(day)}
-                    defaultChecked={initial.training_days.includes(day)}
+                    checked={trainingDays.has(day)}
+                    onChange={(e) => {
+                      const newDays = new Set(trainingDays);
+                      if (e.target.checked) {
+                        newDays.add(day);
+                      } else {
+                        newDays.delete(day);
+                      }
+                      setTrainingDays(newDays);
+                    }}
                     className="hidden peer"
                   />
                   <div
