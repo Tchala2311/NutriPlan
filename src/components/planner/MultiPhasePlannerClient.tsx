@@ -5,7 +5,7 @@ import {
   Dumbbell, Moon, CheckCircle2, Circle, Loader2,
   ShoppingCart, LayoutGrid, List, Package, ChevronDown,
   Target, Flame, ChevronLeft, ChevronRight,
-  ExternalLink, Copy, Check, Link2, X,
+  ExternalLink, Copy, Check, Link2, X, RotateCcw,
 } from "lucide-react";
 import {
   PHASES, MEAL_TYPES, MEAL_LABEL_RU, DAY_NAMES_RU,
@@ -17,6 +17,7 @@ import {
   getPhaseCalorieTarget,
 } from "@/lib/planner/goal-prompts";
 import { setPlanStartDate } from "@/app/dashboard/planner/actions";
+import { MealRedoModal } from "./MealRedoModal";
 
 function getThisMonday(): string {
   const d = new Date();
@@ -173,6 +174,14 @@ export function MultiPhasePlannerClient({
     initialConfig?.plan_start_date ?? null
   );
   const [editingStartDate, setEditingStartDate] = useState(false);
+
+  // Meal redo modal state
+  const [redoModalOpen, setRedoModalOpen] = useState(false);
+  const [selectedRedoMeal, setSelectedRedoMeal] = useState<{
+    mealType: string;
+    date: string;
+    redoType: "individual" | "daily" | "weekly";
+  } | null>(null);
 
   // Auto-set plan_start_date to this week's Monday if not configured yet (TES-103)
   useEffect(() => {
@@ -443,6 +452,10 @@ export function MultiPhasePlannerClient({
           config={initialConfig}
           goalContext={goalContext}
           onToggleCompletion={toggleCompletion}
+          onRedoMeal={(mealType, date) => {
+            setSelectedRedoMeal({ mealType, date, redoType: "individual" });
+            setRedoModalOpen(true);
+          }}
           isTrainingDay={isTrainingDay}
         />
       ) : viewMode === "list" ? (
@@ -455,6 +468,23 @@ export function MultiPhasePlannerClient({
         />
       ) : (
         <ShoppingView items={shopping} globalWeek={globalWeek} />
+      )}
+
+      {/* Redo modal */}
+      {selectedRedoMeal && (
+        <MealRedoModal
+          open={redoModalOpen}
+          onOpenChange={setRedoModalOpen}
+          weekNumber={globalWeek}
+          mealType={selectedRedoMeal.mealType}
+          date={selectedRedoMeal.date}
+          redoType={selectedRedoMeal.redoType}
+          onSuccess={() => {
+            setSelectedRedoMeal(null);
+            // Refetch meals to show updated version
+            ensureWeek(globalWeek);
+          }}
+        />
       )}
     </div>
   );
@@ -553,11 +583,12 @@ interface ScheduleViewProps {
   config: UserPlanConfig | null;
   goalContext?: UserGoalContext;
   onToggleCompletion: (day: number, meal_type: string) => void;
+  onRedoMeal: (mealType: string, date: string) => void;
   isTrainingDay: (day: number) => boolean;
 }
 
 function ScheduleView({
-  meals, completions, batchMealNames, dayTotals, phase, config, goalContext, onToggleCompletion, isTrainingDay,
+  meals, completions, batchMealNames, dayTotals, phase, config, goalContext, onToggleCompletion, onRedoMeal, isTrainingDay,
 }: ScheduleViewProps) {
   const [selectedDay, setSelectedDay] = useState<number>(0);
 
@@ -679,7 +710,11 @@ function ScheduleView({
                 isDone={isDone}
                 isBatch={isBatch}
                 mealType={mealType}
+                day={selectedDay}
                 onToggle={() => onToggleCompletion(selectedDay, mealType)}
+                onRedo={(date) => {
+                  onRedoMeal(mealType, date);
+                }}
               />
             );
           })}
@@ -776,7 +811,11 @@ function ScheduleView({
                         isDone={isDone}
                         isBatch={isBatch}
                         mealType={mealType}
+                        day={day}
                         onToggle={() => onToggleCompletion(day, mealType)}
+                        onRedo={(date) => {
+                          onRedoMeal(mealType, date);
+                        }}
                       />
                     );
                   })}
@@ -846,17 +885,22 @@ function ScheduleView({
 // ── Meal Card (desktop grid) ─────────────────────────────────────────────────
 
 function MealCard({
-  meal, isDone, isBatch, mealType, onToggle,
+  meal, isDone, isBatch, mealType, day, onToggle, onRedo,
 }: {
   meal: CatalogMeal;
   isDone: boolean;
   isBatch: boolean;
   mealType: MealType;
+  day: number;
   onToggle: () => void;
+  onRedo?: (date: string) => void;
 }) {
+  // Convert day number to date (1-7 for the week)
+  const date = `day${day}`;
+
   return (
     <div
-      className={`relative rounded-xl border ${MEAL_COLOR[mealType]} p-2 h-28 flex flex-col
+      className={`group relative rounded-xl border ${MEAL_COLOR[mealType]} p-2 h-28 flex flex-col
         transition-all ${isDone ? "opacity-55" : "hover:shadow-warm-sm"}`}
     >
       {isBatch && (
@@ -875,6 +919,16 @@ function MealCard({
           : <Circle className="h-3.5 w-3.5 text-parchment-300 hover:text-sage-300 transition-colors" />
         }
       </button>
+
+      {onRedo && (
+        <button
+          className="absolute bottom-1.5 right-1.5 z-10 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => onRedo(date)}
+          title="Переделать приём пищи"
+        >
+          <RotateCcw className="h-3 w-3 text-stone-400 hover:text-bark-300 transition-colors" />
+        </button>
+      )}
 
       <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 pr-4 ${
         isDone ? "line-through text-stone-400" : ""
@@ -899,14 +953,17 @@ function MealCard({
 // ── Meal Card (mobile) ───────────────────────────────────────────────────────
 
 function MealCardMobile({
-  meal, isDone, isBatch, mealType, onToggle,
+  meal, isDone, isBatch, mealType, day, onToggle, onRedo,
 }: {
   meal: CatalogMeal;
   isDone: boolean;
   isBatch: boolean;
   mealType: MealType;
+  day: number;
   onToggle: () => void;
+  onRedo?: (date: string) => void;
 }) {
+  const date = `day${day}`;
   return (
     <div className={`rounded-2xl border ${MEAL_COLOR[mealType]} transition-all ${isDone ? "opacity-55" : ""}`}>
       <div className="flex items-center gap-3 px-4 py-3">
@@ -937,15 +994,26 @@ function MealCardMobile({
           </p>
         </div>
 
-        <div className="flex-shrink-0 text-right">
-          {meal.kcal != null && (
-            <p className="text-xs font-medium text-bark-200">{meal.kcal} ккал</p>
+        <div className="flex-shrink-0 flex flex-col items-end">
+          <div className="text-right">
+            {meal.kcal != null && (
+              <p className="text-xs font-medium text-bark-200">{meal.kcal} ккал</p>
+            )}
+            <p className="text-2xs text-stone-400 leading-tight">
+              {meal.protein_g != null && `Б${meal.protein_g} `}
+              {meal.carbs_g != null && `У${meal.carbs_g} `}
+              {meal.fat_g != null && `Ж${meal.fat_g}`}
+            </p>
+          </div>
+          {onRedo && (
+            <button
+              onClick={() => onRedo(date)}
+              className="mt-1 p-1 -m-1 rounded-full"
+              title="Переделать приём пищи"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-stone-400 hover:text-bark-300 transition-colors" />
+            </button>
           )}
-          <p className="text-2xs text-stone-400 leading-tight">
-            {meal.protein_g != null && `Б${meal.protein_g} `}
-            {meal.carbs_g != null && `У${meal.carbs_g} `}
-            {meal.fat_g != null && `Ж${meal.fat_g}`}
-          </p>
         </div>
       </div>
     </div>

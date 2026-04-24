@@ -295,3 +295,61 @@ export async function logRecipeMeal(
   revalidatePath("/dashboard/log");
   return { success: !error };
 }
+
+/** Get redo count for current week (for paywall logic: 3 free, then paid). */
+export async function getWeeklyRedoCount(
+  weekNumber: number
+): Promise<{ count: number; freeRemaining: number }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { count: 0, freeRemaining: 3 };
+
+  const { data: redos, error } = await supabase
+    .from("meal_redos")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("week_number", weekNumber);
+
+  if (error) return { count: 0, freeRemaining: 3 };
+
+  const count = redos?.length ?? 0;
+  const freeRemaining = Math.max(0, 3 - count);
+
+  return { count, freeRemaining };
+}
+
+/** Record a meal redo request (individual meal, daily, or weekly replan). */
+export async function recordMealRedo(
+  weekNumber: number,
+  redoType: "individual" | "daily" | "weekly",
+  affectedDate: string,
+  reason: string
+): Promise<{ success: boolean; requiresPayment: boolean; paymentAmount?: number }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, requiresPayment: false };
+
+  const { count } = await getWeeklyRedoCount(weekNumber);
+
+  // Check if payment is required
+  const requiresPayment = count >= 3;
+
+  const { error } = await supabase.from("meal_redos").insert({
+    user_id: user.id,
+    week_number: weekNumber,
+    redo_type: redoType,
+    affected_date: affectedDate,
+    reason,
+    paid: requiresPayment ? false : true, // Free=true, needs payment=false
+  });
+
+  if (error) return { success: false, requiresPayment: false };
+
+  revalidatePath("/dashboard/planner");
+
+  return {
+    success: true,
+    requiresPayment,
+    paymentAmount: requiresPayment ? 100 : undefined, // 100 RUB per redo after free limit
+  };
+}
