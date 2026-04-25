@@ -40,6 +40,7 @@ import {
   buildFoodPhotoPrompt,
   buildCrossReactionWarnings,
   buildPregnancyRestrictions,
+  buildEatingDisorderInstruction,
   getConditionInstructions,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
@@ -137,6 +138,10 @@ export interface UserProfile {
   allergens?: string[];
   medical_conditions?: string[];
   eating_disorder_flag?: boolean;
+  // TES-154: Granular eating disorder flags
+  eating_disorder_anorexia_restrictive?: boolean;
+  eating_disorder_binge?: boolean;
+  eating_disorder_orthorexia?: boolean;
   tone_mode?: ToneMode;
   tdee_kcal?: number;
   target_protein_g?: number;
@@ -738,10 +743,12 @@ export async function getFoodSuggestion(
     target_carbs_g: String(dayTotals.target_carbs_g),
     current_fat_g: String(dayTotals.current_fat_g),
     target_fat_g: String(dayTotals.target_fat_g),
-    // Inject explicit ED instruction instead of relying on GigaChat interpreting a boolean string
-    eating_disorder_instruction: user.eating_disorder_flag
-      ? "⚠️ ВАЖНО: У пользователя история расстройства пищевого поведения. Не упоминай никакие цифры калорий, граммы или проценты в ответе. Говори только о качестве и разнообразии питания.\n\n"
-      : "",
+    // TES-154: Build instruction based on granular eating disorder types
+    eating_disorder_instruction: buildEatingDisorderInstruction(
+      user.eating_disorder_anorexia_restrictive,
+      user.eating_disorder_binge,
+      user.eating_disorder_orthorexia
+    ),
   };
 
   const vars = buildVars(user, {}, extra);

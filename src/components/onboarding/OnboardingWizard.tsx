@@ -59,8 +59,13 @@ const MEDICAL_OPTIONS = [
   { value: "kidney_disease", label: "Болезни почек" },
   { value: "celiac", label: "Целиакия" },
   { value: "ibs", label: "СРК / Расстройства пищеварения" },
-  { value: "eating_disorder", label: "Расстройство пищевого поведения" },
   { value: "heart_disease", label: "Болезни сердца" },
+];
+
+const EATING_DISORDER_OPTIONS = [
+  { value: "anorexia_restrictive", label: "Анорексия / Ограничивающее питание" },
+  { value: "binge_eating", label: "Приступы переедания (BED)" },
+  { value: "orthorexia", label: "Орторексия (зацикленность на 'здоровом' питании)" },
 ];
 
 const ACTIVITY_OPTIONS = [
@@ -262,6 +267,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     allergens: [],
     avoided_ingredients: "",
     medical_conditions: [],
+    eating_disorder_types: [],
     medications: "",
     disclaimer_accepted: false,
     is_pregnant: false,
@@ -614,6 +620,34 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   label={opt.label}
                   selected={form.medical_conditions.includes(opt.value)}
                   onToggle={() => toggleArray("medical_conditions", opt.value)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* TES-154: Granular eating disorder types */}
+          <div className="mb-6">
+            <p className="text-sm font-medium text-foreground mb-3">
+              Расстройства пищевого поведения{" "}
+              <span className="font-normal text-muted-foreground">(выберите все подходящие)</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {EATING_DISORDER_OPTIONS.map((opt) => (
+                <MultiSelectChip
+                  key={opt.value}
+                  label={opt.label}
+                  selected={form.eating_disorder_types?.includes(opt.value) ?? false}
+                  onToggle={() => {
+                    setForm((p) => {
+                      const types = p.eating_disorder_types ?? [];
+                      return {
+                        ...p,
+                        eating_disorder_types: types.includes(opt.value)
+                          ? types.filter((v) => v !== opt.value)
+                          : [...types, opt.value],
+                      };
+                    });
+                  }}
                 />
               ))}
             </div>

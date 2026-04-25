@@ -32,7 +32,7 @@ export default async function NutritionLogPage({
     getUserGoals(),
     supabase
       .from("health_assessments")
-      .select("dietary_restrictions, eating_disorder_ui_mode, primary_goal")
+      .select("dietary_restrictions, eating_disorder_ui_mode, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, primary_goal")
       .eq("user_id", user!.id)
       .maybeSingle(),
   ]);
@@ -44,6 +44,10 @@ export default async function NutritionLogPage({
     primary_goal: goals.primary_goal ?? assessment?.primary_goal ?? null,
     dietary_restrictions: (assessment?.dietary_restrictions as string[] | undefined) ?? [],
     eating_disorder_flag: assessment?.eating_disorder_ui_mode ?? false,
+    // TES-154: Granular eating disorder flags
+    eating_disorder_anorexia_restrictive: (assessment?.eating_disorder_anorexia_restrictive as boolean | undefined) ?? false,
+    eating_disorder_binge: (assessment?.eating_disorder_binge as boolean | undefined) ?? false,
+    eating_disorder_orthorexia: (assessment?.eating_disorder_orthorexia as boolean | undefined) ?? false,
   };
 
   return (

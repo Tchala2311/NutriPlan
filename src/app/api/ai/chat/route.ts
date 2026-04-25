@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   const { data: assessment } = await supabase
     .from("health_assessments")
-    .select("primary_goal, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, secondary_goals")
+    .select("primary_goal, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, secondary_goals")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
     allergens: assessment?.allergens ?? [],
     medical_conditions: assessment?.medical_conditions ?? [],
     eating_disorder_flag: assessment?.eating_disorder_flag ?? false,
+    // TES-154: Granular eating disorder flags
+    eating_disorder_anorexia_restrictive: assessment?.eating_disorder_anorexia_restrictive ?? false,
+    eating_disorder_binge: assessment?.eating_disorder_binge ?? false,
+    eating_disorder_orthorexia: assessment?.eating_disorder_orthorexia ?? false,
     secondary_goals: assessment?.secondary_goals ?? [],
     tone_mode: "подробный",
   };

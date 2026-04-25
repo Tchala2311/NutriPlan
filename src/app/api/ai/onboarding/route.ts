@@ -38,6 +38,10 @@ export async function POST() {
     allergens: assessment.allergens ?? [],
     medical_conditions: assessment.medical_conditions ?? [],
     eating_disorder_flag: assessment.eating_disorder_flag ?? false,
+    // TES-154: Granular eating disorder flags
+    eating_disorder_anorexia_restrictive: assessment.eating_disorder_anorexia_restrictive ?? false,
+    eating_disorder_binge: assessment.eating_disorder_binge ?? false,
+    eating_disorder_orthorexia: assessment.eating_disorder_orthorexia ?? false,
     secondary_goals: assessment.secondary_goals ?? [],
     tone_mode: "подробный",
     // Anthropometric fields populated from assessment if stored

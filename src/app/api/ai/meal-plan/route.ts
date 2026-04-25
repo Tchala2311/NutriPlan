@@ -90,7 +90,7 @@ export async function POST(req: Request) {
   // Load health assessment for user profile
   const { data: ha } = await supabase
     .from("health_assessments")
-    .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, is_pregnant, pregnancy_trimester, is_breastfeeding")
+    .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -141,6 +141,10 @@ export async function POST(req: Request) {
     avoided_ingredients: ha?.avoided_ingredients ?? [],
     medical_conditions: ha?.medical_conditions ?? [],
     eating_disorder_flag: ha?.eating_disorder_flag ?? false,
+    // TES-154: Granular eating disorder flags
+    eating_disorder_anorexia_restrictive: ha?.eating_disorder_anorexia_restrictive ?? false,
+    eating_disorder_binge: ha?.eating_disorder_binge ?? false,
+    eating_disorder_orthorexia: ha?.eating_disorder_orthorexia ?? false,
     budget_preference: settings?.budget_preference ?? "moderate",
     tdee_kcal:        tdeeKcal,
     target_protein_g: proteinG,

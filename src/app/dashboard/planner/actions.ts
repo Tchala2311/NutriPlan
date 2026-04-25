@@ -365,7 +365,7 @@ async function regenerateMealsForRedo(
   const [haRes, goalsRes, settingsRes, planRes] = await Promise.all([
     supabase
       .from("health_assessments")
-      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag")
+      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -426,6 +426,10 @@ async function regenerateMealsForRedo(
     avoided_ingredients: ha?.avoided_ingredients ?? [],
     medical_conditions: ha?.medical_conditions ?? [],
     eating_disorder_flag: ha?.eating_disorder_flag ?? false,
+    // TES-154: Granular eating disorder flags
+    eating_disorder_anorexia_restrictive: ha?.eating_disorder_anorexia_restrictive ?? false,
+    eating_disorder_binge: ha?.eating_disorder_binge ?? false,
+    eating_disorder_orthorexia: ha?.eating_disorder_orthorexia ?? false,
     tdee_kcal: tdeeKcal,
     target_protein_g: proteinG,
     target_carbs_g: carbsG,

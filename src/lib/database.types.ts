@@ -132,6 +132,9 @@ export type Database = {
           disclaimer_accepted_at: string | null
           eating_disorder_flag: boolean
           eating_disorder_ui_mode: boolean
+          eating_disorder_anorexia_restrictive: boolean
+          eating_disorder_binge: boolean
+          eating_disorder_orthorexia: boolean
           glucose_tracking_enabled: boolean
           health_goals: string[]
           id: string
@@ -161,6 +164,9 @@ export type Database = {
           disclaimer_accepted_at?: string | null
           eating_disorder_flag?: boolean
           eating_disorder_ui_mode?: boolean
+          eating_disorder_anorexia_restrictive?: boolean
+          eating_disorder_binge?: boolean
+          eating_disorder_orthorexia?: boolean
           glucose_tracking_enabled?: boolean
           health_goals?: string[]
           id?: string
@@ -190,6 +196,9 @@ export type Database = {
           disclaimer_accepted_at?: string | null
           eating_disorder_flag?: boolean
           eating_disorder_ui_mode?: boolean
+          eating_disorder_anorexia_restrictive?: boolean
+          eating_disorder_binge?: boolean
+          eating_disorder_orthorexia?: boolean
           glucose_tracking_enabled?: boolean
           health_goals?: string[]
           id?: string

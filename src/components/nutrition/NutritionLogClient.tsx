@@ -24,6 +24,10 @@ interface UserProfileMin {
   primary_goal?: string | null;
   dietary_restrictions?: string[];
   eating_disorder_flag?: boolean;
+  // TES-154: Granular eating disorder flags
+  eating_disorder_anorexia_restrictive?: boolean;
+  eating_disorder_binge?: boolean;
+  eating_disorder_orthorexia?: boolean;
 }
 
 interface NutritionLogClientProps {

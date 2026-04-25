@@ -14,6 +14,7 @@ export interface OnboardingFormData {
   avoided_ingredients: string;
   // Step 3 – Medical & Disclaimer
   medical_conditions: string[];
+  eating_disorder_types?: string[]; // TES-154: granular eating disorder flags
   medications: string;
   disclaimer_accepted: boolean;
   // Optional biometrics (Step 1 TDEE inputs)
@@ -68,8 +69,13 @@ export async function saveOnboarding(data: OnboardingFormData) {
       sodium_tracking_enabled: data.medical_conditions.some((c) =>
         ["hypertension", "heart_disease", "kidney_disease"].includes(c)
       ),
-      eating_disorder_ui_mode: data.medical_conditions.includes("eating_disorder"),
-      eating_disorder_flag: data.medical_conditions.includes("eating_disorder"),
+      // TES-154: Granular eating disorder flags
+      eating_disorder_anorexia_restrictive: data.eating_disorder_types?.includes("anorexia_restrictive") ?? false,
+      eating_disorder_binge: data.eating_disorder_types?.includes("binge_eating") ?? false,
+      eating_disorder_orthorexia: data.eating_disorder_types?.includes("orthorexia") ?? false,
+      // Keep legacy flags for backward compatibility
+      eating_disorder_ui_mode: (data.eating_disorder_types?.length ?? 0) > 0,
+      eating_disorder_flag: (data.eating_disorder_types?.length ?? 0) > 0,
     },
     { onConflict: "user_id" }
   );

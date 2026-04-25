@@ -74,6 +74,39 @@ export function buildPregnancyRestrictions(
 - Исключи: алкоголь`;
 }
 
+/**
+ * TES-154: Builds granular eating disorder instruction for prompt injection.
+ * Returns specialized guidance based on disorder type. Empty string if no disorders.
+ */
+export function buildEatingDisorderInstruction(
+  hasAnorexiaRestrictive?: boolean,
+  hasBinge?: boolean,
+  hasOrthorexia?: boolean
+): string {
+  if (!hasAnorexiaRestrictive && !hasBinge && !hasOrthorexia) return "";
+
+  const instructions: string[] = [];
+
+  // Anorexia/Restrictive: Avoid calorie/number fixation
+  if (hasAnorexiaRestrictive) {
+    instructions.push("⚠️ Анорексия/ограничивающее питание: избегай обсуждения калорий/граммов");
+  }
+
+  // BED: Focus on psychological safety, not restriction messaging
+  if (hasBinge) {
+    instructions.push("⚠️ Приступы переедания: избегай рестриктивного тона, фокусируй на принятии и самосострадании");
+  }
+
+  // Orthorexia: Avoid perfectionism messaging
+  if (hasOrthorexia) {
+    instructions.push("⚠️ Орторексия: не способствуй перфекционизму, поддерживай гибкость и психическое здоровье");
+  }
+
+  return instructions.length > 0
+    ? `⚠️ ВАЖНО: ${instructions.join("; ")}. Не упоминай цифры калорий/граммы в ответе, говори о качестве и разнообразии питания.\n\n`
+    : "";
+}
+
 export const SYSTEM_PROMPT_RU = `Ты — NutriPlan, персональный ИИ-помощник по питанию. Ты помогаешь пользователям понять свои пищевые привычки и принимать обоснованные решения в области питания.
 
 Основные правила:
