@@ -38,6 +38,7 @@ import {
   PROMPT_ESTIMATE_INGREDIENT_RU,
   PROMPT_TASTE_PORTRAIT_RU,
   buildFoodPhotoPrompt,
+  getConditionInstructions,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from "./prompts";
@@ -321,6 +322,11 @@ export async function getGoalInsight(
     extra.kidney_instruction = `ВАЖНО: У пользователя заболевание почек. Максимум белка: ${user.protein_cap_g} г/день. Не рекомендуй превышать этот уровень.`;
   } else {
     extra.kidney_instruction = "";
+  }
+  if (goal === "disease_management") {
+    extra.condition_instructions = getConditionInstructions(
+      Array.isArray(user.medical_conditions) ? user.medical_conditions : []
+    );
   }
 
   const vars = buildVars(user, analysis, extra);
