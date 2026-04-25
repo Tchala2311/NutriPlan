@@ -377,7 +377,9 @@ export async function getFreeAnswer(
   user: UserProfile,
   userMessage: string
 ): Promise<string> {
-  const vars = buildVars(user, {}, { user_message: userMessage });
+  // Escape template delimiters in user input to prevent prompt injection
+  const safeMessage = userMessage.replace(/\{\{/g, "{ {").replace(/\}\}/g, "} }");
+  const vars = buildVars(user, {}, { user_message: safeMessage });
   const system = interpolate(SYSTEM_PROMPT_RU, vars);
   const userMsg = interpolate(PROMPT_FREE_QUESTION_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("free_question", user.tone_mode ?? "краткий"));
@@ -663,6 +665,10 @@ export async function getFoodSuggestion(
     target_carbs_g: String(dayTotals.target_carbs_g),
     current_fat_g: String(dayTotals.current_fat_g),
     target_fat_g: String(dayTotals.target_fat_g),
+    // Inject explicit ED instruction instead of relying on GigaChat interpreting a boolean string
+    eating_disorder_instruction: user.eating_disorder_flag
+      ? "⚠️ ВАЖНО: У пользователя история расстройства пищевого поведения. Не упоминай никакие цифры калорий, граммы или проценты в ответе. Говори только о качестве и разнообразии питания.\n\n"
+      : "",
   };
 
   const vars = buildVars(user, {}, extra);
