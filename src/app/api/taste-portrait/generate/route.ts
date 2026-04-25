@@ -47,7 +47,7 @@ export async function POST() {
       target_fat_g: userGoals.target_fat_g,
     };
 
-    // Fetch meal history (last 30 days)
+    // Fetch meal history (last 30 days, limit to 500 entries for performance)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - MEAL_HISTORY_DAYS);
 
@@ -56,7 +56,8 @@ export async function POST() {
       .select("food_title, calories, protein_g, carbs_g, fat_g, logged_at")
       .eq("user_id", userId)
       .gte("logged_at", thirtyDaysAgo.toISOString())
-      .order("logged_at", { ascending: false });
+      .order("logged_at", { ascending: false })
+      .limit(500);
 
     if (mealError) {
       console.error("Fetch meal history error:", mealError);
