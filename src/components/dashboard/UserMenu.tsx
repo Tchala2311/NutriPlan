@@ -8,14 +8,18 @@ import { useState } from "react";
 interface UserMenuProps {
   email: string;
   avatarUrl?: string | null;
+  firstName?: string | null;
 }
 
-export function UserMenu({ email, avatarUrl }: UserMenuProps) {
+export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const initials = email.slice(0, 2).toUpperCase();
+  const displayName = firstName?.trim() || email;
+  const initials = firstName?.trim()
+    ? firstName.trim().slice(0, 2).toUpperCase()
+    : email.slice(0, 2).toUpperCase();
 
   async function handleSignOut() {
     setLoading(true);
@@ -50,7 +54,7 @@ export function UserMenu({ email, avatarUrl }: UserMenuProps) {
           </span>
         )}
         <span className="hidden sm:block max-w-[140px] truncate text-sm text-bark-300">
-          {email}
+          {displayName}
         </span>
         <ChevronIcon className={cn("h-3.5 w-3.5 text-bark-200 transition-transform", open && "rotate-180")} />
       </button>

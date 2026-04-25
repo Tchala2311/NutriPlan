@@ -27,9 +27,10 @@ export default async function DashboardLayout({
 
   const email = user.email ?? "";
   const avatarUrl = user.user_metadata?.avatar_url ?? null;
+  const firstName = (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? null;
 
   return (
-    <DashboardShell userEmail={email} userAvatarUrl={avatarUrl}>
+    <DashboardShell userEmail={email} userAvatarUrl={avatarUrl} userFirstName={firstName}>
       {children}
     </DashboardShell>
   );

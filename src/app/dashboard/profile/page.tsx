@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { GoalSettingsForm } from "@/components/dashboard/GoalSettingsForm";
 import { TrendsSection } from "@/components/dashboard/TrendsSection";
+import { DisplayNameForm } from "@/components/dashboard/DisplayNameForm";
 import { getUserGoals, getTrendsData } from "./actions";
 import { getUserSubscription } from "@/lib/subscription";
 import { UpgradeButton } from "@/components/subscription/UpgradeButton";
@@ -42,12 +43,7 @@ export default async function ProfilePage() {
       <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 mb-6">
         <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-4">Аккаунт</h2>
         <dl className="space-y-3">
-          {fullName && (
-            <div className="flex justify-between text-sm">
-              <dt className="text-muted-foreground">Имя</dt>
-              <dd className="font-medium text-bark-300">{fullName}</dd>
-            </div>
-          )}
+          <DisplayNameForm initialName={fullName} />
           <div className="flex justify-between text-sm">
             <dt className="text-muted-foreground">Email</dt>
             <dd className="font-medium text-bark-300">{email}</dd>

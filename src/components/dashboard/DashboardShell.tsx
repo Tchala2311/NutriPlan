@@ -35,9 +35,10 @@ interface DashboardShellProps {
   children: React.ReactNode;
   userEmail: string;
   userAvatarUrl?: string | null;
+  userFirstName?: string | null;
 }
 
-export function DashboardShell({ children, userEmail, userAvatarUrl }: DashboardShellProps) {
+export function DashboardShell({ children, userEmail, userAvatarUrl, userFirstName }: DashboardShellProps) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -129,7 +130,7 @@ export function DashboardShell({ children, userEmail, userAvatarUrl }: Dashboard
           <div className="hidden lg:block flex-1" />
 
           <div className="ml-auto lg:ml-0">
-            <UserMenu email={userEmail} avatarUrl={userAvatarUrl} />
+            <UserMenu email={userEmail} avatarUrl={userAvatarUrl} firstName={userFirstName} />
           </div>
         </header>
 

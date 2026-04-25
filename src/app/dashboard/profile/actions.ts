@@ -294,3 +294,20 @@ export async function saveUserGoals(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");
 }
+
+export async function updateDisplayName(firstName: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await getUser();
+  if (!user) return { error: "Не авторизован" };
+
+  const trimmed = firstName.trim();
+  const { error } = await supabase.auth.updateUser({
+    data: { full_name: trimmed || null },
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/profile");
+  return {};
+}

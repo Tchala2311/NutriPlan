@@ -101,7 +101,16 @@ interface MacroTargets {
   fat_g: number;
 }
 
-function computeTdee(inputs: TdeeInputs): number | null {
+// Pregnancy/breastfeeding uplifts mirroring server-side tdee.ts (TES-156)
+const PREGNANCY_UPLIFTS: Record<number, number> = { 1: 0, 2: 340, 3: 452 };
+const BREASTFEEDING_UPLIFT = 500;
+
+function computeTdee(
+  inputs: TdeeInputs,
+  isPregnant?: boolean,
+  pregnancyTrimester?: number | null,
+  isBreastfeeding?: boolean,
+): number | null {
   const age = parseInt(inputs.age, 10);
   const weight = parseFloat(inputs.weight_kg);
   const height = parseFloat(inputs.height_cm);
@@ -111,7 +120,12 @@ function computeTdee(inputs: TdeeInputs): number | null {
       ? 10 * weight + 6.25 * height - 5 * age + 5
       : 10 * weight + 6.25 * height - 5 * age - 161;
   const multiplier = ACTIVITY_MULTIPLIERS[inputs.activity_level] ?? 1.55;
-  return Math.round(bmr * multiplier);
+  let tdee = Math.round(bmr * multiplier);
+  if (isPregnant && pregnancyTrimester) {
+    tdee += PREGNANCY_UPLIFTS[pregnancyTrimester] ?? 0;
+  }
+  if (isBreastfeeding) tdee += BREASTFEEDING_UPLIFT;
+  return tdee;
 }
 
 function computeMacros(tdee: number | null, primaryGoal: string): MacroTargets | null {
@@ -241,7 +255,7 @@ interface OnboardingWizardProps {
   isAuthenticated: boolean;
 }
 
-const TOTAL_STEPS = 4; // Goals, Dietary, Medical+Disclaimer, Results
+const TOTAL_STEPS = 5; // Name, Goals, Dietary, Medical+Disclaimer, Results
 
 const DRAFT_STORAGE_KEY = "nutriplan_onboarding_draft";
 
@@ -261,6 +275,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<OnboardingFormData>({
+    first_name: "",
     health_goals: [],
     primary_goal: "",
     dietary_restrictions: [],
@@ -289,8 +304,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     if (draft) {
       setForm(draft.form);
       setTdee(draft.tdee);
-      // Only restore step if not yet at results page (step 3 = results)
-      if (draft.step > 0 && draft.step < 3) setStep(draft.step);
+      // Only restore step if not yet at results page (step 4 = results)
+      if (draft.step > 0 && draft.step < 4) setStep(draft.step);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -314,7 +329,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     });
   }
 
-  const tdeeValue = computeTdee(tdee);
+  const tdeeValue = computeTdee(tdee, form.is_pregnant, form.pregnancy_trimester, form.is_breastfeeding);
   const macros = computeMacros(tdeeValue, form.primary_goal);
 
   /** Persist to localStorage and advance to results (step 3) */
@@ -354,8 +369,47 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     <div className="w-full max-w-lg mx-auto">
       {step < TOTAL_STEPS - 1 && <StepIndicator current={step} total={TOTAL_STEPS - 1} />}
 
-      {/* ── Step 0: Health Goals + TDEE ── */}
+      {/* ── Step 0: First Name ── */}
       {step === 0 && (
+        <div>
+          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
+            Как вас зовут?
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Мы будем обращаться к вам по имени в приложении.
+          </p>
+
+          <div className="mb-8">
+            <label htmlFor="first_name" className="block text-sm font-medium text-bark-300 mb-2">
+              Ваше имя
+            </label>
+            <input
+              id="first_name"
+              type="text"
+              autoComplete="given-name"
+              autoFocus
+              value={form.first_name ?? ""}
+              onChange={(e) => setForm((prev) => ({ ...prev, first_name: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === "Enter" && (form.first_name ?? "").trim()) setStep(1); }}
+              placeholder="Например, Алексей"
+              className="w-full rounded-xl border border-parchment-200 bg-parchment-50 px-4 py-3 text-bark-300 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-bark-200 text-base"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Можно пропустить — позже укажете в профиле.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setStep(1)}
+            className="w-full rounded-xl bg-bark-300 text-primary-foreground py-3 text-sm font-semibold hover:bg-bark-400 transition-colors"
+          >
+            {(form.first_name ?? "").trim() ? "Продолжить" : "Пропустить"}
+          </button>
+        </div>
+      )}
+
+      {/* ── Step 1: Health Goals + TDEE ── */}
+      {step === 1 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
             Каковы ваши цели?
@@ -508,7 +562,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           <button
             type="button"
             disabled={form.health_goals.length === 0 || form.primary_goal === ""}
-            onClick={() => setStep(1)}
+            onClick={() => setStep(2)}
             className={cn(
               "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
               "hover:bg-primary/90 transition-colors disabled:opacity-40"
@@ -519,8 +573,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
         </div>
       )}
 
-      {/* ── Step 1: Food Preferences ── */}
-      {step === 1 && (
+      {/* ── Step 2: Food Preferences ── */}
+      {step === 2 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
             Предпочтения в питании?
@@ -579,14 +633,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setStep(0)}
+              onClick={() => setStep(1)}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               Назад
             </button>
             <button
               type="button"
-              onClick={() => setStep(2)}
+              onClick={() => setStep(3)}
               className={cn(
                 "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
                 "hover:bg-primary/90 transition-colors"
@@ -598,8 +652,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
         </div>
       )}
 
-      {/* ── Step 2: Medical + Disclaimer ── */}
-      {step === 2 && (
+      {/* ── Step 3: Medical + Disclaimer ── */}
+      {step === 3 && (
         <div>
           <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
             Здоровье
@@ -753,7 +807,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             >
               Назад
@@ -763,7 +817,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               disabled={!form.disclaimer_accepted}
               onClick={() => {
                 persistAndShowResults();
-                setStep(3);
+                setStep(4);
               }}
               className={cn(
                 "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
@@ -776,8 +830,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
         </div>
       )}
 
-      {/* ── Step 3: Results screen ── */}
-      {step === 3 && (
+      {/* ── Step 4: Results screen ── */}
+      {step === 4 && (
         <div>
           {/* Success header */}
           <div className="text-center mb-6">
@@ -887,7 +941,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={() => setStep(3)}
             className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Назад

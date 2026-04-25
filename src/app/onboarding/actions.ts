@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
 
 export interface OnboardingFormData {
+  // Step 0 – Name
+  first_name?: string;
   // Step 1 – Health Goals
   health_goals: string[];
   primary_goal: string;
@@ -44,6 +46,13 @@ export async function saveOnboarding(data: OnboardingFormData) {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  // Save first name to user metadata if provided
+  if (data.first_name?.trim()) {
+    await supabase.auth.updateUser({
+      data: { full_name: data.first_name.trim() },
+    });
+  }
 
   const { error: haError } = await supabase.from("health_assessments").upsert(
     {
