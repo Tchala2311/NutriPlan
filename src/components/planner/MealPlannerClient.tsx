@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   Sparkles, RefreshCw, Lock, LockOpen, Loader2, UtensilsCrossed,
@@ -107,6 +107,8 @@ export function MealPlannerClient({
   const [generating, setGenerating] = useState(false);
   const [loadingWeek, setLoadingWeek] = useState(false);
   const [swappingSlot, setSwappingSlot] = useState<string | null>(null);
+  const generatingLong = useLongRunning(generating);
+  const loadingWeekLong = useLongRunning(loadingWeek);
   const [completingSlot, setCompletingSlot] = useState<string | null>(null);
   const [, startPinTransition] = useTransition();
   const [confirmRegenOpen, setConfirmRegenOpen] = useState(false);
@@ -474,21 +476,25 @@ export function MealPlannerClient({
 
       {/* Loading state for tab switch */}
       {loadingWeek && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-sage-300" />
+        <div>
+          <MealPlanSkeleton />
+          {loadingWeekLong && (
+            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+          )}
         </div>
       )}
 
       {!loadingWeek && !hasPlan ? (
         /* Empty state */
-        <div className="rounded-2xl border border-dashed border-parchment-300 bg-parchment-50 p-12 text-center">
+        <div className="rounded-2xl border border-dashed border-parchment-300 bg-parchment-50 p-6 text-center">
           {generating ? (
             <>
-              <Loader2 className="mx-auto h-10 w-10 text-sage-300 mb-4 animate-spin" />
-              <p className="font-display text-lg font-semibold text-bark-200">Создаю план питания…</p>
-              <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-                GigaChat подбирает рецепты под ваши цели и предпочтения.
-              </p>
+              <MealPlanSkeleton />
+              <p className="mt-4 font-display text-base font-semibold text-bark-200">Создаю план питания…</p>
+              <p className="mt-1 text-sm text-muted-foreground">GigaChat подбирает рецепты под ваши цели.</p>
+              {generatingLong && (
+                <p className="mt-2 text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+              )}
             </>
           ) : (
             <>
@@ -664,6 +670,12 @@ function ScheduleView({
                     className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-3 flex items-center gap-3 cursor-pointer ${isDone ? "opacity-70" : ""}`}
                     onClick={() => onOpenRecipe(recipe, mealType, date)}
                   >
+                    {isSwapping && (
+                      <div className="absolute inset-0 rounded-xl bg-parchment-50/90 flex items-center justify-center z-20 gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-sage-400" />
+                        <span className="text-sm text-stone-500">Подбираем замену…</span>
+                      </div>
+                    )}
                     <button
                       className="shrink-0"
                       onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
@@ -825,6 +837,14 @@ function ScheduleView({
                           : <Circle className="h-3.5 w-3.5 text-parchment-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                       }
                     </button>
+
+                    {/* Swapping overlay */}
+                    {isSwapping && (
+                      <div className="absolute inset-0 rounded-xl bg-parchment-50/90 flex flex-col items-center justify-center z-20">
+                        <Loader2 className="h-4 w-4 animate-spin text-sage-400 mb-1" />
+                        <span className="text-2xs text-stone-500">Подбираем замену…</span>
+                      </div>
+                    )}
 
                     {/* Recipe title */}
                     <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 ${isDone ? "line-through text-stone-400" : ""}`}>
@@ -1093,5 +1113,43 @@ function ShareCheckIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
+  );
+}
+
+// ── Shared loading helpers ────────────────────────────────────────────────────
+
+function useLongRunning(active: boolean, ms = 10000) {
+  const [long, setLong] = useState(false);
+  useEffect(() => {
+    if (!active) { setLong(false); return; }
+    const t = setTimeout(() => setLong(true), ms);
+    return () => clearTimeout(t);
+  }, [active, ms]);
+  return long;
+}
+
+function MealPlanSkeleton() {
+  const DAYS = 7;
+  const MEALS = 4;
+  return (
+    <div className="space-y-3">
+      {/* Mobile: single column skeleton */}
+      <div className="grid grid-cols-1 gap-2 sm:hidden">
+        {Array.from({ length: MEALS }).map((_, m) => (
+          <div key={m} className="h-14 rounded-xl animate-pulse bg-parchment-200" />
+        ))}
+      </div>
+      {/* Desktop: 7-column grid skeleton */}
+      <div className="hidden sm:grid sm:grid-cols-7 gap-1.5">
+        {Array.from({ length: DAYS }).map((_, d) => (
+          <div key={d} className="space-y-1.5">
+            <div className="h-4 w-8 mx-auto rounded animate-pulse bg-parchment-200" />
+            {Array.from({ length: MEALS }).map((_, m) => (
+              <div key={m} className="h-28 rounded-xl animate-pulse bg-parchment-200" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

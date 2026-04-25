@@ -168,6 +168,7 @@ export function MultiPhasePlannerClient({
   });
 
   const [loadingWeek, setLoadingWeek] = useState(false);
+  const loadingWeekLong = useLongRunning(loadingWeek);
   const [, startTransition] = useTransition();
 
   const [planStartDate, setPlanStartDateLocal] = useState<string | null>(
@@ -439,8 +440,11 @@ export function MultiPhasePlannerClient({
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
       {loadingWeek ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-7 w-7 animate-spin text-sage-300" />
+        <div>
+          <MealPlanSkeleton />
+          {loadingWeekLong && (
+            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+          )}
         </div>
       ) : viewMode === "schedule" ? (
         <ScheduleView
@@ -1552,6 +1556,42 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Loading helpers ───────────────────────────────────────────────────────────
+
+function useLongRunning(active: boolean, ms = 10000) {
+  const [long, setLong] = useState(false);
+  useEffect(() => {
+    if (!active) { setLong(false); return; }
+    const t = setTimeout(() => setLong(true), ms);
+    return () => clearTimeout(t);
+  }, [active, ms]);
+  return long;
+}
+
+function MealPlanSkeleton() {
+  const DAYS = 7;
+  const MEALS = 4;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 sm:hidden">
+        {Array.from({ length: MEALS }).map((_, m) => (
+          <div key={m} className="h-14 rounded-xl animate-pulse bg-parchment-200" />
+        ))}
+      </div>
+      <div className="hidden sm:grid sm:grid-cols-7 gap-1.5">
+        {Array.from({ length: DAYS }).map((_, d) => (
+          <div key={d} className="space-y-1.5">
+            <div className="h-4 w-8 mx-auto rounded animate-pulse bg-parchment-200" />
+            {Array.from({ length: MEALS }).map((_, m) => (
+              <div key={m} className="h-24 rounded-xl animate-pulse bg-parchment-200" />
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

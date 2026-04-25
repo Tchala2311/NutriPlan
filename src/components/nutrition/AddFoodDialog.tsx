@@ -95,6 +95,7 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [photoState, setPhotoState] = useState<PhotoState>("idle");
+  const photoLong = useLongRunning(photoState === "uploading");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoResult, setPhotoResult] = useState<FoodPhotoResult | null>(null);
   const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
@@ -340,12 +341,18 @@ export function AddFoodDialog({ date, defaultMeal, children, onAdded }: AddFoodD
               className={cn(
                 "w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-3 text-sm font-medium transition-colors",
                 photoState === "uploading"
-                  ? "border-parchment-200 text-muted-foreground cursor-wait"
+                  ? "border-sage-200 text-sage-500 cursor-wait bg-sage-50"
                   : "border-parchment-200 text-bark-200 hover:border-bark-100 hover:text-bark-300"
               )}>
-              <CameraIcon className="h-4 w-4 shrink-0" />
-              {photoState === "uploading" ? "Анализируем фото…" : "Анализировать фото через ИИ"}
+              {photoState === "uploading"
+                ? <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" />
+                : <CameraIcon className="h-4 w-4 shrink-0" />
+              }
+              {photoState === "uploading" ? "Распознаём блюдо…" : "Анализировать фото через ИИ"}
             </button>
+            {photoState === "uploading" && photoLong && (
+              <p className="mt-1.5 text-center text-xs text-muted-foreground animate-pulse">Ещё немного…</p>
+            )}
 
             {photoUrl && photoState !== "uploading" && (
               <div className="mt-3 space-y-3">
@@ -650,5 +657,26 @@ function CheckCircleIcon({ className }: { className?: string }) {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   );
+}
+
+function SpinnerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
+// ── Loading hook ──────────────────────────────────────────────────────────────
+
+function useLongRunning(active: boolean, ms = 10000) {
+  const [long, setLong] = useState(false);
+  useEffect(() => {
+    if (!active) { setLong(false); return; }
+    const t = setTimeout(() => setLong(true), ms);
+    return () => clearTimeout(t);
+  }, [active, ms]);
+  return long;
 }
 

@@ -15,6 +15,12 @@ export function OnboardingCompleteClient() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "saving" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
+  const [showLongHint, setShowLongHint] = useState(false);
+  useEffect(() => {
+    if (status === "error") { setShowLongHint(false); return; }
+    const t = setTimeout(() => setShowLongHint(true), 10000);
+    return () => clearTimeout(t);
+  }, [status]);
 
   useEffect(() => {
     async function flush() {
@@ -78,6 +84,9 @@ export function OnboardingCompleteClient() {
         <p className="text-sm text-muted-foreground">
           {status === "saving" ? "Сохраняем план…" : "Настраиваем аккаунт…"}
         </p>
+        {showLongHint && (
+          <p className="mt-2 text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,12 @@ export function ChatClient() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingLong, setLoadingLong] = useState(false);
+  useEffect(() => {
+    if (!loading) { setLoadingLong(false); return; }
+    const t = setTimeout(() => setLoadingLong(true), 10000);
+    return () => clearTimeout(t);
+  }, [loading]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -145,6 +151,9 @@ export function ChatClient() {
             </div>
             <div className="rounded-xl border border-parchment-200 bg-parchment-100 px-4 py-3">
               <ThinkingDots />
+              {loadingLong && (
+                <p className="mt-1.5 text-xs text-muted-foreground animate-pulse">Ещё немного…</p>
+              )}
             </div>
           </div>
         )}

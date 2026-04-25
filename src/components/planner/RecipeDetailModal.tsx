@@ -66,8 +66,15 @@ export function RecipeDetailModal({
   const [userRating, setUserRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [tastePortrait, setTastePortrait] = useState<TastePortraitData | null>(null);
+  const [portraitLoading, setPortraitLoading] = useState(false);
   const [isRatingPending, setIsRatingPending] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [portraitLong, setPortraitLong] = useState(false);
+  useEffect(() => {
+    if (!portraitLoading) { setPortraitLong(false); return; }
+    const t = setTimeout(() => setPortraitLong(true), 10000);
+    return () => clearTimeout(t);
+  }, [portraitLoading]);
 
   useEffect(() => {
     setDaysSpan(currentDaysSpan);
@@ -78,20 +85,19 @@ export function RecipeDetailModal({
     if (!open || !recipe) return;
 
     const fetchData = async () => {
+      setPortraitLoading(true);
       try {
-        // Fetch user's rating for this recipe
-        const ratingsRes = await fetch(`/api/ratings/recipe?recipe_id=${recipe.id}`);
+        // Fetch user's rating and taste portrait in parallel
+        const [ratingsRes, portraitRes] = await Promise.all([
+          fetch(`/api/ratings/recipe?recipe_id=${recipe.id}`),
+          fetch("/api/taste-portrait"),
+        ]);
+
         if (ratingsRes.ok) {
           const ratingsData = await ratingsRes.json();
-          if (ratingsData.user_rating) {
-            setUserRating(ratingsData.user_rating);
-          } else {
-            setUserRating(null);
-          }
+          setUserRating(ratingsData.user_rating ?? null);
         }
 
-        // Fetch user's taste portrait
-        const portraitRes = await fetch("/api/taste-portrait");
         if (portraitRes.ok) {
           const portraitData = await portraitRes.json();
           if (portraitData.portrait_data) {
@@ -100,6 +106,8 @@ export function RecipeDetailModal({
         }
       } catch (err) {
         console.error("Failed to fetch rating/taste portrait data:", err);
+      } finally {
+        setPortraitLoading(false);
       }
     };
 
@@ -307,8 +315,21 @@ export function RecipeDetailModal({
                 </div>
               </div>
 
-              {/* Taste portrait compatibility */}
-              {tastePortrait && (
+              {/* Taste portrait compatibility — shimmer skeleton while loading */}
+              {portraitLoading && (
+                <div className="mb-5 p-3 rounded-lg bg-sage-50 border border-sage-100" aria-busy="true" aria-label="Загружаем вкусовой профиль…">
+                  <div className="h-3 w-32 rounded animate-pulse bg-sage-200 mb-3" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded animate-pulse bg-sage-100" />
+                    <div className="h-3 w-4/5 rounded animate-pulse bg-sage-100" />
+                    <div className="h-3 w-3/5 rounded animate-pulse bg-sage-100" />
+                  </div>
+                  {portraitLong && (
+                    <p className="mt-2 text-xs text-muted-foreground animate-pulse">Ещё немного…</p>
+                  )}
+                </div>
+              )}
+              {!portraitLoading && tastePortrait && (
                 <div className="mb-5 p-3 rounded-lg bg-sage-50 border border-sage-100">
                   <h3 className="text-xs font-semibold text-bark-200 uppercase tracking-wide mb-2">Совместимость с вашим вкусом</h3>
                   <p className="text-sm text-stone-600 mb-3">{tastePortrait.taste_profile_summary}</p>
