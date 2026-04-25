@@ -40,13 +40,23 @@ export async function getUserGoals(): Promise<UserGoals> {
     .maybeSingle();
 
   if (goals) {
+    // Fetch pregnancy/breastfeeding status for TDEE uplift (TES-150)
+    const { data: assessment } = await supabase
+      .from("health_assessments")
+      .select("is_pregnant, pregnancy_trimester, is_breastfeeding")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     // Recompute from biometrics when available; otherwise use stored values.
     const tdee = calculateTDEE({
-      weight_kg:      goals.weight_kg      ?? undefined,
-      height_cm:      goals.height_cm      ?? undefined,
-      age:            goals.age            ?? undefined,
-      sex:            (goals.sex ?? undefined) as "male" | "female" | undefined,
-      activity_level: goals.activity_level ?? "moderate",
+      weight_kg:           goals.weight_kg      ?? undefined,
+      height_cm:           goals.height_cm      ?? undefined,
+      age:                 goals.age            ?? undefined,
+      sex:                 (goals.sex ?? undefined) as "male" | "female" | undefined,
+      activity_level:      goals.activity_level ?? "moderate",
+      is_pregnant:         assessment?.is_pregnant,
+      pregnancy_trimester: assessment?.pregnancy_trimester as 1 | 2 | 3 | undefined,
+      is_breastfeeding:    assessment?.is_breastfeeding,
     });
     if (tdee) {
       const computed = calculateMacros(tdee, goals.primary_goal ?? "general_wellness", (goals.sex ?? undefined) as "male" | "female" | undefined);
@@ -208,8 +218,24 @@ export async function saveUserGoals(formData: FormData) {
   const sex           = (formData.get("sex") as "male" | "female" | null) || null;
   const activity_level = (formData.get("activity_level") as string) || "moderate";
 
+  // Fetch pregnancy/breastfeeding status for TDEE uplift (TES-150)
+  const { data: assessment } = await supabase
+    .from("health_assessments")
+    .select("is_pregnant, pregnancy_trimester, is_breastfeeding")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   // Auto-compute macros from biometrics; fall back to form values if absent
-  const bio    = { weight_kg: weight_kg ?? undefined, height_cm: height_cm ?? undefined, age: age ?? undefined, sex: sex ?? undefined, activity_level };
+  const bio    = {
+    weight_kg: weight_kg ?? undefined,
+    height_cm: height_cm ?? undefined,
+    age: age ?? undefined,
+    sex: sex ?? undefined,
+    activity_level,
+    is_pregnant: assessment?.is_pregnant,
+    pregnancy_trimester: assessment?.pregnancy_trimester as 1 | 2 | 3 | undefined,
+    is_breastfeeding: assessment?.is_breastfeeding,
+  };
   const tdee   = calculateTDEE(bio);
   const macros = tdee ? calculateMacros(tdee, primaryGoal ?? "general_wellness", bio.sex) : null;
 
