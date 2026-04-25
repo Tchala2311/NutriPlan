@@ -68,19 +68,31 @@ export async function getUserGoals(): Promise<UserGoals> {
   // 2. Derive defaults from health_assessment if present
   const { data: assessment } = await supabase
     .from("health_assessments")
-    .select("primary_goal, protein_target_g")
+    .select("primary_goal, protein_target_g, is_pregnant, pregnancy_trimester, is_breastfeeding")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const goalKey = assessment?.primary_goal as string | undefined;
   const base = GOAL_DEFAULTS[goalKey ?? "maintenance"] ?? GOAL_DEFAULTS.maintenance;
 
+  // Apply pregnancy/breastfeeding uplift to default goals (TES-150)
+  // If user is pregnant/breastfeeding but hasn't filled biometrics yet, still apply uplift to defaults
+  let tdeeAdjustment = 0;
+  if (assessment?.is_pregnant) {
+    if (assessment.pregnancy_trimester === 2) tdeeAdjustment = 340;
+    else if (assessment.pregnancy_trimester === 3) tdeeAdjustment = 452;
+  }
+  if (assessment?.is_breastfeeding) tdeeAdjustment = 500;
+
+  const adjustedCalories = base.daily_calorie_target + tdeeAdjustment;
+  const calorieRatio = adjustedCalories / base.daily_calorie_target;
+
   return {
     primary_goal: (assessment?.primary_goal as UserGoals["primary_goal"]) ?? null,
-    daily_calorie_target: base.daily_calorie_target,
-    protein_target_g: assessment?.protein_target_g ?? base.protein_target_g,
-    carbs_target_g: base.carbs_target_g,
-    fat_target_g: base.fat_target_g,
+    daily_calorie_target: adjustedCalories,
+    protein_target_g: assessment?.protein_target_g ?? Math.round(base.protein_target_g * calorieRatio),
+    carbs_target_g: Math.round(base.carbs_target_g * calorieRatio),
+    fat_target_g: Math.round(base.fat_target_g * calorieRatio),
   };
 }
 
