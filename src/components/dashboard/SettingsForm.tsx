@@ -465,7 +465,7 @@ function RadioCard({
       />
       <div
         className={cn(
-          "rounded-lg border border-parchment-200 px-4 py-3 text-sm transition-colors",
+          "h-full rounded-lg border border-parchment-200 px-4 py-3 text-sm transition-colors",
           "peer-checked:border-bark-300 peer-checked:bg-bark-50/30",
           "hover:bg-parchment-200"
         )}
