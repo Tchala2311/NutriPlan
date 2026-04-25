@@ -200,7 +200,7 @@ async function callGigaChat(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "GigaChat-Lite",
+      model: "GigaChat",
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
