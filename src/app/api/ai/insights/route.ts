@@ -42,14 +42,21 @@ export async function POST(req: NextRequest) {
 
   const { type, ...payload } = body as { type: string; [k: string]: unknown };
 
-  // Build user profile from Supabase health_assessments
-  const { data: assessment } = await supabase
-    .from("health_assessments")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+  // Build user profile from Supabase health_assessments + user_settings
+  const [{ data: assessment }, { data: settings }] = await Promise.all([
+    supabase
+      .from("health_assessments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single(),
+    supabase
+      .from("user_settings")
+      .select("tone_mode")
+      .eq("user_id", user.id)
+      .single(),
+  ]);
 
   const profile: UserProfile = {
     primary_goal: assessment?.primary_goal ?? "general_wellness",
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
     medical_conditions: assessment?.medical_conditions ?? [],
     eating_disorder_flag: assessment?.eating_disorder_flag ?? false,
     secondary_goals: assessment?.secondary_goals ?? [],
-    tone_mode: "краткий",
+    tone_mode: (settings?.tone_mode as UserProfile["tone_mode"]) ?? "краткий",
   };
 
   try {
