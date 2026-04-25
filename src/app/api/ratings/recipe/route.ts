@@ -14,12 +14,28 @@ export async function GET(req: NextRequest) {
     }
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
+    // Get all ratings for this recipe
     const { data, error } = await supabase
       .from("dish_ratings")
-      .select("id, rating, comment, rated_at")
+      .select("id, rating, comment, rated_at, user_id")
       .eq("recipe_id", recipe_id)
       .order("rated_at", { ascending: false });
+
+    // Get current user's rating (if logged in)
+    let user_rating: number | null = null;
+    if (user) {
+      const { data: userRatingData } = await supabase
+        .from("dish_ratings")
+        .select("rating")
+        .eq("recipe_id", recipe_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (userRatingData) {
+        user_rating = userRatingData.rating;
+      }
+    }
 
     if (error) {
       console.error("Get ratings error:", error);
@@ -39,6 +55,7 @@ export async function GET(req: NextRequest) {
       ratings: data,
       count: data.length,
       average_rating: avg_rating,
+      user_rating: user_rating,
     });
   } catch (error) {
     console.error("Get ratings error:", error);

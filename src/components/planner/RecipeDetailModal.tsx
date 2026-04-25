@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Clock, Flame, Beef, Wheat, Droplets, Bookmark, BookmarkCheck, CheckCheck, X, Repeat2 } from "lucide-react";
+import { Clock, Flame, Beef, Wheat, Droplets, Bookmark, BookmarkCheck, CheckCheck, X, Repeat2, Star } from "lucide-react";
 import type { RecipeSummary } from "@/app/dashboard/planner/actions";
 import { saveRecipeToLibrary, unsaveRecipe, logRecipeMeal } from "@/app/dashboard/planner/actions";
 
@@ -38,6 +38,16 @@ function MacroChip({ label, value, unit, color }: { label: string; value: number
   );
 }
 
+interface TastePortraitData {
+  taste_profile_summary: string;
+  preferred_cuisines: string[];
+  flavor_preferences: string[];
+  dietary_fit: string;
+  health_alignment: string;
+  top_rated_patterns: string[];
+  recommendations: string[];
+}
+
 export function RecipeDetailModal({
   recipe,
   mealType,
@@ -53,11 +63,48 @@ export function RecipeDetailModal({
 }: RecipeDetailModalProps) {
   const [logged, setLogged] = useState(false);
   const [daysSpan, setDaysSpan] = useState(currentDaysSpan);
+  const [userRating, setUserRating] = useState<number | null>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [tastePortrait, setTastePortrait] = useState<TastePortraitData | null>(null);
+  const [isRatingPending, setIsRatingPending] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setDaysSpan(currentDaysSpan);
   }, [currentDaysSpan]);
+
+  // Fetch user's rating and taste portrait when modal opens
+  useEffect(() => {
+    if (!open || !recipe) return;
+
+    const fetchData = async () => {
+      try {
+        // Fetch user's rating for this recipe
+        const ratingsRes = await fetch(`/api/ratings/recipe?recipe_id=${recipe.id}`);
+        if (ratingsRes.ok) {
+          const ratingsData = await ratingsRes.json();
+          if (ratingsData.user_rating) {
+            setUserRating(ratingsData.user_rating);
+          } else {
+            setUserRating(null);
+          }
+        }
+
+        // Fetch user's taste portrait
+        const portraitRes = await fetch("/api/taste-portrait");
+        if (portraitRes.ok) {
+          const portraitData = await portraitRes.json();
+          if (portraitData.portrait_data) {
+            setTastePortrait(portraitData.portrait_data as TastePortraitData);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch rating/taste portrait data:", err);
+      }
+    };
+
+    fetchData();
+  }, [open, recipe?.id]);
 
   if (!recipe) return null;
 
@@ -82,6 +129,25 @@ export function RecipeDetailModal({
       onLogged();
       setTimeout(() => setLogged(false), 2000);
     });
+  }
+
+  async function handleRatingSubmit(rating: number) {
+    if (!recipe) return;
+    setIsRatingPending(true);
+    try {
+      const res = await fetch("/api/ratings/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipe_id: recipe.id, rating }),
+      });
+      if (res.ok) {
+        setUserRating(rating);
+      }
+    } catch (err) {
+      console.error("Failed to submit rating:", err);
+    } finally {
+      setIsRatingPending(false);
+    }
   }
 
   const ingredients = Array.isArray(recipe.ingredients)
@@ -207,6 +273,57 @@ export function RecipeDetailModal({
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Rating section */}
+              <div className="mb-5 p-3 rounded-lg bg-amber-50 border border-amber-100">
+                <h3 className="text-xs font-semibold text-bark-200 uppercase tracking-wide mb-2">Оцените блюдо</h3>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      onClick={() => handleRatingSubmit(rating)}
+                      onMouseEnter={() => setHoverRating(rating)}
+                      onMouseLeave={() => setHoverRating(null)}
+                      disabled={isRatingPending}
+                      className="p-1 transition-transform hover:scale-110"
+                      title={`Оценить на ${rating}/5`}
+                    >
+                      <Star
+                        className={`h-5 w-5 ${
+                          (hoverRating !== null ? rating <= hoverRating : rating <= (userRating || 0))
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-stone-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  {userRating !== null && (
+                    <span className="ml-2 text-xs font-medium text-stone-500">
+                      {userRating}/5
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Taste portrait compatibility */}
+              {tastePortrait && (
+                <div className="mb-5 p-3 rounded-lg bg-sage-50 border border-sage-100">
+                  <h3 className="text-xs font-semibold text-bark-200 uppercase tracking-wide mb-2">Совместимость с вашим вкусом</h3>
+                  <p className="text-sm text-stone-600 mb-3">{tastePortrait.taste_profile_summary}</p>
+                  {tastePortrait.preferred_cuisines.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-2xs font-medium text-stone-500 mb-1">Ваши предпочитаемые кухни:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tastePortrait.preferred_cuisines.map((cuisine, i) => (
+                          <span key={i} className="px-2 py-1 text-2xs rounded-full bg-white text-sage-400 border border-sage-200">
+                            {cuisine}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
