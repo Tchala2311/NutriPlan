@@ -158,11 +158,10 @@ export async function saveSettings(formData: FormData) {
 
   if (settingsError) throw new Error(settingsError.message);
 
-  // Update health_assessments
+  // Upsert health_assessments (insert or update)
   const { error: healthError } = await supabase
     .from("health_assessments")
-    .update(healthSettings)
-    .eq("user_id", user.id);
+    .upsert(healthSettings, { onConflict: "user_id" });
 
   if (healthError) throw new Error(healthError.message);
 
