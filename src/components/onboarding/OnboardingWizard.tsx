@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { saveOnboarding, type OnboardingFormData } from "@/app/onboarding/actions";
@@ -238,6 +238,18 @@ interface OnboardingWizardProps {
 
 const TOTAL_STEPS = 4; // Goals, Dietary, Medical+Disclaimer, Results
 
+const DRAFT_STORAGE_KEY = "nutriplan_onboarding_draft";
+
+function loadDraft(): { form: OnboardingFormData; tdee: TdeeInputs; step: number } | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -261,6 +273,27 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     sex: "",
     activity_level: "moderate",
   });
+
+  // Restore draft on first render (step-by-step persistence for UF-1)
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setForm(draft.form);
+      setTdee(draft.tdee);
+      // Only restore step if not yet at results page (step 3 = results)
+      if (draft.step > 0 && draft.step < 3) setStep(draft.step);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save draft to localStorage on every change (UF-1)
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ form, tdee, step }));
+    } catch {
+      // localStorage unavailable
+    }
+  }, [form, tdee, step]);
 
   function toggleArray(field: keyof OnboardingFormData, value: string) {
     setForm((prev) => {
@@ -300,7 +333,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           sex:            tdee.sex || null,
           activity_level: tdee.activity_level || "moderate",
         });
-        // saveOnboarding redirects to /dashboard on success
+        // Clear draft on success — saveOnboarding redirects to /dashboard (replace)
+        try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ok */ }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Что-то пошло не так. Попробуйте снова.");
       }

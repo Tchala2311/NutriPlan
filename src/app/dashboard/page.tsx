@@ -43,6 +43,7 @@ export default async function DashboardPage() {
     supabase
       .from("nutrition_logs")
       .select("calories, protein_g, carbs_g, fat_g")
+      .eq("user_id", user!.id)
       .eq("logged_date", today),
     getUserGoals(),
     supabase
@@ -147,13 +148,13 @@ export default async function DashboardPage() {
               href="/dashboard/log"
               className="flex-1 rounded-lg bg-bark-300 text-primary-foreground px-4 py-2.5 text-sm font-semibold text-center hover:bg-bark-400 transition-colors"
             >
-              Записать первый приём пищи
+              Добавить первый приём пищи
             </Link>
             <Link
               href="/dashboard/planner"
               className="flex-1 rounded-lg border border-sage-300 bg-white text-sage-700 px-4 py-2.5 text-sm font-medium text-center hover:bg-sage-50 transition-colors"
             >
-              Создать план питания
+              Сгенерировать план питания
             </Link>
           </div>
         </div>
