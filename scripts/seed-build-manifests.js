@@ -39,11 +39,20 @@ function seedManifests() {
         pages: {},
         ampFirstPages: [],
       }),
+      "next-font-manifest.json": JSON.stringify({
+        app: {},
+        appUsingSizeAdjust: false,
+        pages: {},
+        pagesUsingSizeAdjust: false,
+      }),
     };
 
     for (const [name, content] of Object.entries(stubs)) {
       const filePath = path.join(serverDir, name);
-      fs.writeFileSync(filePath, content);
+      // Only write stub if file is missing — never clobber files Next.js has written
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, content);
+      }
     }
   } catch (e) {
     // Ignore errors during seeding
