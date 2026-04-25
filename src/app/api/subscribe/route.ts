@@ -57,6 +57,25 @@ export async function POST(req: Request) {
       { onConflict: "user_id" }
     );
 
+    // Check if this user was referred and mark referral as completed
+    // (reward granting happens in webhook or separate admin process)
+    const { data: referral } = await supabase
+      .from("referrals")
+      .select("id")
+      .eq("referred_user_id", user.id)
+      .eq("status", "pending")
+      .single();
+
+    if (referral) {
+      await supabase
+        .from("referrals")
+        .update({
+          status: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", referral.id);
+    }
+
     return NextResponse.json({ confirmationUrl });
   } catch (err) {
     console.error("[subscribe] YooKassa error:", err);

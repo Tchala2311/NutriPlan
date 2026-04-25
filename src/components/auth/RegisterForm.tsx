@@ -13,7 +13,27 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
   const telegramRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Capture ?ref= and ?promo= from URL; persist in storage so they survive navigation
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref") ?? sessionStorage.getItem("nutriplan_ref") ?? localStorage.getItem("nutriplan_ref");
+    const promo = params.get("promo") ?? sessionStorage.getItem("nutriplan_promo") ?? localStorage.getItem("nutriplan_promo");
+
+    if (ref) {
+      setReferralCode(ref);
+      localStorage.setItem("nutriplan_ref", ref);
+      sessionStorage.setItem("nutriplan_ref", ref);
+    }
+    if (promo) {
+      setPromoCode(promo);
+      localStorage.setItem("nutriplan_promo", promo);
+      sessionStorage.setItem("nutriplan_promo", promo);
+    }
+  }, []);
 
   useEffect(() => {
     const container = telegramRef.current;
@@ -42,10 +62,16 @@ export function RegisterForm() {
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data: authData, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          ...(referralCode ? { referral_code: referralCode } : {}),
+          ...(promoCode ? { promo_code: promoCode } : {}),
+        },
+      },
     });
 
     if (error) {
@@ -53,6 +79,29 @@ export function RegisterForm() {
       setLoading(false);
       return;
     }
+
+    // Track referral if ?ref= provided
+    if (referralCode && authData.user?.id) {
+      try {
+        await fetch("/api/referrals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            referred_user_id: authData.user.id,
+            referral_code: referralCode,
+          }),
+        });
+      } catch (err) {
+        console.error("[register] Referral tracking failed:", err);
+        // Non-blocking — signup still succeeds
+      }
+    }
+
+    // Clear stored codes after successful signup
+    localStorage.removeItem("nutriplan_ref");
+    localStorage.removeItem("nutriplan_promo");
+    sessionStorage.removeItem("nutriplan_ref");
+    sessionStorage.removeItem("nutriplan_promo");
 
     setSuccess(true);
     setLoading(false);
