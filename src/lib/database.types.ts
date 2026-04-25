@@ -305,6 +305,50 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_redos: {
+        Row: {
+          affected_date: string
+          created_at: string | null
+          id: string
+          meal_plan_id: string | null
+          paid: boolean | null
+          reason: string | null
+          redo_type: string
+          user_id: string
+          week_number: number | null
+        }
+        Insert: {
+          affected_date: string
+          created_at?: string | null
+          id?: string
+          meal_plan_id?: string | null
+          paid?: boolean | null
+          reason?: string | null
+          redo_type: string
+          user_id: string
+          week_number?: number | null
+        }
+        Update: {
+          affected_date?: string
+          created_at?: string | null
+          id?: string
+          meal_plan_id?: string | null
+          paid?: boolean | null
+          reason?: string | null
+          redo_type?: string
+          user_id?: string
+          week_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_redos_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meals: {
         Row: {
           carbs_g: number | null
@@ -1057,9 +1101,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const
