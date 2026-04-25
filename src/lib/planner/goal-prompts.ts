@@ -121,6 +121,58 @@ export const PHASE_GUIDANCE_ED_SAFE: Record<string, Record<number, string>> = {
   },
 };
 
+// ── Hard dietary constraint block ────────────────────────────────────────────
+// Translates restriction/allergen codes into explicit Russian prohibition text
+// so GigaChat receives hard constraints, not vague category names.
+
+const RESTRICTION_PROHIBITIONS: Record<string, string> = {
+  lactose_free:     "ЗАПРЕЩЕНО (непереносимость лактозы): молоко, кефир, йогурт, сметана, сливки, сливочное масло, творог, большинство мягких сыров (рикотта, моцарелла, бри). Допустимо: твёрдые выдержанные сыры (пармезан, чеддер), безлактозное молоко.",
+  "без лактозы":    "ЗАПРЕЩЕНО (непереносимость лактозы): молоко, кефир, йогурт, сметана, сливки, сливочное масло, творог, большинство мягких сыров (рикотта, моцарелла, бри). Допустимо: твёрдые выдержанные сыры (пармезан, чеддер), безлактозное молоко.",
+  gluten_free:      "ЗАПРЕЩЕНО (безглютеновый рацион): пшеница, рожь, ячмень, полба, манная крупа, булгур, кус-кус, обычный хлеб, обычные макароны, большинство готовых соусов (содержат пшеничную муку). Допустимо: рис, гречка, кукуруза, картофель, киноа, амарант, безглютеновые макароны.",
+  "без глютена":    "ЗАПРЕЩЕНО (безглютеновый рацион): пшеница, рожь, ячмень, полба, манная крупа, булгур, кус-кус, обычный хлеб, обычные макароны, большинство готовых соусов (содержат пшеничную муку). Допустимо: рис, гречка, кукуруза, картофель, киноа, амарант, безглютеновые макароны.",
+  vegan:            "ЗАПРЕЩЕНО (веганский рацион): мясо, птица, рыба, морепродукты, яйца, молоко, кефир, йогурт, сметана, сыр, творог, мёд, желатин.",
+  веганское:        "ЗАПРЕЩЕНО (веганский рацион): мясо, птица, рыба, морепродукты, яйца, молоко, кефир, йогурт, сметана, сыр, творог, мёд, желатин.",
+  vegetarian:       "ЗАПРЕЩЕНО (вегетарианский рацион): мясо, птица, рыба, морепродукты, желатин животного происхождения.",
+  вегетарианское:   "ЗАПРЕЩЕНО (вегетарианский рацион): мясо, птица, рыба, морепродукты, желатин животного происхождения.",
+  keto:             "ЗАПРЕЩЕНО (кетогенный рацион, углеводы < 30 г нетто/день): хлеб, крупы (рис, гречка, овсянка), макароны, картофель, бобовые, большинство фруктов, сахар, мёд, соки.",
+  halal:            "ЗАПРЕЩЕНО (халяль): свинина и субпродукты из неё, алкоголь в блюдах, кровь и продукты из крови.",
+  kosher:           "ЗАПРЕЩЕНО (кошерный рацион): свинина, морепродукты без плавников и чешуи (креветки, кальмары, мидии). Нельзя смешивать мясное и молочное в одном приёме пищи.",
+};
+
+/**
+ * Builds an explicit hard-constraint block from the user's dietary restrictions
+ * and allergen list. Returns a ready-to-inject prompt section with concrete
+ * Russian prohibition text. Returns empty string if no restrictions apply.
+ */
+export function buildHardConstraintsBlock(
+  restrictions: string[],
+  allergens: string[]
+): string {
+  const lines: string[] = [];
+
+  for (const r of restrictions) {
+    const key = r.toLowerCase().trim();
+    const prohibition = RESTRICTION_PROHIBITIONS[key];
+    if (prohibition) lines.push(prohibition);
+  }
+
+  if (allergens.length > 0) {
+    lines.push(
+      `ЖЁСТКОЕ ИСКЛЮЧЕНИЕ (аллергены — НИКОГДА не использовать): ${allergens.join(", ")}. Наличие любого из этих продуктов в блюде недопустимо.`
+    );
+  }
+
+  if (lines.length === 0) return "";
+
+  return [
+    "",
+    "⚠️ ЖЁСТКИЕ ОГРАНИЧЕНИЯ РАЦИОНА — АБСОЛЮТНЫЕ ТРЕБОВАНИЯ (не рекомендации):",
+    ...lines.map((l) => `- ${l}`),
+    "Нарушение любого из этих ограничений недопустимо. Каждое блюдо и каждый ингредиент должны строго соответствовать перечисленным запретам.",
+    "",
+  ].join("\n");
+}
+
 // ── Goal-aware phase guidance helper ─────────────────────────────────────────
 
 export function getPhaseGuidance(
@@ -303,6 +355,8 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 
 Профиль пользователя:
 - Основная цель: снижение веса
+- Диетические ограничения: {{user.dietary_restrictions}}
+- Аллергены: {{user.allergens}}
 - Медицинские условия: {{user.medical_conditions}}
 - TDEE: {{user.tdee_kcal}} ккал/день
 - Целевой белок: {{user.target_protein_g}} г | Углеводы: {{user.target_carbs_g}} г | Жиры: {{user.target_fat_g}} г
@@ -335,6 +389,8 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 
 Профиль пользователя:
 - Основная цель: набор мышечной массы
+- Диетические ограничения: {{user.dietary_restrictions}}
+- Аллергены: {{user.allergens}}
 - Медицинские условия: {{user.medical_conditions}}
 - TDEE: {{user.tdee_kcal}} ккал/день
 - Целевой белок: {{user.target_protein_g}} г | Углеводы: {{user.target_carbs_g}} г | Жиры: {{user.target_fat_g}} г
@@ -368,6 +424,8 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 
 Профиль пользователя:
 - Основная цель: поддержание веса
+- Диетические ограничения: {{user.dietary_restrictions}}
+- Аллергены: {{user.allergens}}
 - Медицинские условия: {{user.medical_conditions}}
 - TDEE: {{user.tdee_kcal}} ккал/день
 - Целевой белок: {{user.target_protein_g}} г | Углеводы: {{user.target_carbs_g}} г | Жиры: {{user.target_fat_g}} г
@@ -401,6 +459,8 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 
 Профиль пользователя:
 - Основная цель: управление здоровьем / терапевтическое питание
+- Диетические ограничения: {{user.dietary_restrictions}}
+- Аллергены: {{user.allergens}}
 - Медицинские условия: {{user.medical_conditions}}
 - TDEE: {{user.tdee_kcal}} ккал/день
 - Целевой белок: {{user.target_protein_g}} г | Углеводы: {{user.target_carbs_g}} г | Жиры: {{user.target_fat_g}} г
@@ -432,6 +492,8 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 
 Профиль пользователя:
 - Основная цель: общее здоровье и самочувствие
+- Диетические ограничения: {{user.dietary_restrictions}}
+- Аллергены: {{user.allergens}}
 - Медицинские условия: {{user.medical_conditions}}
 - TDEE: {{user.tdee_kcal}} ккал/день
 - Целевой белок: {{user.target_protein_g}} г | Углеводы: {{user.target_carbs_g}} г | Жиры: {{user.target_fat_g}} г

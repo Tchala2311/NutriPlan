@@ -17,6 +17,8 @@ export type UserSettings = {
   notification_prefs: NotificationPrefs;
   training_days: number[]; // catalog day indices: 0=Mon … 6=Sun
   budget_preference: "low" | "moderate" | "high";
+  dietary_restrictions: string[];
+  allergens: string[];
 };
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -29,6 +31,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   },
   training_days: [0, 2, 4, 5], // Mon, Wed, Fri, Sat
   budget_preference: "moderate",
+  dietary_restrictions: [],
+  allergens: [],
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
@@ -38,13 +42,29 @@ export async function getUserSettings(): Promise<UserSettings> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data } = await supabase
-    .from("user_settings")
-    .select("units, language, notification_prefs, training_days, budget_preference")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [settingsResult, healthResult] = await Promise.all([
+    supabase
+      .from("user_settings")
+      .select("units, language, notification_prefs, training_days, budget_preference")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("health_assessments")
+      .select("dietary_restrictions, allergens")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
-  if (!data) return DEFAULT_SETTINGS;
+  const data = settingsResult.data;
+  const health = healthResult.data;
+
+  if (!data) {
+    return {
+      ...DEFAULT_SETTINGS,
+      dietary_restrictions: (health?.dietary_restrictions as string[]) ?? DEFAULT_SETTINGS.dietary_restrictions,
+      allergens: (health?.allergens as string[]) ?? DEFAULT_SETTINGS.allergens,
+    };
+  }
 
   return {
     units: (data.units as UserSettings["units"]) ?? DEFAULT_SETTINGS.units,
@@ -57,6 +77,8 @@ export async function getUserSettings(): Promise<UserSettings> {
       ? (data.training_days as number[])
       : DEFAULT_SETTINGS.training_days,
     budget_preference: (data.budget_preference as UserSettings["budget_preference"]) ?? DEFAULT_SETTINGS.budget_preference,
+    dietary_restrictions: (health?.dietary_restrictions as string[]) ?? DEFAULT_SETTINGS.dietary_restrictions,
+    allergens: (health?.allergens as string[]) ?? DEFAULT_SETTINGS.allergens,
   };
 }
 
@@ -78,6 +100,17 @@ export async function saveSettings(formData: FormData) {
     }
   }
 
+  // Extract dietary restrictions and allergens from checkboxes
+  const dietaryRestrictions: string[] = [];
+  const allergens: string[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("dietary_restriction_")) {
+      dietaryRestrictions.push(value as string);
+    } else if (key.startsWith("allergen_")) {
+      allergens.push(value as string);
+    }
+  }
+
   const settings = {
     user_id: user.id,
     units: (formData.get("units") as string) || "metric",
@@ -92,11 +125,26 @@ export async function saveSettings(formData: FormData) {
     budget_preference: (formData.get("budget_preference") as string) || "moderate",
   };
 
-  const { error } = await supabase
-    .from("user_settings")
-    .upsert(settings, { onConflict: "user_id" });
+  const healthSettings = {
+    user_id: user.id,
+    dietary_restrictions: dietaryRestrictions,
+    allergens: allergens,
+  };
 
-  if (error) throw new Error(error.message);
+  const [settingsError, healthError] = await Promise.all([
+    supabase
+      .from("user_settings")
+      .upsert(settings, { onConflict: "user_id" })
+      .then((r) => r.error),
+    supabase
+      .from("health_assessments")
+      .update(healthSettings)
+      .eq("user_id", user.id)
+      .then((r) => r.error),
+  ]);
+
+  if (settingsError) throw new Error(settingsError.message);
+  if (healthError) throw new Error(healthError.message);
 
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/planner");

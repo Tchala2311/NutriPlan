@@ -10,26 +10,42 @@ interface SettingsFormProps {
   userEmail: string;
   isPremium: boolean;
   periodEnd: string | null;
+  currentDietaryRestrictions?: string[];
+  currentAllergens?: string[];
 }
 
-export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: SettingsFormProps) {
+const DIETARY_RESTRICTION_OPTIONS = ["vegan", "vegetarian", "keto", "gluten-free", "dairy-free", "nut-free"];
+const ALLERGEN_OPTIONS = ["peanuts", "treenuts", "milk", "eggs", "fish", "shellfish", "soy", "sesame"];
+
+export function SettingsForm({ initial, userEmail, isPremium, periodEnd, currentDietaryRestrictions = [], currentAllergens = [] }: SettingsFormProps) {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [trainingDays, setTrainingDays] = useState<Set<number>>(new Set(initial.training_days));
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<Set<string>>(new Set(currentDietaryRestrictions));
+  const [allergens, setAllergens] = useState<Set<string>>(new Set(currentAllergens));
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
 
   useEffect(() => {
     setTrainingDays(new Set(initial.training_days));
-  }, [initial.training_days]);
+    setDietaryRestrictions(new Set(currentDietaryRestrictions));
+    setAllergens(new Set(currentAllergens));
+  }, [initial.training_days, currentDietaryRestrictions, currentAllergens]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaved(false);
     setSaveError(null);
     const formData = new FormData(e.currentTarget);
+    // Add dietary restrictions and allergens
+    dietaryRestrictions.forEach((dr) => {
+      formData.append(`dietary_restriction_${dr}`, dr);
+    });
+    allergens.forEach((allergen) => {
+      formData.append(`allergen_${allergen}`, allergen);
+    });
     startTransition(async () => {
       try {
         await saveSettings(formData);
@@ -55,6 +71,73 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ── Food Preferences ── */}
+        <Section title="Пищевые предпочтения">
+          <Field label="Диетические ограничения">
+            <div className="space-y-3">
+              {DIETARY_RESTRICTION_OPTIONS.map((option) => (
+                <label key={option} className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dietaryRestrictions.has(option)}
+                    onChange={(e) => {
+                      const newRestrictions = new Set(dietaryRestrictions);
+                      if (e.target.checked) {
+                        newRestrictions.add(option);
+                      } else {
+                        newRestrictions.delete(option);
+                      }
+                      setDietaryRestrictions(newRestrictions);
+                    }}
+                    className="rounded border-parchment-300"
+                  />
+                  <span className="text-sm text-bark-300">
+                    {option === "vegan" && "Веган"}
+                    {option === "vegetarian" && "Вегетарианец"}
+                    {option === "keto" && "Кетогенная диета"}
+                    {option === "gluten-free" && "Без глютена"}
+                    {option === "dairy-free" && "Без молочных продуктов"}
+                    {option === "nut-free" && "Без орехов"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Аллергии">
+            <div className="space-y-3">
+              {ALLERGEN_OPTIONS.map((option) => (
+                <label key={option} className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allergens.has(option)}
+                    onChange={(e) => {
+                      const newAllergens = new Set(allergens);
+                      if (e.target.checked) {
+                        newAllergens.add(option);
+                      } else {
+                        newAllergens.delete(option);
+                      }
+                      setAllergens(newAllergens);
+                    }}
+                    className="rounded border-parchment-300"
+                  />
+                  <span className="text-sm text-bark-300">
+                    {option === "peanuts" && "Арахис"}
+                    {option === "treenuts" && "Древесные орехи"}
+                    {option === "milk" && "Молоко"}
+                    {option === "eggs" && "Яйца"}
+                    {option === "fish" && "Рыба"}
+                    {option === "shellfish" && "Морепродукты"}
+                    {option === "soy" && "Соя"}
+                    {option === "sesame" && "Кунжут"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </Field>
+        </Section>
+
         {/* ── Notifications ── */}
         <Section title="Уведомления">
           <Field label="Напоминание о приёме пищи">
