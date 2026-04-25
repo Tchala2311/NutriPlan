@@ -121,7 +121,7 @@ export async function saveSettings(formData: FormData) {
       ai_suggestion_timing:
         (formData.get("ai_suggestion_timing") as string) || "off",
     },
-    training_days: trainingDays.length > 0 ? trainingDays : [0, 2, 4, 5],
+    training_days: trainingDays.length > 0 ? trainingDays.sort((a, b) => a - b) : [0, 2, 4, 5],
     budget_preference: (formData.get("budget_preference") as string) || "moderate",
   };
 
