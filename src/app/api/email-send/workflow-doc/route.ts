@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const result = await sendEmail({
       from: "noreply@nutriplan.app",
       to,
-      subject: "NutriPlan Development Workflow Documentation",
+      subject: "NutriPlan — Основной сценарий и отклонения (TES-119)",
       html: WORKFLOW_DOC_HTML,
     });
 

@@ -1,371 +1,312 @@
 /**
- * Workflow documentation content that can be sent via email
- * Contains development workflow, processes, and guidelines
+ * NutriPlan main scenario + common deviations — HTML email version.
+ * Generated from TES-119 plan document (v3).
+ * Sent to board via POST /api/email-send/workflow-doc.
  */
 
-export const WORKFLOW_DOC_HTML = `
-<!DOCTYPE html>
-<html>
+export const WORKFLOW_DOC_HTML = `<!DOCTYPE html>
+<html lang="ru">
 <head>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
-      margin: 0;
-      padding: 20px;
-      background: #f5f5f5;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #1a1a1a;
-      border-bottom: 3px solid #4f46e5;
-      padding-bottom: 10px;
-    }
-    h2 {
-      color: #4f46e5;
-      margin-top: 30px;
-    }
-    h3 {
-      color: #6366f1;
-    }
-    code {
-      background: #f3f4f6;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 0.9em;
-    }
-    pre {
-      background: #f3f4f6;
-      padding: 15px;
-      border-radius: 5px;
-      overflow-x: auto;
-      border-left: 4px solid #4f46e5;
-    }
-    pre code {
-      background: none;
-      padding: 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-    th, td {
-      text-align: left;
-      padding: 12px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    th {
-      background: #f3f4f6;
-      font-weight: 600;
-      color: #1f2937;
-    }
-    ul, ol {
-      margin: 15px 0;
-      padding-left: 25px;
-    }
-    li {
-      margin: 8px 0;
-    }
-    .command {
-      background: #1f2937;
-      color: #e5e7eb;
-      padding: 15px;
-      border-radius: 5px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      margin: 10px 0;
-    }
-    .note {
-      background: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      padding: 15px;
-      margin: 20px 0;
-      border-radius: 4px;
-    }
-    .success {
-      background: #d1fae5;
-      border-left: 4px solid #10b981;
-      padding: 15px;
-      margin: 20px 0;
-      border-radius: 4px;
-    }
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
-      color: #6b7280;
-      font-size: 0.9em;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;max-width:860px;margin:0 auto;padding:24px;background:#f7f7f5}
+  .card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:32px;margin-bottom:24px}
+  h1{color:#1a1a1a;border-bottom:3px solid #4f46e5;padding-bottom:10px;margin-top:0}
+  h2{color:#4f46e5;margin-top:28px}
+  h3{color:#6366f1;margin-top:20px}
+  h4{color:#374151;margin-top:16px}
+  code{background:#f3f4f6;padding:2px 6px;border-radius:3px;font-family:'Monaco','Menlo',monospace;font-size:.88em}
+  pre{background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:6px;overflow-x:auto;font-size:.85em;border-left:4px solid #4f46e5}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.9em}
+  th{background:#4f46e5;color:#fff;text-align:left;padding:8px 12px}
+  td{padding:7px 12px;border-bottom:1px solid #e5e7eb}
+  tr:nth-child(even) td{background:#f9fafb}
+  .badge{display:inline-block;background:#4f46e5;color:#fff;border-radius:4px;padding:2px 8px;font-size:.8em;font-weight:600}
+  .badge-green{background:#16a34a}
+  .badge-orange{background:#ea580c}
+  .badge-red{background:#dc2626}
+  .step{background:#f0f0ff;border-left:4px solid #4f46e5;padding:10px 14px;margin:10px 0;border-radius:0 6px 6px 0}
+  .deviation{background:#fff7ed;border-left:4px solid #ea580c;padding:10px 14px;margin:10px 0;border-radius:0 6px 6px 0}
+  ul{padding-left:20px}
+  li{margin:4px 0}
+  hr{border:none;border-top:1px solid #e5e7eb;margin:24px 0}
+  .footer{text-align:center;color:#9ca3af;font-size:.85em;margin-top:32px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>NutriPlan Development Workflow</h1>
 
-    <div class="success">
-      <strong>Welcome to the NutriPlan project!</strong> This document outlines the development workflow, processes, and best practices for contributing to NutriPlan.
-    </div>
+<div class="card">
+<h1>NutriPlan — Основной сценарий и отклонения</h1>
+<p><strong>Версия:</strong> 3 (все проверки агентов завершены) &nbsp;|&nbsp; <strong>Дата:</strong> Апрель 2026</p>
 
-    <h2>Project Overview</h2>
-    <p>NutriPlan is a Next.js-based nutrition and meal planning application built with:</p>
-    <table>
-      <tr>
-        <th>Layer</th>
-        <th>Technology</th>
-      </tr>
-      <tr>
-        <td>Language</td>
-        <td>TypeScript 5 (Node 22)</td>
-      </tr>
-      <tr>
-        <td>Framework</td>
-        <td>Next.js 15</td>
-      </tr>
-      <tr>
-        <td>Database</td>
-        <td>Supabase (PostgreSQL)</td>
-      </tr>
-      <tr>
-        <td>Testing</td>
-        <td>Vitest</td>
-      </tr>
-      <tr>
-        <td>Linting</td>
-        <td>ESLint + TypeScript ESLint</td>
-      </tr>
-      <tr>
-        <td>Code Formatting</td>
-        <td>Prettier</td>
-      </tr>
-      <tr>
-        <td>CI/CD</td>
-        <td>GitHub Actions</td>
-      </tr>
-    </table>
+<h2>Обзор</h2>
+<p>NutriPlan — персонализированное приложение для планирования питания (Next.js 15, Supabase, GigaChat AI). Ведёт пользователя от регистрации через ведение дневника питания, AI-генерацию планов питания, управление рецептами и постоянные инсайты о здоровье. Все AI-функции работают на <strong>GigaChat</strong> (LLM от Сбера) через OpenAI-совместимый Chat Completions API.</p>
 
-    <h2>Local Development Setup</h2>
+<h2>Инвентаризация GigaChat-потоков (15 функций)</h2>
+<table>
+<tr><th>#</th><th>Функция</th><th>Модель</th><th>Триггер</th></tr>
+<tr><td>1</td><td><code>getOnboardingInsight()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/onboarding после анкеты здоровья</td></tr>
+<tr><td>2</td><td><code>getDailyAnalysis()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/insights?type=daily_analysis</td></tr>
+<tr><td>3</td><td><code>getSafetyAlert()</code></td><td><span class="badge">lite</span></td><td>Критический дефицит нутриентов</td></tr>
+<tr><td>4</td><td><code>getGoalInsight()</code></td><td><span class="badge">lite</span></td><td>Еженедельная проверка прогресса</td></tr>
+<tr><td>5</td><td><code>getTrendWarning()</code></td><td><span class="badge">lite</span></td><td>Негативный тренд 7+ дней</td></tr>
+<tr><td>6</td><td><code>getOptimisationTip()</code></td><td><span class="badge">lite</span></td><td>Совет по оптимизации</td></tr>
+<tr><td>7</td><td><code>getMealSubstitution()</code></td><td><span class="badge">lite</span></td><td>Дефицит микронутриента → 3 замены</td></tr>
+<tr><td>8</td><td><code>getFreeAnswer()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/chat (свободный Q&amp;A)</td></tr>
+<tr><td>9</td><td><code>generateWeeklyMealPlan()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/meal-plan</td></tr>
+<tr><td>10</td><td><code>swapMealSlot()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/meal-plan/swap</td></tr>
+<tr><td>11</td><td><code>getRecipeDetail()</code></td><td><span class="badge">lite</span></td><td>GET /api/ai/meal-plan/get</td></tr>
+<tr><td>12</td><td><code>getFoodPhotoAnalysis()</code></td><td><span class="badge badge-orange">max→pro</span></td><td>POST /api/ai/food-photo (фото еды)</td></tr>
+<tr><td>13</td><td><code>estimateIngredientNutrition()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/food-suggestions (продукт не в БД)</td></tr>
+<tr><td>14</td><td><code>getFoodSuggestion()</code></td><td><span class="badge">lite</span></td><td>Постлоговый нёдж</td></tr>
+<tr><td>15</td><td><code>generateTastePortrait()</code></td><td><span class="badge">lite</span></td><td>POST /api/ai/taste-portrait (история 30 дней)</td></tr>
+</table>
+<p><strong>Авторизация GigaChat:</strong> <code>GIGACHAT_AUTH_KEY</code> (base64 clientId:clientSecret) → OAuth-токен с <code>https://ngw.devices.sberbank.ru:9443/api/v2/oauth</code>. Токен кэшируется до истечения (−60 с).</p>
+</div>
 
-    <h3>Prerequisites</h3>
-    <ul>
-      <li>Node.js 22+ (<a href="https://github.com/nvm-sh/nvm">nvm</a> recommended)</li>
-      <li>npm 10+</li>
-      <li>Git</li>
-    </ul>
+<div class="card">
+<h1>Основной сценарий (Happy Path)</h1>
 
-    <h3>Getting Started</h3>
-    <div class="command">
-git clone &lt;repo-url&gt;
-cd nutriplan
-npm install
-    </div>
+<h2>Этап 1: Регистрация и аутентификация</h2>
+<div class="step">
+<strong>Действие пользователя:</strong> Открывает NutriPlan → нажимает «Зарегистрироваться».
+</div>
+<ol>
+<li>Пользователь вводит email + пароль в <code>RegisterForm</code>.</li>
+<li>Фронтенд вызывает <code>supabase.auth.signUp()</code>.</li>
+<li>Supabase отправляет письмо-подтверждение.</li>
+<li>Пользователь кликает ссылку → Supabase устанавливает session cookie.</li>
+<li>Next.js middleware (<code>/src/middleware.ts</code>) перехватывает запросы, вызывает <code>supabase.auth.getUser()</code>, перенаправляет неавторизованных на <code>/login</code>.</li>
+</ol>
+<p><strong>Результат:</strong> Пользователь аутентифицирован, перенаправлен на <code>/onboarding</code>.</p>
 
-    <h3>Environment Configuration</h3>
-    <p>Copy <code>.env.example</code> to <code>.env.local</code> and configure:</p>
-    <ul>
-      <li><strong>Supabase:</strong> Database URL and API keys</li>
-      <li><strong>OAuth Providers:</strong> Yandex Client ID and Secret</li>
-      <li><strong>AI Services:</strong> GigaChat authentication</li>
-      <li><strong>Telegram Bot:</strong> Bot token and username</li>
-      <li><strong>Email Service:</strong> Resend API key</li>
-    </ul>
+<hr/>
 
-    <h2>Development Commands</h2>
-    <table>
-      <tr>
-        <th>Command</th>
-        <th>Description</th>
-      </tr>
-      <tr>
-        <td><code>npm run dev</code></td>
-        <td>Start dev server with hot reload (port 3001)</td>
-      </tr>
-      <tr>
-        <td><code>npm run build</code></td>
-        <td>Build for production</td>
-      </tr>
-      <tr>
-        <td><code>npm start</code></td>
-        <td>Start production server</td>
-      </tr>
-      <tr>
-        <td><code>npm test</code></td>
-        <td>Run tests once</td>
-      </tr>
-      <tr>
-        <td><code>npm run test:watch</code></td>
-        <td>Run tests in watch mode</td>
-      </tr>
-      <tr>
-        <td><code>npm run lint</code></td>
-        <td>Lint source and test files</td>
-      </tr>
-      <tr>
-        <td><code>npm run format</code></td>
-        <td>Auto-format all files with Prettier</td>
-      </tr>
-      <tr>
-        <td><code>npm run format:check</code></td>
-        <td>Check if files match Prettier formatting</td>
-      </tr>
-    </table>
+<h2>Этап 2: Онбординг (анкета здоровья)</h2>
+<div class="step">
+<strong>Действие пользователя:</strong> Заполняет многошаговую анкету в <code>OnboardingWizard</code>.
+</div>
+<h4>Шаги анкеты:</h4>
+<ul>
+<li>Цель: похудение / набор мышц / лечение заболевания / общее здоровье / поддержание веса</li>
+<li>Возраст, пол, рост, вес</li>
+<li>Уровень активности (сидячий → очень активный)</li>
+<li>Пищевые ограничения (вегетарианство, веган, халяль, кето, без глютена, без лактозы и др.)</li>
+<li>Аллергены</li>
+<li>Медицинские условия (диабет T2, гипертония, СРК, СПКЯ, гипотиреоз)</li>
+<li>Бюджет (низкий / средний / высокий) — используется при генерации плана</li>
+<li>Тон ответов (краткий / подробный) — влияет на длину AI-ответов</li>
+</ul>
+<h4>Что происходит в системе:</h4>
+<ol>
+<li>Server Action сохраняет данные в таблицу <code>health_assessments</code>.</li>
+<li>TDEE и макро-цели рассчитываются через <code>calculateTDEE()</code> + <code>calculateMacros()</code>.</li>
+<li><code>POST /api/ai/onboarding</code> → строится <code>UserProfile</code> → вызывается <code>getOnboardingInsight(profile)</code>.</li>
+<li><span class="badge">GigaChat lite</span> получает <code>SYSTEM_PROMPT_RU</code> + <code>PROMPT_ONBOARDING_RU</code> с данными пользователя.</li>
+<li>Возвращает персонализированный анализ и начальные рекомендации.</li>
+</ol>
+<p><strong>Результат:</strong> Пользователь видит приветствие + макро-цели на дашборде.</p>
 
-    <h2>Project Structure</h2>
-    <pre><code>
-src/
-  app/                      # Next.js app directory
-    api/                    # API routes
-      auth/                 # Authentication endpoints
-      meal-plans/           # Meal planning endpoints
-      shopping/             # Shopping list endpoints
-      email-send/           # Email sending endpoint
-      ...                   # Other API routes
-    dashboard/              # Dashboard pages and layout
-    components/             # Page-level components
-    page.tsx                # Home page
-  components/               # Reusable React components
-    ui/                     # UI primitives
-    ...                     # Feature components
-  lib/                      # Utility libraries
-    supabase/               # Supabase client setup
-    ...                     # Other utilities
-  middleware.ts             # Next.js middleware
-.github/
-  workflows/
-    ci.yml                  # GitHub Actions CI pipeline
-.env.example                # Environment variables template
-.env.local                  # Local environment (git-ignored)
-package.json                # Dependencies and scripts
-tsconfig.json               # TypeScript configuration
-tailwind.config.js          # Tailwind CSS configuration
-    </code></pre>
+<hr/>
 
-    <h2>Code Quality Standards</h2>
+<h2>Этап 3: Дашборд — ежедневный обзор</h2>
+<div class="step"><strong>Действие пользователя:</strong> Открывает <code>/dashboard</code>.</div>
+<ol>
+<li>Сервер параллельно загружает: <code>nutrition_logs</code> за сегодня, <code>user_goals</code>, <code>water_logs</code>.</li>
+<li>Подсчитывает итоги, рендерит карточки статистики и прогресс-бары.</li>
+</ol>
+<p><strong>Результат:</strong> Пользователь видит снимок питания за день.</p>
 
-    <h3>Formatting and Linting</h3>
-    <p>All code must pass Prettier and ESLint checks:</p>
-    <div class="command">
-npm run format:check
-npm run lint
-    </div>
+<hr/>
 
-    <h3>Testing</h3>
-    <p>Write tests for new features and bug fixes:</p>
-    <div class="command">
-npm test
-    </div>
+<h2>Этап 4: Ведение дневника питания</h2>
+<div class="step"><strong>Действие пользователя:</strong> Нажимает «Добавить еду» → переходит на <code>/dashboard/log</code>.</div>
 
-    <h3>TypeScript</h3>
-    <p>All code must be written in TypeScript with proper type annotations. No <code>any</code> types unless absolutely necessary.</p>
+<h4>Путь A: Ручной ввод текстом</h4>
+<ol>
+<li>Пользователь вводит название продукта + количество.</li>
+<li>Фронтенд вызывает <code>POST /api/ingredients</code> для поиска нутриентов.</li>
+<li>Если не найден → <code>estimateIngredientNutrition()</code> → <span class="badge">GigaChat lite</span> → JSON-оценка.</li>
+<li>Пользователь подтверждает → сохраняется в <code>nutrition_logs</code>.</li>
+</ol>
 
-    <h2>CI/CD Pipeline</h2>
-    <p>GitHub Actions runs automatically on every push and pull request to <code>main</code>:</p>
-    <ol>
-      <li><strong>Format Check:</strong> <code>prettier --check</code></li>
-      <li><strong>Linting:</strong> <code>eslint</code></li>
-      <li><strong>Tests:</strong> <code>vitest run</code></li>
-      <li><strong>Build:</strong> <code>npm run build</code></li>
-    </ol>
-    <p>All four steps must pass before merging to main.</p>
+<h4>Путь B: Распознавание фото еды</h4>
+<ol>
+<li>Пользователь загружает фото → <code>POST /api/ai/food-photo</code>.</li>
+<li>Сервер уменьшает до ≤1024px через <code>sharp</code>, загружает в GigaChat Files API.</li>
+<li><span class="badge badge-orange">GigaChat max (fallback pro)</span> + <code>buildFoodPhotoPrompt()</code> → детальный JSON: ингредиенты, способ приготовления, оценка веса, скрытые калории.</li>
+<li>Если доступны рецепты недели — GigaChat пытается сопоставить через <code>matched_recipe_id</code>.</li>
+</ol>
 
-    <h2>API Endpoints</h2>
+<h4>Путь C: AI-подсказка после логирования</h4>
+<ol>
+<li>После каждой записи → <code>getFoodSuggestion(profile, dayTotals)</code> → <span class="badge">GigaChat lite</span>.</li>
+<li>Если <code>eating_disorder_flag = true</code> — в промпт явно инжектируется блокирующая инструкция (не строка с флагом), избегающая числовых значений.</li>
+<li>Возвращается ОДНА краткая подсказка или пустая строка.</li>
+</ol>
 
-    <h3>Email Sending</h3>
-    <p><strong>POST</strong> <code>/api/email-send</code></p>
-    <p>Send emails using Resend service.</p>
-    <p><strong>Request Body:</strong></p>
-    <pre><code>{
-  "to": "recipient@example.com",
-  "subject": "Email Subject",
-  "html": "&lt;h1&gt;HTML Content&lt;/h1&gt;",
-  "from": "noreply@nutriplan.app"  // optional
-}</code></pre>
-    <p><strong>Response:</strong></p>
-    <pre><code>{
-  "success": true,
-  "id": "email-message-id"
-}</code></pre>
+<hr/>
 
-    <h2>Database Migrations</h2>
-    <p>Database migrations are stored in <code>supabase/migrations/</code> directory. Use Supabase CLI to manage migrations:</p>
-    <div class="command">
-supabase migration new &lt;migration_name&gt;
-    </div>
+<h2>Этап 5: Генерация недельного плана питания</h2>
+<div class="step"><strong>Действие пользователя:</strong> Переходит на <code>/dashboard/planner</code> → нажимает «Сгенерировать план».</div>
+<ol>
+<li><code>getMealPlanPrompt(params)</code> строит обогащённый промпт:
+  <ul>
+  <li><strong>5 шаблонов</strong> по целям (похудение / набор мышц / поддержание / заболевания / общее здоровье)</li>
+  <li><strong>Фазовые цели по калориям</strong> (тренировочный / восстановительный день)</li>
+  <li><strong>Модификаторы сценария</strong>: keto, vegan_muscle, diabetes_t2, hypertension, ibs, pcos, hypothyroidism, eating_disorder, budget_low/moderate/high</li>
+  <li><strong>Блок жёстких ограничений</strong> — коды ограничений переведены в явные запреты на русском</li>
+  <li><strong>ED-пост-обработка</strong> — при флаге скрабятся числа ккал из текста промпта</li>
+  </ul>
+</li>
+<li><code>generateWeeklyMealPlan()</code> → <span class="badge">GigaChat lite</span> → <code>WeekPlanRaw</code> (7 дней × 4 приёма пищи).</li>
+<li><code>extractJson()</code> удаляет markdown-фенсы; <code>sanitizeNumbers()</code> приводит строки-числа.</li>
+<li>Рецепты сохраняются в таблицу <code>recipes</code>; создаются <code>meal_plan_entries</code>.</li>
+</ol>
 
-    <h2>Git Workflow</h2>
+<hr/>
 
-    <h3>Branch Naming</h3>
-    <ul>
-      <li><code>feature/description</code> - New features</li>
-      <li><code>fix/description</code> - Bug fixes</li>
-      <li><code>chore/description</code> - Maintenance tasks</li>
-      <li><code>docs/description</code> - Documentation updates</li>
-    </ul>
+<h2>Этап 6: Взаимодействие с рецептами</h2>
+<ul>
+<li><strong>Детали рецепта:</strong> <code>getRecipeDetail()</code> → <span class="badge">GigaChat lite</span> → пошаговые инструкции, советы, замены.</li>
+<li><strong>Замена блюда:</strong> <code>swapMealSlot()</code> → <span class="badge">GigaChat lite</span> → ОДНО новое блюдо, не повторяющее существующие в этот день.</li>
+<li><strong>Переделка плана (redo):</strong> до 3 раз в неделю бесплатно; 4+ → платёж 100 ₽.</li>
+</ul>
 
-    <h3>Commit Messages</h3>
-    <p>Use conventional commit format:</p>
-    <div class="command">
-&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
+<hr/>
 
-&lt;body&gt;
+<h2>Этап 7: AI-инсайты</h2>
+<table>
+<tr><th>Приоритет</th><th>Тип</th><th>Функция GigaChat</th><th>Триггер</th></tr>
+<tr><td>1</td><td>safety_alert</td><td><code>getSafetyAlert()</code></td><td>Критический дефицит нутриентов (&lt;70% цели 3+ дня)</td></tr>
+<tr><td>2</td><td>goal_insight</td><td><code>getGoalInsight()</code></td><td>Еженедельная проверка</td></tr>
+<tr><td>3</td><td>trend_warning</td><td><code>getTrendWarning()</code></td><td>Негативный тренд 7 дней</td></tr>
+<tr><td>4</td><td>optimisation_tip</td><td><code>getOptimisationTip()</code></td><td>Совет по улучшению</td></tr>
+<tr><td>5</td><td>daily_analysis</td><td><code>getDailyAnalysis()</code></td><td>Сводка дня; фолбэк для неизвестных целей</td></tr>
+<tr><td>6</td><td>meal_substitution</td><td><code>getMealSubstitution()</code></td><td>Дефицит микронутриента → 3 продукта-замены</td></tr>
+</table>
 
-&lt;footer&gt;
-    </div>
-    <p>Types: <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>style</code>, <code>refactor</code>, <code>perf</code>, <code>test</code>, <code>chore</code></p>
+<hr/>
 
-    <h2>Deployment</h2>
-    <p>The application is deployed automatically on merges to main via GitHub Actions and Vercel.</p>
+<h2>Этап 8: Свободный чат Q&amp;A</h2>
+<ol>
+<li><code>POST /api/ai/chat</code> с <code>{ message }</code>.</li>
+<li>Ввод санируется: <code>{{</code> и <code>}}</code> экранируются (защита от prompt injection).</li>
+<li><code>getFreeAnswer(profile, message)</code> → <span class="badge">GigaChat lite</span> → ответ, адаптированный к профилю.</li>
+<li>История диалога сохраняется в <code>chat_sessions</code> + <code>chat_messages</code> (Supabase).</li>
+</ol>
 
-    <div class="note">
-      <strong>Important:</strong> Never commit sensitive information like API keys or passwords. Use environment variables instead.
-    </div>
+<hr/>
 
-    <h2>Troubleshooting</h2>
+<h2>Этап 9: Портрет вкуса</h2>
+<ol>
+<li>Сервер агрегирует историю 30 дней + оценённые блюда.</li>
+<li><code>generateTastePortrait()</code> → <span class="badge">GigaChat lite</span> → JSON: <code>taste_profile_summary, preferred_cuisines[], flavor_preferences[], dietary_fit, health_alignment, top_rated_patterns[], recommendations[]</code>.</li>
+</ol>
 
-    <h3>Port Already in Use</h3>
-    <p>If port 3001 is already in use, kill the process or modify the dev command in <code>package.json</code>.</p>
+<hr/>
 
-    <h3>Dependencies Issues</h3>
-    <p>Clear npm cache and reinstall:</p>
-    <div class="command">
-rm -rf node_modules package-lock.json
-npm install
-    </div>
+<h2>Этапы 10–11: Список покупок и экспорт данных</h2>
+<ul>
+<li><strong>Список покупок:</strong> Агрегирует ингредиенты из <code>meal_plan_entries</code> за неделю. AI не используется — чистая агрегация данных.</li>
+<li><strong>Экспорт:</strong> <code>GET /api/export-data</code> → CSV всех <code>nutrition_logs</code> и <code>water_logs</code>.</li>
+</ul>
+</div>
 
-    <h3>TypeScript Errors</h3>
-    <p>Ensure TypeScript version matches <code>package.json</code> and compile to check for errors:</p>
-    <div class="command">
-npx tsc --noEmit
-    </div>
+<div class="card">
+<h1>Частые отклонения и обработка</h1>
 
-    <div class="footer">
-      <p>Last updated: ${new Date().toLocaleDateString()}</p>
-      <p>For questions or issues, please open an issue on GitHub or contact the development team.</p>
-    </div>
-  </div>
+<h3>Отклонение 1: Пользователь пропускает онбординг</h3>
+<div class="deviation">
+<code>DashboardShell</code> проверяет наличие <code>health_assessments</code> при каждом рендере → перенаправляет на <code>/onboarding?from=dashboard</code>. GigaChat-инсайт не вызывается до завершения анкеты.
+</div>
+
+<h3>Отклонение 2: Сбой / таймаут GigaChat</h3>
+<div class="deviation">
+Таймаут: 30 с (фото-анализ: 60 с). Одна автоматическая повторная попытка. При сбое — graceful degradation: UI показывает заглушку, не крашится. Скелетон-состояния загрузки реализованы для всех 8 AI-точек входа.
+</div>
+
+<h3>Отклонение 3: Истёк токен GigaChat</h3>
+<div class="deviation">
+Модуль <code>gigachat/client.ts</code> кэширует OAuth-токен. Если до истечения &lt;60 с — автоматически запрашивает новый перед вызовом. Прозрачно для вызывающего кода.
+</div>
+
+<h3>Отклонение 4: Пользователь меняет настройки профиля</h3>
+<div class="deviation">
+Настройки обновляются через Server Actions. Новый план генерируется вручную пользователем — AI не перегенерирует автоматически при изменении профиля.
+</div>
+
+<h3>Отклонение 5: Платёж / подписка</h3>
+<div class="deviation">
+YooKassa webhook (<code>POST /api/subscription/webhook</code>): <code>payment.succeeded</code> → устанавливает <code>plan: "premium"</code>; <code>payment.canceled</code> → <code>plan: "past_due"</code>. Пробный период: 14 дней, триггер предупреждения за 3 дня (T-3 email). Платные фичи: планировщик, redo 4+, экспорт PDF. Реферальная система: ?ref= захватывается на лендинге, сохраняется в localStorage/sessionStorage, применяется при регистрации.
+</div>
+
+<h3>Отклонение 6: Нераспознанная фотография еды</h3>
+<div class="deviation">
+GigaChat возвращает пустой массив ингредиентов или низкую уверенность → фронтенд предлагает перейти к ручному вводу. Сообщение об ошибке отображается без краша.
+</div>
+
+<h3>Отклонение 7: Беременность / кормление грудью</h3>
+<div class="deviation">
+Флаги <code>is_pregnant</code> / <code>is_breastfeeding</code> в <code>health_assessments</code>. TDEE-аплифт: +0/+340/+452/+500 ккал по триместрам. GigaChat получает ограничения по безопасности продуктов (нет сырой рыбы, мяса, яиц; печени; непастеризованных сыров; тунца &gt;2 порции/нед.). Применяется во всех 5 точках вызова целей.
+</div>
+
+<h3>Отклонение 8: Расстройства пищевого поведения (RПП)</h3>
+<div class="deviation">
+Гранулярные флаги: анорексия/ограничительное РПП (скрыть числа калорий, показать только светофор), компульсивное переедание (БЭД) (без ограничений, акцент на чувство голода), орторексия (избегать «чистая» vs «грязная» еда). Флаг инжектируется как явный блок инструкций в промпт GigaChat, не как строка.
+</div>
+
+<h3>Отклонение 9: Заболевания (per-condition маршрутизация)</h3>
+<div class="deviation">
+Отдельные субпромпты для: ХБП (ограничение белка, фосфора, калия), СД1/СД2 (подсчёт углеводов, ГИ), подагра (низкопуриновая), бариатрия (малые порции, белок первым), ФКУ (ограничение фенилаланина), гипотиреоз (ограничение сырых крестоцветных/сои). ХБП и ФКУ включают обязательный дисклеймер: «проконсультируйтесь с нефрологом/диетологом».
+</div>
+
+<h3>Отклонение 10: Нарушение безопасности питания</h3>
+<div class="deviation">
+Пороги для safety_alert: &lt;70% цели калорий 3+ дня; &lt;50% белка 3+ дня; нет источника B12 7+ дней (веганы); потеря &gt;1% массы тела/неделю. При срабатывании — <code>getSafetyAlert()</code> получает наивысший приоритет перед другими инсайтами.
+</div>
+</div>
+
+<div class="card">
+<h1>Технические характеристики</h1>
+<table>
+<tr><th>Компонент</th><th>Технология</th></tr>
+<tr><td>Frontend</td><td>Next.js 15 (App Router), React 19, TypeScript</td></tr>
+<tr><td>Backend</td><td>Next.js API Routes + Server Actions</td></tr>
+<tr><td>База данных</td><td>Supabase (PostgreSQL) + Row Level Security</td></tr>
+<tr><td>Аутентификация</td><td>Supabase Auth (email/password, Yandex OAuth, Telegram)</td></tr>
+<tr><td>AI-сервис</td><td>GigaChat (Sber) — lite (текст), max→pro (фото)</td></tr>
+<tr><td>AI-авторизация</td><td>OAuth2 GIGACHAT_API_PERS, токен кэшируется</td></tr>
+<tr><td>Платежи</td><td>YooKassa webhook</td></tr>
+<tr><td>Email</td><td>Resend API (RESEND_API_KEY)</td></tr>
+<tr><td>Стилизация</td><td>Tailwind CSS v4</td></tr>
+<tr><td>Деплой</td><td>Vercel (рекомендуется)</td></tr>
+</table>
+
+<h2>Ключевые таблицы БД</h2>
+<table>
+<tr><th>Таблица</th><th>Назначение</th></tr>
+<tr><td>health_assessments</td><td>Профиль здоровья пользователя (цели, ограничения, медусловия)</td></tr>
+<tr><td>nutrition_logs</td><td>Записи питания (пагинация + фильтр по дате)</td></tr>
+<tr><td>meal_plans / meal_plan_entries</td><td>AI-сгенерированные планы питания</td></tr>
+<tr><td>recipes</td><td>Рецепты (источник AI + оценки пользователей)</td></tr>
+<tr><td>dish_ratings</td><td>Оценки блюд (1–5) + комментарии</td></tr>
+<tr><td>user_taste_portrait</td><td>AI-портрет вкусов (JSON)</td></tr>
+<tr><td>chat_sessions / chat_messages</td><td>История диалогов с GigaChat</td></tr>
+<tr><td>meal_redos</td><td>Запросы на переделку плана (3/нед. бесплатно)</td></tr>
+<tr><td>referrals</td><td>Реферальная система (?ref= → награды)</td></tr>
+<tr><td>water_logs</td><td>Трекинг потребления воды</td></tr>
+<tr><td>user_goals</td><td>Цели и макро-таргеты пользователя</td></tr>
+<tr><td>meals</td><td>Каталог блюд для 8-недельной программы</td></tr>
+<tr><td>catalog_completions</td><td>Отметки выполнения блюд в программе</td></tr>
+</table>
+</div>
+
+<div class="footer">
+<p>NutriPlan — разработано с использованием рекомендаций ВОЗ по нормам питания</p>
+<p>Документ сгенерирован автоматически из TES-119 (v3) · ${new Date().toLocaleDateString('ru-RU')}</p>
+</div>
+
 </body>
-</html>
-`;
-
-export async function sendWorkflowDoc(email: string) {
-  const response = await fetch("/api/email-send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      to: email,
-      subject: "NutriPlan Development Workflow Documentation",
-      html: WORKFLOW_DOC_HTML,
-    }),
-  });
-
-  return response.json();
-}
+</html>`;
