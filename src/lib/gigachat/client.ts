@@ -550,7 +550,8 @@ const FOOD_PHOTO_EXTENDED_NUMERIC_KEYS = new Set([
 
 /**
  * Analyse a food photo using GigaChat vision.
- * Tries GigaChat-2-Max first, falls back to GigaChat-2-Pro when Max token quota is exhausted.
+ * Tries "max" first, falls back to "pro" when Max token quota is exhausted.
+ * Model identifiers follow the same lowercase naming convention as "lite".
  * Optionally accepts week recipe context for recipe matching.
  */
 export async function getFoodPhotoAnalysis(
@@ -564,7 +565,7 @@ export async function getFoodPhotoAnalysis(
   const prompt = buildFoodPhotoPrompt(weekRecipes);
 
   // Try Max first (best quality), fall back to Pro when Max tokens exhausted
-  for (const model of ["GigaChat-2-Max", "GigaChat-2-Pro"]) {
+  for (const model of ["max", "pro"]) {
     const res = await fetch(GIGACHAT_API_URL, {
       method: "POST",
       headers: {
@@ -586,7 +587,7 @@ export async function getFoodPhotoAnalysis(
 
     if (!res.ok) {
       // If Max fails (e.g. quota exhausted), try Pro. Only throw if both fail.
-      if (model === "GigaChat-2-Max") continue;
+      if (model === "max") continue;
       const body = await res.text();
       throw new Error(`GigaChat vision error ${res.status}: ${body}`);
     }
@@ -598,7 +599,7 @@ export async function getFoodPhotoAnalysis(
     return sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoResult;
   }
 
-  throw new Error("GigaChat vision unavailable (both Max and Pro failed)");
+  throw new Error("GigaChat vision unavailable (both max and pro failed)");
 }
 
 /**
