@@ -1,6 +1,13 @@
 /**
- * Email service abstraction
- * Supports both Resend (production) and mock (development)
+ * Email service abstraction.
+ * Priority: RESEND_API_KEY → GMAIL_USER+GMAIL_APP_PASSWORD → mock (dev only).
+ *
+ * Gmail setup (no new account needed):
+ *   1. Enable 2FA on your Google account
+ *   2. myaccount.google.com/apppasswords → create app password (16 chars, no spaces)
+ *   3. Add to .env.local:
+ *        GMAIL_USER=youraddress@gmail.com
+ *        GMAIL_APP_PASSWORD=abcdabcdabcdabcd
  */
 
 export interface EmailOptions {
@@ -14,17 +21,15 @@ export interface EmailResponse {
   success: boolean;
   id?: string;
   error?: string;
+  provider?: string;
 }
 
-async function sendWithResend(
-  options: EmailOptions
-): Promise<EmailResponse> {
+async function sendWithResend(options: EmailOptions): Promise<EmailResponse> {
   const { Resend } = await import("resend");
-
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const result = await resend.emails.send({
-    from: options.from || "noreply@nutriplan.app",
+    from: options.from || "onboarding@resend.dev",
     to: options.to,
     subject: options.subject,
     html: options.html,
@@ -32,72 +37,66 @@ async function sendWithResend(
 
   if (result.error) {
     console.error("Resend error:", result.error);
-    return {
-      success: false,
-      error: result.error.message,
-    };
+    return { success: false, error: result.error.message };
   }
-
-  return {
-    success: true,
-    id: result.data?.id,
-  };
+  return { success: true, id: result.data?.id, provider: "resend" };
 }
 
-async function sendWithMock(
-  options: EmailOptions
-): Promise<EmailResponse> {
-  // Log to console for development
+async function sendWithGmail(options: EmailOptions): Promise<EmailResponse> {
+  const nodemailer = await import("nodemailer");
+
+  const transporter = nodemailer.default.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  const info = await transporter.sendMail({
+    from: `NutriPlan <${process.env.GMAIL_USER}>`,
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+  });
+
+  return { success: true, id: info.messageId, provider: "gmail" };
+}
+
+async function sendWithMock(options: EmailOptions): Promise<EmailResponse> {
   console.log("📧 [MOCK EMAIL]");
   console.log(`   From: ${options.from || "noreply@nutriplan.app"}`);
   console.log(`   To: ${options.to}`);
   console.log(`   Subject: ${options.subject}`);
   console.log(`   HTML Length: ${options.html.length} chars`);
-
-  // Generate a fake message ID
   const mockId = `mock_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  // In development, also write to a log file if needed
-  if (process.env.NODE_ENV === "development") {
-    console.log(`   ID: ${mockId}`);
-  }
-
-  return {
-    success: true,
-    id: mockId,
-  };
+  console.log(`   ID: ${mockId}`);
+  return { success: true, id: mockId, provider: "mock" };
 }
 
 /**
- * Send email using configured service (Resend or mock)
+ * Send email using the first configured provider.
+ * Order: Resend → Gmail SMTP → mock
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResponse> {
-  // Validate input
   if (!options.to || !options.subject || !options.html) {
-    return {
-      success: false,
-      error: "Missing required fields: to, subject, html",
-    };
+    return { success: false, error: "Missing required fields: to, subject, html" };
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(options.to)) {
-    return {
-      success: false,
-      error: "Invalid email address format",
-    };
+    return { success: false, error: "Invalid email address format" };
   }
 
   try {
-    // Use Resend if API key is configured, otherwise use mock
     if (process.env.RESEND_API_KEY) {
       return await sendWithResend(options);
-    } else {
-      console.warn(
-        "⚠️  RESEND_API_KEY not configured. Using mock email service for development."
-      );
-      return await sendWithMock(options);
     }
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      return await sendWithGmail(options);
+    }
+    console.warn("⚠️  No email provider configured (RESEND_API_KEY or GMAIL_USER+GMAIL_APP_PASSWORD). Using mock.");
+    return await sendWithMock(options);
   } catch (error) {
     console.error("Email service error:", error);
     return {
@@ -107,9 +106,6 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResponse> {
   }
 }
 
-/**
- * Check if using real or mock email service
- */
 export function isUsingMockEmail(): boolean {
-  return !process.env.RESEND_API_KEY;
+  return !process.env.RESEND_API_KEY && !(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
