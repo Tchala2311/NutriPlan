@@ -17,12 +17,19 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Дневник питания", href: "/dashboard/log",      icon: LogIcon     },
   { label: "Планировщик",    href: "/dashboard/planner",  icon: PlannerIcon },
   { label: "Рецепты",        href: "/dashboard/recipes",  icon: RecipesIcon },
+  { label: "Чат с ИИ",       href: "/dashboard/chat",     icon: ChatIcon    },
   { label: "Профиль и цели", href: "/dashboard/profile",  icon: ProfileIcon },
   { label: "Настройки",      href: "/dashboard/settings", icon: SettingsIcon },
 ];
 
-// 5 primary tabs for the mobile bottom nav — Settings lives in Profile page
-const BOTTOM_NAV_ITEMS: NavItem[] = NAV_ITEMS.slice(0, 5);
+// 5 primary tabs for the mobile bottom nav — Рецепты and Настройки accessible via sidebar
+const BOTTOM_NAV_ITEMS: NavItem[] = [
+  NAV_ITEMS[0], // Главная
+  NAV_ITEMS[1], // Дневник питания
+  NAV_ITEMS[2], // Планировщик
+  NAV_ITEMS[4], // Чат с ИИ
+  NAV_ITEMS[5], // Профиль и цели
+];
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -228,6 +235,14 @@ function SettingsIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function ChatIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
     </svg>
   );
 }

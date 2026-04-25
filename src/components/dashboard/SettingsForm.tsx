@@ -28,6 +28,12 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
 
+  // Cancellation state
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelPending, setCancelPending] = useState(false);
+  const [cancelDone, setCancelDone] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
   useEffect(() => {
     setTrainingDays(new Set(initial.training_days));
     setDietaryRestrictions(new Set(currentDietaryRestrictions));
@@ -59,6 +65,25 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
         setSaveError(err instanceof Error ? err.message : "Ошибка сохранения");
       }
     });
+  }
+
+  async function handleCancel() {
+    setCancelError(null);
+    setCancelPending(true);
+    try {
+      const res = await fetch("/api/subscribe/cancel", { method: "POST" });
+      const data = await res.json() as { success?: boolean; error?: string; accessUntil?: string | null };
+      if (!res.ok || !data.success) {
+        setCancelError(data.error ?? "Не удалось отменить подписку");
+      } else {
+        setCancelDone(true);
+        setCancelConfirm(false);
+      }
+    } catch {
+      setCancelError("Ошибка соединения. Попробуйте позже.");
+    } finally {
+      setCancelPending(false);
+    }
   }
 
   async function handleDelete() {
@@ -332,7 +357,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
 
       {/* ── Subscription ── */}
       <Section title="Подписка">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             {isPremium ? (
               <>
@@ -341,6 +366,11 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
                 </span>
                 {periodEnd && (
                   <p className="mt-1 text-sm text-muted-foreground">Действует до {periodEnd}</p>
+                )}
+                {cancelDone && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Подписка отменена — доступ сохранится до конца периода.
+                  </p>
                 )}
               </>
             ) : (
@@ -361,6 +391,50 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
             Тарифы
           </a>
         </div>
+
+        {/* Cancellation flow — only for active premium, not yet cancelled */}
+        {isPremium && !cancelDone && (
+          <div className="mt-4 pt-4 border-t border-parchment-200">
+            {!cancelConfirm ? (
+              <button
+                type="button"
+                onClick={() => setCancelConfirm(true)}
+                className="text-sm text-muted-foreground hover:text-red-600 transition-colors underline underline-offset-2"
+              >
+                Отменить подписку
+              </button>
+            ) : (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4 space-y-3">
+                <p className="text-sm font-medium text-red-800">Подтвердите отмену подписки</p>
+                {periodEnd && (
+                  <p className="text-xs text-red-700">
+                    Доступ к Premium сохранится до {periodEnd}. После этой даты аккаунт перейдёт на Free.
+                  </p>
+                )}
+                {cancelError && (
+                  <p className="text-xs text-red-600">{cancelError}</p>
+                )}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={cancelPending}
+                    className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {cancelPending ? "Отменяем…" : "Да, отменить"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCancelConfirm(false); setCancelError(null); }}
+                    className="text-sm text-muted-foreground hover:text-bark-300 transition-colors"
+                  >
+                    Оставить подписку
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Section>
 
       {/* ── Data ── */}

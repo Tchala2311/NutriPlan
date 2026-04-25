@@ -2,9 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getUserGoals } from "./profile/actions";
+import { getUserSubscription } from "@/lib/subscription";
 import { WaterWidget } from "@/components/dashboard/WaterWidget";
+import { AIInsightsCard } from "@/components/dashboard/AIInsightsCard";
 
 export const metadata: Metadata = { title: "Главная — NutriPlan" };
+
+/** Compute current logging streak (consecutive days with ≥1 entry, ending today). */
+function computeStreak(loggedDates: string[], todayStr: string): number {
+  const dateSet = new Set(loggedDates);
+  let streak = 0;
+  const d = new Date(todayStr + "T00:00:00");
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().split("T")[0];
+    if (!dateSet.has(key)) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
 
 export default async function DashboardPage() {
   const { data: { user } } = await getUser();
@@ -19,7 +35,11 @@ export default async function DashboardPage() {
   const dayStart = `${today}T00:00:00.000Z`;
   const dayEnd   = `${today}T23:59:59.999Z`;
 
-  const [{ data: entries }, goals, { data: waterRows }, { data: goalsRow }] = await Promise.all([
+  // Date 30 days ago for streak computation
+  const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  const since30 = d30.toISOString().split("T")[0];
+
+  const [{ data: entries }, goals, { data: waterRows }, { data: goalsRow }, { data: streakDates }, sub] = await Promise.all([
     supabase
       .from("nutrition_logs")
       .select("calories, protein_g, carbs_g, fat_g")
@@ -36,6 +56,13 @@ export default async function DashboardPage() {
       .select("water_target_ml")
       .eq("user_id", user!.id)
       .maybeSingle(),
+    supabase
+      .from("nutrition_logs")
+      .select("logged_date")
+      .eq("user_id", user!.id)
+      .gte("logged_date", since30)
+      .order("logged_date", { ascending: false }),
+    getUserSubscription(),
   ]);
 
   const totals = (entries ?? []).reduce(
@@ -49,8 +76,21 @@ export default async function DashboardPage() {
   );
 
   const hasEntries = (entries ?? []).length > 0;
+  const isFirstRun = !hasEntries && (streakDates ?? []).length === 0;
   const waterTotalMl = (waterRows ?? []).reduce((s, r) => s + (r.amount_ml ?? 0), 0);
   const waterTargetMl = (goalsRow as { water_target_ml?: number } | null)?.water_target_ml ?? 2000;
+
+  // Streak
+  const loggedDates = (streakDates ?? []).map((r) => (r as { logged_date: string }).logged_date);
+  const currentStreak = computeStreak(loggedDates, today);
+
+  // Trial expiry banner: show if user is on free plan and account is < 14 days old
+  const isPremiumActive = sub?.plan === "premium" && sub?.status === "active";
+  const userCreatedAt = user?.created_at ? new Date(user.created_at) : null;
+  const trialDaysLeft = userCreatedAt
+    ? Math.max(0, 14 - Math.floor((Date.now() - userCreatedAt.getTime()) / 86_400_000))
+    : 0;
+  const showTrialBanner = !isPremiumActive && trialDaysLeft > 0;
 
   const statCards = [
     {
@@ -83,12 +123,79 @@ export default async function DashboardPage() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="font-display text-2xl font-bold text-bark-300">
-          С возвращением, {firstName}
+          {isFirstRun ? `Добро пожаловать, ${firstName}!` : `С возвращением, ${firstName}`}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Питание сегодня.
+          {isFirstRun ? "Профиль создан. Начните с первого приёма пищи." : "Питание сегодня."}
         </p>
       </div>
+
+      {/* First-run onboarding completion card */}
+      {isFirstRun && (
+        <div className="mb-6 rounded-xl border border-sage-200 bg-sage-50 p-5">
+          <div className="flex items-start gap-3 mb-4">
+            <span className="text-2xl" aria-hidden="true">🌱</span>
+            <div>
+              <p className="text-sm font-semibold text-sage-700">Профиль готов — можно начинать!</p>
+              <p className="mt-0.5 text-sm text-sage-600">
+                Запишите первый приём пищи или создайте план питания на неделю с помощью ИИ.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link
+              href="/dashboard/log"
+              className="flex-1 rounded-lg bg-bark-300 text-primary-foreground px-4 py-2.5 text-sm font-semibold text-center hover:bg-bark-400 transition-colors"
+            >
+              Записать первый приём пищи
+            </Link>
+            <Link
+              href="/dashboard/planner"
+              className="flex-1 rounded-lg border border-sage-300 bg-white text-sage-700 px-4 py-2.5 text-sm font-medium text-center hover:bg-sage-50 transition-colors"
+            >
+              Создать план питания
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Trial expiry banner */}
+      {showTrialBanner && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <ClockIcon className="h-4 w-4 text-amber-500 shrink-0" />
+            <p className="text-sm text-amber-900">
+              {trialDaysLeft === 1
+                ? "Последний день пробного периода — не теряйте доступ к планировщику и рецептам."
+                : `Пробный период заканчивается через ${trialDaysLeft} дн. — оформите подписку, чтобы сохранить доступ.`}
+            </p>
+          </div>
+          <Link
+            href="/pricing"
+            className="shrink-0 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-900 px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            Подписаться
+          </Link>
+        </div>
+      )}
+
+      {/* Streak widget */}
+      {currentStreak > 0 && (
+        <div className="mb-6 rounded-xl border border-parchment-200 bg-parchment-100 px-4 py-3 flex items-center gap-3">
+          <span className="text-2xl" aria-hidden="true">🔥</span>
+          <div>
+            <p className="text-sm font-semibold text-bark-300">
+              {currentStreak}{" "}
+              {currentStreak === 1
+                ? "день подряд"
+                : currentStreak < 5
+                ? "дня подряд"
+                : "дней подряд"}
+            </p>
+            <p className="text-xs text-muted-foreground">Продолжайте — не прерывайте серию!</p>
+          </div>
+        </div>
+      )}
 
       {/* Stat cards with progress vs target */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -135,9 +242,27 @@ export default async function DashboardPage() {
       </div>
 
       {/* Water widget */}
-      <div className="mb-8">
+      <div className="mb-6">
         <WaterWidget initialTotalMl={waterTotalMl} targetMl={waterTargetMl} />
       </div>
+
+      {/* AI Insights card — appears when user has logged food today */}
+      {hasEntries && (
+        <div className="mb-6">
+          <AIInsightsCard
+            dayTotals={{
+              current_kcal: Math.round(totals.calories),
+              target_kcal: goals.daily_calorie_target,
+              current_protein_g: Math.round(totals.protein_g),
+              target_protein_g: goals.protein_target_g,
+              current_carbs_g: Math.round(totals.carbs_g),
+              target_carbs_g: goals.carbs_target_g,
+              current_fat_g: Math.round(totals.fat_g),
+              target_fat_g: goals.fat_target_g,
+            }}
+          />
+        </div>
+      )}
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -172,6 +297,14 @@ export default async function DashboardPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   );
 }
 

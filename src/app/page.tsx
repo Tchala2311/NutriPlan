@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check, ChevronRight, Star, Zap, ShoppingCart, TrendingUp } from "lucide-react";
 import { LandingDemoClient as LandingDemo } from "@/components/landing/LandingDemoClient";
+import { ReferralCapture } from "@/components/landing/ReferralCapture";
 
 // ── Feature cards ─────────────────────────────────────────
 const FEATURES = [
@@ -49,6 +50,7 @@ const PRO_FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-cream-100">
+      <ReferralCapture />
       {/* ── Sticky nav ────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-parchment-200 bg-cream-100/90 backdrop-blur-sm">
         <div className="max-w-content mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

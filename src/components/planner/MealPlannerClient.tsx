@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   Sparkles, RefreshCw, Lock, LockOpen, Loader2, UtensilsCrossed,
   CheckCircle2, Circle, ShoppingCart, LayoutGrid, List, Dumbbell, Moon, RotateCcw,
@@ -108,6 +109,14 @@ export function MealPlannerClient({
   const [swappingSlot, setSwappingSlot] = useState<string | null>(null);
   const [completingSlot, setCompletingSlot] = useState<string | null>(null);
   const [, startPinTransition] = useTransition();
+  const [confirmRegenOpen, setConfirmRegenOpen] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
+
+  // Share state
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -150,20 +159,57 @@ export function MealPlannerClient({
     }
   }
 
+  async function handleShare() {
+    if (!plan) return;
+    setSharing(true);
+    setShareUrl(null);
+    try {
+      const res = await fetch("/api/share/meal-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mealPlanId: plan.id }),
+      });
+      const data = await res.json() as { shareUrl?: string; error?: string };
+      if (data.shareUrl) {
+        setShareUrl(data.shareUrl);
+        // Copy to clipboard if supported
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(data.shareUrl);
+          setShareCopied(true);
+          setTimeout(() => setShareCopied(false), 3000);
+        }
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  function handleGenerateClick() {
+    if (hasPlan) {
+      setConfirmRegenOpen(true);
+    } else {
+      generatePlan();
+    }
+  }
+
   async function generatePlan() {
+    setConfirmRegenOpen(false);
     setGenerating(true);
+    setGenerateError(null);
     try {
       const res = await fetch("/api/ai/meal-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ week_start: currentWeekStart }),
       });
-      if (!res.ok) throw new Error("Generation failed");
+      if (!res.ok) throw new Error("Ошибка генерации плана. Попробуйте снова.");
       const data = await res.json();
       setPlanCache((prev) => ({ ...prev, [currentWeekStart]: data.plan }));
       setRecipesCache((prev) => ({ ...prev, ...data.recipes }));
-    } catch {
-      // TODO: surface error toast
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Ошибка генерации плана. Попробуйте снова.");
     } finally {
       setGenerating(false);
     }
@@ -190,7 +236,7 @@ export function MealPlannerClient({
       });
       setRecipesCache((prev) => ({ ...prev, [data.recipe.id]: data.recipe }));
     } catch {
-      // TODO: surface error
+      setSwapError("Не удалось заменить блюдо. Попробуйте снова.");
     } finally {
       setSwappingSlot(null);
     }
@@ -333,8 +379,41 @@ export function MealPlannerClient({
               <><Sparkles className="h-4 w-4" /> {hasPlan ? "Обновить план" : "Создать план"}</>
             )}
           </button>
+          {hasPlan && (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              title="Поделиться планом"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-parchment-200 bg-parchment-100 text-bark-200 text-sm font-medium
+                hover:bg-parchment-200 hover:text-bark-300 transition-colors disabled:opacity-50 shadow-warm-sm"
+            >
+              {sharing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : shareCopied ? (
+                <><ShareCheckIcon className="h-4 w-4 text-sage-500" /> <span className="hidden sm:inline text-sage-600">Скопировано!</span></>
+              ) : (
+                <><ShareIcon className="h-4 w-4" /> <span className="hidden sm:inline">Поделиться</span></>
+              )}
+            </button>
+          )}
         </div>
       </div>
+      {/* Share URL display */}
+      {shareUrl && !shareCopied && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-sage-200 bg-sage-50 px-4 py-2.5">
+          <ShareIcon className="h-4 w-4 text-sage-500 shrink-0" />
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer"
+            className="flex-1 text-xs text-sage-700 font-mono truncate underline">
+            {shareUrl}
+          </a>
+          <button
+            onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); }}
+            className="shrink-0 text-xs text-sage-600 font-medium hover:text-sage-800"
+          >
+            Скопировать
+          </button>
+        </div>
+      )}
 
       {/* Week tabs + View toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
@@ -514,6 +593,10 @@ function ScheduleView({
   plan, dates, recipes, today, completions, swappingSlot, completingSlot,
   onOpenRecipe, onTogglePin, onSwapSlot, onToggleCompletion, onOpenRedo,
 }: ScheduleViewProps) {
+  // Mobile day-picker: default to today's index, or 0
+  const todayIdx = dates.indexOf(today);
+  const [mobileDayIdx, setMobileDayIdx] = useState(todayIdx >= 0 ? todayIdx : 0);
+
   // Build a set of (date, mealType) pairs that are covered by batch meals
   const batchCovered = new Set<string>();
   for (const date of dates) {
@@ -535,7 +618,108 @@ function ScheduleView({
 
   return (
     <>
-      <div className="overflow-x-auto -mx-4 px-4 pb-4">
+      {/* ── Mobile day-picker (visible only on < sm) ── */}
+      <div className="sm:hidden mb-3">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+          {dates.map((date, idx) => {
+            const isToday = date === today;
+            const isSelected = idx === mobileDayIdx;
+            return (
+              <button
+                key={date}
+                type="button"
+                onClick={() => setMobileDayIdx(idx)}
+                className={`flex-shrink-0 flex flex-col items-center rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
+                  isSelected
+                    ? "bg-bark-300 text-primary-foreground"
+                    : isToday
+                    ? "bg-parchment-200 text-bark-300"
+                    : "text-stone-400 hover:bg-parchment-100"
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wide">{DAY_NAMES_RU[idx]}</span>
+                <span className="text-base font-semibold">{new Date(date + "T00:00:00").getDate()}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Single day meal list for mobile */}
+        <div className="mt-2 space-y-2">
+          {MEAL_TYPES.map((mealType) => {
+            const date = dates[mobileDayIdx];
+            if (!date) return null;
+            const slotKey = `${date}-${mealType}`;
+            const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+            const recipe = slot?.recipe_id ? recipes[slot.recipe_id] : undefined;
+            const isDone = completions.has(slotKey);
+            const isSwapping = swappingSlot === slotKey;
+            const isCompleting = completingSlot === slotKey;
+            return (
+              <div key={mealType}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${MEAL_ACCENT[mealType]}`}>
+                  {MEAL_LABEL[mealType]}
+                </p>
+                {slot && recipe ? (
+                  <div
+                    className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-3 flex items-center gap-3 cursor-pointer ${isDone ? "opacity-70" : ""}`}
+                    onClick={() => onOpenRecipe(recipe, mealType, date)}
+                  >
+                    <button
+                      className="shrink-0"
+                      onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+                      disabled={isCompleting}
+                    >
+                      {isCompleting
+                        ? <Loader2 className="h-4 w-4 animate-spin text-sage-400" />
+                        : isDone
+                          ? <CheckCircle2 className="h-4 w-4 text-sage-400" />
+                          : <Circle className="h-4 w-4 text-parchment-300" />
+                      }
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium text-bark-300 truncate ${isDone ? "line-through text-stone-400" : ""}`}>
+                        {recipe.title}
+                      </p>
+                      <p className="text-xs text-stone-400">
+                        {recipe.calories_per_serving != null ? `${Math.round(recipe.calories_per_serving)} ккал` : ""}
+                        {recipe.protein_per_serving != null ? ` · Б ${Math.round(recipe.protein_per_serving)}г` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {!slot.pinned && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onSwapSlot(date, mealType); }}
+                          disabled={isSwapping}
+                          className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
+                          title="Заменить блюдо"
+                        >
+                          {isSwapping
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />
+                            : <RefreshCw className="h-3.5 w-3.5 text-stone-400" />
+                          }
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-parchment-200 bg-parchment-50 py-4 flex items-center justify-center">
+                    <span className="text-xs text-stone-300">Нет блюда</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <button
+            onClick={() => onOpenRedo("daily", dates[mobileDayIdx]!)}
+            className="w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-parchment-200 py-2.5 text-xs font-medium text-stone-400 hover:bg-parchment-100 hover:text-bark-300 transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Переделать день
+          </button>
+        </div>
+      </div>
+
+      {/* ── Desktop grid (hidden on mobile) ── */}
+      <div className="hidden sm:block overflow-x-auto -mx-4 px-4 pb-4">
         <div className="min-w-[640px]">
           {/* Day headers with training tags */}
           <div className="grid grid-cols-7 gap-2 mb-3">
@@ -709,8 +893,8 @@ function ScheduleView({
         </div>
       </div>
 
-      {/* Day totals — full macro bar */}
-      <div className="mt-4 overflow-x-auto -mx-4 px-4">
+      {/* Day totals — full macro bar (desktop only) */}
+      <div className="hidden sm:block mt-4 overflow-x-auto -mx-4 px-4">
         <div className="min-w-[640px]">
           <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">Итого за день</p>
           <div className="grid grid-cols-7 gap-2">
@@ -893,5 +1077,21 @@ function RecipesView({ weekRecipes, completions, completingSlot, onOpenRecipe, o
         );
       })}
     </div>
+  );
+}
+
+function ShareIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    </svg>
+  );
+}
+
+function ShareCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
