@@ -295,6 +295,61 @@ export async function saveUserGoals(formData: FormData) {
   revalidatePath("/dashboard/profile");
 }
 
+// ─── Save user preferences (training days + food preferences) ────────────────
+
+export async function saveUserPreferences(formData: FormData): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await getUser();
+  if (!user) return { error: "Не авторизован" };
+
+  // Training days
+  const trainingDays: number[] = [];
+  for (let i = 0; i < 7; i++) {
+    if (formData.has(`training_day_${i}`)) trainingDays.push(i);
+  }
+
+  // Dietary restrictions + allergens
+  const dietaryRestrictions: string[] = [];
+  const allergens: string[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("dietary_restriction_")) dietaryRestrictions.push(value as string);
+    else if (key.startsWith("allergen_")) allergens.push(value as string);
+  }
+
+  // Update training days in user_settings
+  const { data: existing, error: checkError } = await supabase
+    .from("user_settings")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (checkError) return { error: checkError.message };
+
+  if (existing) {
+    const { error } = await supabase
+      .from("user_settings")
+      .update({ training_days: trainingDays.sort((a, b) => a - b) })
+      .eq("id", existing.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("user_settings")
+      .insert([{ user_id: user.id, training_days: trainingDays.sort((a, b) => a - b) }]);
+    if (error) return { error: error.message };
+  }
+
+  // Update dietary restrictions + allergens in health_assessments
+  const { error: healthError } = await supabase
+    .from("health_assessments")
+    .upsert({ user_id: user.id, dietary_restrictions: dietaryRestrictions, allergens }, { onConflict: "user_id" });
+
+  if (healthError) return { error: healthError.message };
+
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard/planner");
+  return {};
+}
+
 export async function updateDisplayName(firstName: string): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await getUser();

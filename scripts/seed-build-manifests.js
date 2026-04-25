@@ -47,6 +47,11 @@ function seedManifests() {
       }),
     };
 
+    // Ensure vendor-chunks dir exists to prevent module resolution errors
+    // during error page compilation (TES-174: missing vendor-chunks/next.js)
+    const vendorChunksDir = path.join(serverDir, "vendor-chunks");
+    fs.mkdirSync(vendorChunksDir, { recursive: true });
+
     for (const [name, content] of Object.entries(stubs)) {
       const filePath = path.join(serverDir, name);
       // Only write stub if file is missing — never clobber files Next.js has written

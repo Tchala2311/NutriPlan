@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -72,11 +73,18 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
             <div className="px-3 py-2 border-b border-parchment-200">
               <p className="text-xs text-muted-foreground truncate">{email}</p>
             </div>
+            <Link
+              href="/dashboard/profile"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center px-3 py-2 text-sm text-bark-300 hover:bg-parchment-100 transition-colors"
+            >
+              Профиль
+            </Link>
             <button
               onClick={handleSignOut}
               disabled={loading}
               className={cn(
-                "w-full text-left px-3 py-2 text-sm text-bark-300 hover:bg-parchment-100 transition-colors",
+                "w-full text-left px-3 py-2 text-sm text-bark-300 hover:bg-parchment-100 transition-colors border-t border-parchment-200",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >

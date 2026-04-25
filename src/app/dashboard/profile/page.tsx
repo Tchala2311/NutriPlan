@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getUser } from "@/lib/supabase/server";
+import { getUser, createClient } from "@/lib/supabase/server";
 import { GoalSettingsForm } from "@/components/dashboard/GoalSettingsForm";
 import { TrendsSection } from "@/components/dashboard/TrendsSection";
 import { DisplayNameForm } from "@/components/dashboard/DisplayNameForm";
+import { UserPreferencesForm } from "@/components/dashboard/UserPreferencesForm";
 import { getUserGoals, getTrendsData } from "./actions";
 import { getUserSubscription } from "@/lib/subscription";
 import { UpgradeButton } from "@/components/subscription/UpgradeButton";
@@ -13,13 +14,28 @@ export const metadata: Metadata = { title: "Профиль и цели — Nutri
 export default async function ProfilePage() {
   const { data: { user } } = await getUser();
 
+  const supabase = await createClient();
   const email = user?.email ?? "";
   const fullName = user?.user_metadata?.full_name as string | undefined;
   const goals = await getUserGoals();
-  const [sub, trends] = await Promise.all([
+  const [sub, trends, settingsRow, healthRow] = await Promise.all([
     getUserSubscription(),
     getTrendsData(goals),
+    supabase
+      .from("user_settings")
+      .select("training_days")
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle(),
+    supabase
+      .from("health_assessments")
+      .select("dietary_restrictions, allergens")
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle(),
   ]);
+
+  const trainingDays = (settingsRow.data?.training_days as number[] | null) ?? [0, 2, 4, 5];
+  const dietaryRestrictions = (healthRow.data?.dietary_restrictions as string[] | null) ?? [];
+  const allergens = (healthRow.data?.allergens as string[] | null) ?? [];
 
   const isPremium = sub?.plan === "premium" && sub?.status === "active";
   const periodEnd = sub?.current_period_end
@@ -107,6 +123,15 @@ export default async function ProfilePage() {
           Цели по нутриентам
         </h2>
         <GoalSettingsForm initial={goals} />
+      </div>
+
+      {/* Training days + food preferences */}
+      <div className="mb-6">
+        <UserPreferencesForm
+          initialTrainingDays={trainingDays}
+          initialDietaryRestrictions={dietaryRestrictions}
+          initialAllergens={allergens}
+        />
       </div>
 
       {/* Trends */}
