@@ -39,6 +39,10 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd, current
     setSaved(false);
     setSaveError(null);
     const formData = new FormData(e.currentTarget);
+    // Add training days from state (not included in form)
+    trainingDays.forEach((day) => {
+      formData.append(`training_day_${day}`, String(day));
+    });
     // Add dietary restrictions and allergens
     dietaryRestrictions.forEach((dr) => {
       formData.append(`dietary_restriction_${dr}`, dr);
