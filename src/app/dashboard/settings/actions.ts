@@ -73,7 +73,7 @@ export async function getUserSettings(): Promise<UserSettings> {
       ...DEFAULT_SETTINGS.notification_prefs,
       ...(data.notification_prefs as Partial<NotificationPrefs>),
     },
-    training_days: Array.isArray(data.training_days) && data.training_days.length > 0
+    training_days: Array.isArray(data.training_days)
       ? (data.training_days as number[])
       : DEFAULT_SETTINGS.training_days,
     budget_preference: (data.budget_preference as UserSettings["budget_preference"]) ?? DEFAULT_SETTINGS.budget_preference,
@@ -121,7 +121,7 @@ export async function saveSettings(formData: FormData) {
       ai_suggestion_timing:
         (formData.get("ai_suggestion_timing") as string) || "off",
     },
-    training_days: trainingDays.length > 0 ? trainingDays.sort((a, b) => a - b) : [0, 2, 4, 5],
+    training_days: trainingDays.sort((a, b) => a - b),
     budget_preference: (formData.get("budget_preference") as string) || "moderate",
   };
 
