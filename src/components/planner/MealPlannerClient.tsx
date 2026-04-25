@@ -3,12 +3,13 @@
 import { useState, useTransition, useCallback } from "react";
 import {
   Sparkles, RefreshCw, Lock, LockOpen, Loader2, UtensilsCrossed,
-  CheckCircle2, Circle, ShoppingCart, LayoutGrid, List, Dumbbell, Moon,
+  CheckCircle2, Circle, ShoppingCart, LayoutGrid, List, Dumbbell, Moon, RotateCcw,
 } from "lucide-react";
 import type { MealPlan, MealSlot, RecipeSummary, MealCompletion } from "@/app/dashboard/planner/actions";
 import { togglePinSlot, toggleMealCompletion, setMealBatchSpan } from "@/app/dashboard/planner/actions";
 import { RecipeDetailModal } from "./RecipeDetailModal";
 import { ShoppingListPanel } from "./ShoppingListPanel";
+import { MealRedoModal } from "./MealRedoModal";
 
 interface MealPlannerClientProps {
   initialPlan: MealPlan | null;
@@ -115,6 +116,12 @@ export function MealPlannerClient({
   const [modalDate, setModalDate] = useState<string>("");
   const [modalPlanId, setModalPlanId] = useState<string>("");
   const [modalCurrentSpan, setModalCurrentSpan] = useState<number>(1);
+
+  // Redo modal state
+  const [redoModalOpen, setRedoModalOpen] = useState(false);
+  const [redoType, setRedoType] = useState<"individual" | "daily" | "weekly">("individual");
+  const [redoDate, setRedoDate] = useState<string>("");
+  const [redoWeekNumber, setRedoWeekNumber] = useState<number>(1);
 
   const currentWeekStart = offsetWeek(planGroupStart, activeWeekTab - 1);
   const plan = planCache[currentWeekStart] ?? null;
@@ -241,6 +248,13 @@ export function MealPlannerClient({
     setModalOpen(true);
   }, [plan]);
 
+  const openRedoModal = useCallback((type: "daily" | "weekly", date: string) => {
+    setRedoType(type);
+    setRedoDate(date);
+    setRedoWeekNumber(activeWeekTab);
+    setRedoModalOpen(true);
+  }, [activeWeekTab]);
+
   function handleSaveToggle(recipeId: string, saved: boolean) {
     setSavedIds((prev) => {
       const next = new Set(prev);
@@ -295,18 +309,31 @@ export function MealPlannerClient({
             ИИ-меню на 4 недели с учётом ваших целей и ограничений.
           </p>
         </div>
-        <button
-          onClick={generatePlan}
-          disabled={generating}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-bark-300 text-primary-foreground text-sm font-medium
-            hover:bg-bark-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-warm-sm"
-        >
-          {generating ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Генерирую…</>
-          ) : (
-            <><Sparkles className="h-4 w-4" /> {hasPlan ? "Обновить план" : "Создать план"}</>
+        <div className="flex items-center gap-2">
+          {hasPlan && viewMode === "schedule" && (
+            <button
+              onClick={() => openRedoModal("weekly", currentWeekStart)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sage-400 text-white text-sm font-medium
+                hover:bg-sage-500 transition-colors shadow-warm-sm"
+              title="Переделать всю неделю"
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span className="hidden sm:inline">Неделю</span>
+            </button>
           )}
-        </button>
+          <button
+            onClick={generatePlan}
+            disabled={generating}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-bark-300 text-primary-foreground text-sm font-medium
+              hover:bg-bark-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-warm-sm"
+          >
+            {generating ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Генерирую…</>
+            ) : (
+              <><Sparkles className="h-4 w-4" /> {hasPlan ? "Обновить план" : "Создать план"}</>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Week tabs + View toggle */}
@@ -413,6 +440,7 @@ export function MealPlannerClient({
           onTogglePin={togglePin}
           onSwapSlot={swapSlot}
           onToggleCompletion={handleToggleCompletion}
+          onOpenRedo={openRedoModal}
         />
       ) : !loadingWeek && viewMode === "recipes" ? (
         <RecipesView
@@ -448,6 +476,19 @@ export function MealPlannerClient({
           });
         }}
       />
+
+      {/* Redo modal */}
+      <MealRedoModal
+        open={redoModalOpen}
+        onOpenChange={setRedoModalOpen}
+        weekNumber={redoWeekNumber}
+        mealType=""
+        date={redoDate}
+        redoType={redoType}
+        onSuccess={() => {
+          // Optionally refresh the plan after successful redo
+        }}
+      />
     </div>
   );
 }
@@ -466,11 +507,12 @@ interface ScheduleViewProps {
   onTogglePin: (date: string, mealType: MealType) => void;
   onSwapSlot: (date: string, mealType: MealType) => void;
   onToggleCompletion: (date: string, mealType: string) => void;
+  onOpenRedo: (type: "daily" | "weekly", date: string) => void;
 }
 
 function ScheduleView({
   plan, dates, recipes, today, completions, swappingSlot, completingSlot,
-  onOpenRecipe, onTogglePin, onSwapSlot, onToggleCompletion,
+  onOpenRecipe, onTogglePin, onSwapSlot, onToggleCompletion, onOpenRedo,
 }: ScheduleViewProps) {
   // Build a set of (date, mealType) pairs that are covered by batch meals
   const batchCovered = new Set<string>();
@@ -520,6 +562,14 @@ function ScheduleView({
                       : <Moon className="h-2.5 w-2.5" />}
                     {tag}
                   </div>
+                  {/* Redo day button */}
+                  <button
+                    onClick={() => onOpenRedo("daily", date)}
+                    title="Переделать день"
+                    className="mt-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-sage-50 text-sage-500 hover:bg-sage-100 transition-colors"
+                  >
+                    <RotateCcw className="h-2.5 w-2.5" />
+                  </button>
                 </div>
               );
             })}
