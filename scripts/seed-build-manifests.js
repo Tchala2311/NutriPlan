@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Wrapper that continuously re-seeds manifest files during Next.js build.
+ * Manifest seeding for TES-172.
  *
- * TES-172: Next.js 15 deletes .next/server/ multiple times during build.
- * Solution: keep files re-created throughout the build process so they're always
- * available when page-data collection runs.
+ * Usage:
+ *   node seed-build-manifests.js          - seed only (for dev server)
+ *   node seed-build-manifests.js build    - seed + build (for production)
  *
- * See: TES-172 / TES-169
+ * TES-172: Next.js 15 deletes .next/server/ multiple times during build/dev.
+ * Solution: keep files re-created throughout the process so they're always available.
  */
 
 const fs = require("fs");
@@ -28,6 +29,16 @@ function seedManifests() {
       }),
       "pages-manifest.json": JSON.stringify({}),
       "app-paths-manifest.json": JSON.stringify({}),
+      "server-reference-manifest.json": JSON.stringify({}),
+      "build-manifest.json": JSON.stringify({
+        polyfillFiles: [],
+        devFiles: [],
+        ampDevFiles: [],
+        lowPriorityFiles: [],
+        rootMainFiles: [],
+        pages: {},
+        ampFirstPages: [],
+      }),
     };
 
     for (const [name, content] of Object.entries(stubs)) {
@@ -39,10 +50,17 @@ function seedManifests() {
   }
 }
 
-// Seed before, during, and after build initialization
+const isBuildMode = process.argv[2] === "build";
+
+// Always seed first
 seedManifests();
 
-// Spawn next build
+if (!isBuildMode) {
+  // Dev mode: seed only and exit
+  process.exit(0);
+}
+
+// Build mode: spawn next build with continuous re-seeding
 const build = spawn("npx", ["next", "build"], {
   stdio: ["inherit", "pipe", "pipe"],
 });
