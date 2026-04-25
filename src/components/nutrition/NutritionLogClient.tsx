@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect, useRef } from "react";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { AISuggestionCard } from "./AISuggestionCard";
-import { deleteFoodEntry } from "@/app/dashboard/log/actions";
+import { deleteFoodEntry, getLogEntriesPage, LOG_PAGE_SIZE } from "@/app/dashboard/log/actions";
 import { cn } from "@/lib/utils";
 import type { UserGoals } from "@/app/dashboard/profile/actions";
 
@@ -30,6 +30,7 @@ interface NutritionLogClientProps {
   entries: NutritionEntry[];
   goals: UserGoals;
   userProfile: UserProfileMin;
+  hasMore?: boolean;
 }
 
 const MEALS = [
@@ -39,12 +40,43 @@ const MEALS = [
   { key: "snacks", label: "Перекусы" },
 ] as const;
 
-export function NutritionLogClient({ date, entries, goals, userProfile }: NutritionLogClientProps) {
+export function NutritionLogClient({ date, entries, goals, userProfile, hasMore: initialHasMore = false }: NutritionLogClientProps) {
   const router = useRouter();
   // triggerKey bumps every time an entry is added, causing AISuggestionCard to re-fetch
   const [suggestionTrigger, setSuggestionTrigger] = useState(entries.length > 0 ? 1 : 0);
 
-  const totals = entries.reduce(
+  // Pagination: server sends first page; extra pages are appended client-side.
+  // When the server re-renders (add/delete revalidates), reset extras so the
+  // list stays in sync with fresh server data.
+  const [extraEntries, setExtraEntries] = useState<NutritionEntry[]>([]);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const prevEntriesRef = useRef(entries);
+  useEffect(() => {
+    if (prevEntriesRef.current !== entries) {
+      prevEntriesRef.current = entries;
+      setExtraEntries([]);
+      setHasMore(initialHasMore);
+    }
+  }, [entries, initialHasMore]);
+
+  const allEntries = [...entries, ...extraEntries];
+
+  async function handleLoadMore() {
+    setLoadingMore(true);
+    try {
+      const { entries: more, hasMore: moreRemaining } = await getLogEntriesPage(
+        date,
+        entries.length + extraEntries.length
+      );
+      setExtraEntries((prev) => [...prev, ...more]);
+      setHasMore(moreRemaining);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const totals = allEntries.reduce(
     (acc, e) => ({
       calories: acc.calories + e.calories,
       protein_g: acc.protein_g + Number(e.protein_g),
@@ -139,7 +171,7 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
       {/* Meal sections */}
       <div className="space-y-4">
         {MEALS.map(({ key, label }) => {
-          const mealEntries = entries.filter((e) => e.meal_type === key);
+          const mealEntries = allEntries.filter((e) => e.meal_type === key);
           const mealCals = mealEntries.reduce((s, e) => s + e.calories, 0);
           return (
             <MealSection
@@ -154,6 +186,19 @@ export function NutritionLogClient({ date, entries, goals, userProfile }: Nutrit
           );
         })}
       </div>
+
+      {/* Load more button — shown when there are more entries on the server */}
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="rounded-lg border border-parchment-200 bg-white px-5 py-2 text-sm font-medium text-bark-200 hover:bg-parchment-100 hover:text-bark-300 disabled:opacity-50 transition-colors"
+          >
+            {loadingMore ? "Загрузка…" : `Показать ещё ${LOG_PAGE_SIZE}`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

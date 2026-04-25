@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getUserGoals } from "@/app/dashboard/profile/actions";
 import { NutritionLogClient } from "@/components/nutrition/NutritionLogClient";
+import { LOG_PAGE_SIZE } from "@/app/dashboard/log/actions";
 
 export const metadata: Metadata = { title: "Дневник питания — NutriPlan" };
 
@@ -17,12 +18,17 @@ export default async function NutritionLogPage({
   const supabase = await createClient();
   const { data: { user } } = await getUser();
 
-  const [{ data: entries }, goals, { data: assessment }] = await Promise.all([
+  // Fetch one extra row to detect whether a "Load more" button is needed.
+  const fetchLimit = LOG_PAGE_SIZE + 1;
+
+  const [{ data: rawEntries }, goals, { data: assessment }] = await Promise.all([
     supabase
       .from("nutrition_logs")
       .select("id, meal_type, food_name, calories, protein_g, carbs_g, fat_g, created_at")
+      .eq("user_id", user!.id)
       .eq("logged_date", date)
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+      .limit(fetchLimit),
     getUserGoals(),
     supabase
       .from("health_assessments")
@@ -30,6 +36,9 @@ export default async function NutritionLogPage({
       .eq("user_id", user!.id)
       .maybeSingle(),
   ]);
+
+  const hasMore = (rawEntries ?? []).length > LOG_PAGE_SIZE;
+  const entries = (rawEntries ?? []).slice(0, LOG_PAGE_SIZE);
 
   const userProfile = {
     primary_goal: goals.primary_goal ?? assessment?.primary_goal ?? null,
@@ -40,9 +49,10 @@ export default async function NutritionLogPage({
   return (
     <NutritionLogClient
       date={date}
-      entries={entries ?? []}
+      entries={entries}
       goals={goals}
       userProfile={userProfile}
+      hasMore={hasMore}
     />
   );
 }
