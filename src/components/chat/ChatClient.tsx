@@ -11,15 +11,56 @@ interface Message {
 }
 
 export function ChatClient() {
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingLong, setLoadingLong] = useState(false);
+
+  // Init session on mount
+  useEffect(() => {
+    async function initSession() {
+      try {
+        const res = await fetch("/api/ai/chat/sessions");
+        if (!res.ok) return;
+
+        const { sessions } = (await res.json()) as { sessions: { id: string }[] };
+
+        if (sessions.length > 0) {
+          // Load last session
+          const lastSessionId = sessions[0].id;
+          const sessionRes = await fetch(`/api/ai/chat/sessions/${lastSessionId}`);
+          if (sessionRes.ok) {
+            const { messages: loadedMessages } = (await sessionRes.json()) as {
+              messages: Array<{ id: string; role: "user" | "assistant"; text: string }>;
+            };
+            setSessionId(lastSessionId);
+            setMessages(loadedMessages.map((m) => ({ ...m, error: false })));
+            return;
+          }
+        }
+
+        // No sessions — create new one
+        const createRes = await fetch("/api/ai/chat/sessions", { method: "POST" });
+        if (createRes.ok) {
+          const { session } = (await createRes.json()) as { session: { id: string } };
+          setSessionId(session.id);
+        }
+      } catch {
+        // Silent fail
+      }
+    }
+
+    initSession();
+  }, []);
+
+  // Long-loading indicator
   useEffect(() => {
     if (!loading) { setLoadingLong(false); return; }
     const t = setTimeout(() => setLoadingLong(true), 10000);
     return () => clearTimeout(t);
   }, [loading]);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -29,12 +70,23 @@ export function ChatClient() {
 
   async function handleSend() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || !sessionId) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+
+    // Save user message to DB
+    try {
+      await fetch("/api/ai/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, role: "user", text }),
+      });
+    } catch {
+      // Fail silently — continue even if persistence fails
+    }
 
     try {
       const res = await fetch("/api/ai/chat", {
@@ -45,20 +97,32 @@ export function ChatClient() {
       const data = await res.json() as { answer?: string; error?: string };
 
       if (!res.ok || data.error) {
+        const errorText = data.error ?? "Не удалось получить ответ. Попробуйте ещё раз.";
         setMessages((prev) => [
           ...prev,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            text: data.error ?? "Не удалось получить ответ. Попробуйте ещё раз.",
+            text: errorText,
             error: true,
           },
         ]);
       } else {
+        const answerText = data.answer!;
         setMessages((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), role: "assistant", text: data.answer! },
+          { id: crypto.randomUUID(), role: "assistant", text: answerText },
         ]);
+        // Save assistant response to DB
+        try {
+          await fetch("/api/ai/chat/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId, role: "assistant", text: answerText }),
+          });
+        } catch {
+          // Fail silently
+        }
       }
     } catch {
       setMessages((prev) => [
