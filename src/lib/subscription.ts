@@ -21,6 +21,8 @@ export interface Subscription {
   updated_at: string;
 }
 
+const TRIAL_DURATION_DAYS = 14;
+
 /**
  * Returns the subscription row for the currently-authenticated user,
  * or a synthetic free-plan object if no row exists.
@@ -73,4 +75,48 @@ export async function isPremium(): Promise<boolean> {
     return new Date(sub.current_period_end) > new Date();
   }
   return true;
+}
+
+/**
+ * Returns true if user is within trial period (14 days from account creation).
+ * Founders always have trial active.
+ */
+export async function isInTrial(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const createdAt = user.created_at ? new Date(user.created_at) : null;
+  if (!createdAt) return false;
+
+  const now = new Date();
+  const trialEndMs = createdAt.getTime() + TRIAL_DURATION_DAYS * 86_400_000;
+  return now.getTime() < trialEndMs;
+}
+
+/**
+ * Check if user can access premium features.
+ * True if: has active premium OR still in trial period OR is founder.
+ */
+export async function canAccessPremiumFeatures(): Promise<boolean> {
+  const sub = await getUserSubscription();
+  if (!sub) return false;
+
+  // Founders always have access
+  if (sub.is_founder) return true;
+
+  // Active premium always has access
+  if (sub.plan === "premium" && sub.status === "active") {
+    if (sub.current_period_end && new Date(sub.current_period_end) < new Date()) {
+      return false; // Expired premium
+    }
+    return true;
+  }
+
+  // Free users: check if in trial
+  if (sub.plan === "free") {
+    return await isInTrial();
+  }
+
+  return false;
 }

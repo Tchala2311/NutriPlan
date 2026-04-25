@@ -6,6 +6,7 @@ import type { UserProfile } from "@/lib/gigachat/client";
 import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
 import { fromGlobalWeek } from "@/lib/planner/phases";
 import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
+import { canAccessPremiumFeatures } from "@/lib/subscription";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
 
@@ -71,6 +72,15 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Paywall: block meal plan generation after trial ends
+  const hasAccess = await canAccessPremiumFeatures();
+  if (!hasAccess) {
+    return NextResponse.json(
+      { error: "Trial expired. Upgrade to premium to continue." },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json().catch(() => ({}));
   const weekStart = getWeekStart(body.week_start);
