@@ -364,7 +364,7 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 - Целевая калорийность: тренировочный день {{kcal_training}} ккал / день отдыха {{kcal_rest}} ккал
 - Тренировочный дефицит от TDEE: {{deficit_kcal}} ккал/день
 - Нежелательные ингредиенты: {{user.avoided_ingredients}}
-
+{{hard_constraints_block}}
 Неделя: {{week_start}} — {{week_end}}
 
 Стратегия фазы (снижение веса):
@@ -398,7 +398,7 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 - Целевая калорийность: тренировочный день {{kcal_training}} ккал / день отдыха {{kcal_rest}} ккал
 - Профицит над TDEE: {{surplus_kcal}} ккал/день
 - Нежелательные ингредиенты: {{user.avoided_ingredients}}
-
+{{hard_constraints_block}}
 Неделя: {{week_start}} — {{week_end}}
 
 Стратегия фазы (набор мышечной массы):
@@ -432,7 +432,7 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 - Фаза {{phase_number}} ({{phase_name}}): {{phase_guidance}}
 - Целевая калорийность: тренировочный день {{kcal_training}} ккал / день отдыха {{kcal_rest}} ккал
 - Нежелательные ингредиенты: {{user.avoided_ingredients}}
-
+{{hard_constraints_block}}
 Неделя: {{week_start}} — {{week_end}}
 
 Стратегия фазы (поддержание):
@@ -467,7 +467,7 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 - Фаза {{phase_number}} ({{phase_name}}): {{phase_guidance}}
 - Целевая калорийность: тренировочный день {{kcal_training}} ккал / день отдыха {{kcal_rest}} ккал
 - Нежелательные ингредиенты: {{user.avoided_ingredients}}
-
+{{hard_constraints_block}}
 Неделя: {{week_start}} — {{week_end}}
 
 Стратегия фазы (управление здоровьем):
@@ -500,7 +500,7 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 - Фаза {{phase_number}} ({{phase_name}}): {{phase_guidance}}
 - Целевая калорийность: тренировочный день {{kcal_training}} ккал / день отдыха {{kcal_rest}} ккал
 - Нежелательные ингредиенты: {{user.avoided_ingredients}}
-
+{{hard_constraints_block}}
 Неделя: {{week_start}} — {{week_end}}
 
 Стратегия фазы (общее здоровье):
@@ -569,8 +569,12 @@ export function getMealPlanPrompt(params: MealPlanPromptParams): string {
 
   // Collect scenario modifiers
   const restrictions = params.dietaryRestrictions ?? [];
+  const allergens = params.allergens ?? [];
   const conditions = params.medicalConditions ?? [];
   const modifiers: string[] = [];
+
+  // Build explicit hard-constraint block (translates codes → Russian prohibition text)
+  const hardConstraintsBlock = buildHardConstraintsBlock(restrictions, allergens);
 
   if (restrictions.includes("keto") && goal === "weight_loss") {
     modifiers.push(SCENARIO_MODIFIERS.keto_weight_loss);
@@ -607,7 +611,7 @@ export function getMealPlanPrompt(params: MealPlanPromptParams): string {
     .replace("{{user.target_carbs_g}}", String(params.targetCarbsG))
     .replace("{{user.target_fat_g}}", String(params.targetFatG))
     .replace("{{user.dietary_restrictions}}", restrictions.join(", ") || "нет")
-    .replace("{{user.allergens}}", params.allergens.join(", ") || "нет")
+    .replace("{{user.allergens}}", allergens.join(", ") || "нет")
     .replace("{{user.avoided_ingredients}}", params.avoidedIngredients.join(", ") || "нет")
     .replace("{{user.medical_conditions}}", conditions.join(", ") || "нет")
     .replace("{{phase_number}}", String(params.phaseNumber))
@@ -619,6 +623,7 @@ export function getMealPlanPrompt(params: MealPlanPromptParams): string {
     .replace("{{surplus_kcal}}", String(surplusKcal))
     .replace("{{week_start}}", params.weekStart)
     .replace("{{week_end}}", params.weekEnd)
+    .replace("{{hard_constraints_block}}", hardConstraintsBlock)
     .replace("{{scenario_modifiers}}", scenarioBlock)
     .replace("{{base_format}}", PROMPT_BASE_FORMAT);
 
