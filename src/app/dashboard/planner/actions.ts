@@ -409,7 +409,7 @@ async function regenerateMealsForRedo(
       activity_level: goals.activity_level ?? "moderate",
     });
     if (computedTDEE) {
-      const m = calculateMacros(computedTDEE, primaryGoal);
+      const m = calculateMacros(computedTDEE, primaryGoal, (goals.sex ?? undefined) as "male" | "female" | undefined);
       tdeeKcal = m.daily_calorie_target;
       proteinG = m.protein_target_g;
       carbsG = m.carbs_target_g;

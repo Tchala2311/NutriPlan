@@ -53,16 +53,22 @@ export interface MacroTargets {
 /**
  * Derives macro targets from TDEE and primary goal.
  * Uses the same percentage splits as the onboarding wizard.
+ *
+ * sex is used to apply the correct clinical calorie floor:
+ *   female → 1 200 kcal (standard recommendation)
+ *   male   → 1 500 kcal (NIH / BDA guideline)
  */
-export function calculateMacros(tdee: number, primaryGoal: string): MacroTargets {
+export function calculateMacros(tdee: number, primaryGoal: string, sex?: "male" | "female"): MacroTargets {
   let calories    = tdee;
   let proteinPct  = 0.25;
   let carbsPct    = 0.5;
   let fatPct      = 0.25;
 
+  const calorieFloor = sex === "male" ? 1500 : 1200;
+
   switch (primaryGoal) {
     case "weight_loss":
-      calories   = Math.max(1200, tdee - 400);
+      calories   = Math.max(calorieFloor, tdee - 400);
       proteinPct = 0.3;
       carbsPct   = 0.4;
       fatPct     = 0.3;
@@ -99,5 +105,5 @@ export function calculateFromBiometrics(
 ): MacroTargets | null {
   const tdee = calculateTDEE(bio);
   if (!tdee) return null;
-  return calculateMacros(tdee, primaryGoal);
+  return calculateMacros(tdee, primaryGoal, bio.sex);
 }

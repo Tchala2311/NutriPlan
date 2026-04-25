@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
 
@@ -77,7 +77,7 @@ export async function saveOnboarding(data: OnboardingFormData) {
     activity_level: data.activity_level ?? "moderate",
   };
   const tdeeKcal = calculateTDEE(bio);
-  const macros   = tdeeKcal ? calculateMacros(tdeeKcal, data.primary_goal) : null;
+  const macros   = tdeeKcal ? calculateMacros(tdeeKcal, data.primary_goal, bio.sex) : null;
   const defaults = GOAL_DEFAULTS[data.primary_goal] ?? GOAL_DEFAULTS.maintenance;
 
   const { error: goalsError } = await supabase.from("user_goals").upsert(
@@ -99,5 +99,5 @@ export async function saveOnboarding(data: OnboardingFormData) {
 
   if (goalsError) throw new Error(goalsError.message);
 
-  redirect("/dashboard");
+  redirect("/dashboard", RedirectType.replace);
 }

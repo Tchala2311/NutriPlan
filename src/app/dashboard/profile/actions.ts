@@ -49,7 +49,7 @@ export async function getUserGoals(): Promise<UserGoals> {
       activity_level: goals.activity_level ?? "moderate",
     });
     if (tdee) {
-      const computed = calculateMacros(tdee, goals.primary_goal ?? "general_wellness");
+      const computed = calculateMacros(tdee, goals.primary_goal ?? "general_wellness", (goals.sex ?? undefined) as "male" | "female" | undefined);
       return { ...goals, ...computed } as UserGoals;
     }
     return goals as UserGoals;
@@ -211,7 +211,7 @@ export async function saveUserGoals(formData: FormData) {
   // Auto-compute macros from biometrics; fall back to form values if absent
   const bio    = { weight_kg: weight_kg ?? undefined, height_cm: height_cm ?? undefined, age: age ?? undefined, sex: sex ?? undefined, activity_level };
   const tdee   = calculateTDEE(bio);
-  const macros = tdee ? calculateMacros(tdee, primaryGoal ?? "general_wellness") : null;
+  const macros = tdee ? calculateMacros(tdee, primaryGoal ?? "general_wellness", bio.sex) : null;
 
   const goals = {
     user_id:              user.id,

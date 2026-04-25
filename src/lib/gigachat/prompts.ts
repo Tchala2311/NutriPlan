@@ -7,6 +7,54 @@
 // Type for week recipe context in food photo analysis
 type WeekRecipe = { id: string; title: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; ingredients: string[] };
 
+/**
+ * Clinically documented allergen cross-reaction families.
+ * When a user has allergen A, they may also react to the listed foods.
+ * Source: EAACI, AAAAI guidelines.
+ */
+const CROSS_REACTION_MAP: Record<string, string[]> = {
+  // Latex-fruit syndrome
+  latex:     ["авокадо", "банан", "киви", "каштан", "папайя", "манго"],
+  // Birch pollen OAS (oral allergy syndrome)
+  birch_pollen: ["яблоко (сырое)", "сельдерей (сырой)", "морковь (сырая)", "фундук", "персик", "слива", "груша (сырая)"],
+  // Shellfish: crustaceans ↔ molluscs
+  shellfish: ["креветки", "краб", "омар", "лангуст", "кальмар", "мидии", "устрицы", "гребешки"],
+  shrimp:    ["краб", "омар", "кальмар", "мидии"],
+  crab:      ["креветки", "омар", "кальмар"],
+  // Tree nut cross-reactivity pairs
+  cashew:    ["фисташки"],
+  pistachio: ["кешью"],
+  walnut:    ["пекан"],
+  pecan:     ["грецкий орех"],
+  // Cow's milk ↔ goat/sheep milk (70–80% cross-reactivity)
+  milk:      ["козье молоко", "овечье молоко", "казеин"],
+  // Wheat gluten family
+  wheat:     ["рожь", "ячмень", "полба", "камут"],
+};
+
+/**
+ * Builds a Russian-language cross-reaction warning block for the GigaChat system prompt.
+ * Returns empty string when no cross-reactions apply.
+ */
+export function buildCrossReactionWarnings(allergens: string[]): string {
+  if (!allergens || allergens.length === 0) return "";
+
+  const warnings: string[] = [];
+  for (const allergen of allergens) {
+    const key = allergen.toLowerCase().trim();
+    const crossReactive = CROSS_REACTION_MAP[key];
+    if (crossReactive && crossReactive.length > 0) {
+      warnings.push(
+        `- Аллергия на "${allergen}": также исключай перекрёстно-реактивные продукты: ${crossReactive.join(", ")}`
+      );
+    }
+  }
+
+  if (warnings.length === 0) return "";
+
+  return `\n\nПЕРЕКРЁСТНЫЕ АЛЛЕРГИЧЕСКИЕ РЕАКЦИИ (строго соблюдать):\n${warnings.join("\n")}`;
+}
+
 export const SYSTEM_PROMPT_RU = `Ты — NutriPlan, персональный ИИ-помощник по питанию. Ты помогаешь пользователям понять свои пищевые привычки и принимать обоснованные решения в области питания.
 
 Основные правила:
