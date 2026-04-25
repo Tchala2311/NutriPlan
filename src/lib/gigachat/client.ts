@@ -195,26 +195,56 @@ async function callGigaChat(
   maxTokens: number
 ): Promise<string> {
   const token = await getToken();
-
-  const res = await fetch(GIGACHAT_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "lite",
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
+  const body = JSON.stringify({
+    model: "lite",
+    max_tokens: maxTokens,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
   });
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  const attempt = async () =>
+    fetch(GIGACHAT_API_URL, {
+      method: "POST",
+      headers,
+      body,
+      signal: AbortSignal.timeout(30_000),
+    });
+
+  let res: Response;
+  try {
+    res = await attempt();
+  } catch (err) {
+    const name = (err as { name?: string }).name;
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new Error("GigaChat timeout");
+    }
+    throw err;
+  }
+
+  // Retry once on 429 (after 2 s) or 5xx (immediately)
+  if (res.status === 429 || res.status >= 500) {
+    if (res.status === 429) await new Promise((r) => setTimeout(r, 2_000));
+    try {
+      res = await attempt();
+    } catch (err) {
+      const name = (err as { name?: string }).name;
+      if (name === "TimeoutError" || name === "AbortError") {
+        throw new Error("GigaChat timeout");
+      }
+      throw err;
+    }
+  }
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GigaChat API error ${res.status}: ${body}`);
+    if (res.status === 429) throw new Error("GigaChat rate limited");
+    const responseBody = await res.text();
+    throw new Error(`GigaChat error ${res.status}: ${responseBody}`);
   }
 
   const data = await res.json();
@@ -576,30 +606,61 @@ export async function getFoodPhotoAnalysis(
 
   // Try Max first (best quality), fall back to Pro when Max tokens exhausted
   for (const model of ["max", "pro"]) {
-    const res = await fetch(GIGACHAT_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: MAX_TOKENS.food_photo.краткий,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-            attachments: [fileId],
-          },
-        ],
-      }),
+    const visionBody = JSON.stringify({
+      model,
+      max_tokens: MAX_TOKENS.food_photo.краткий,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+          attachments: [fileId],
+        },
+      ],
     });
+    const visionHeaders = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+
+    const attemptVision = async () =>
+      fetch(GIGACHAT_API_URL, {
+        method: "POST",
+        headers: visionHeaders,
+        body: visionBody,
+        signal: AbortSignal.timeout(60_000),
+      });
+
+    let res: Response;
+    try {
+      res = await attemptVision();
+    } catch (err) {
+      const name = (err as { name?: string }).name;
+      if (name === "TimeoutError" || name === "AbortError") {
+        throw new Error("GigaChat timeout");
+      }
+      throw err;
+    }
+
+    // Retry once on 429 (after 2 s) or 5xx (immediately)
+    if (res.status === 429 || res.status >= 500) {
+      if (res.status === 429) await new Promise((r) => setTimeout(r, 2_000));
+      try {
+        res = await attemptVision();
+      } catch (err) {
+        const name = (err as { name?: string }).name;
+        if (name === "TimeoutError" || name === "AbortError") {
+          throw new Error("GigaChat timeout");
+        }
+        throw err;
+      }
+    }
 
     if (!res.ok) {
+      if (res.status === 429) throw new Error("GigaChat rate limited");
       // If Max fails (e.g. quota exhausted), try Pro. Only throw if both fail.
       if (model === "max") continue;
       const body = await res.text();
-      throw new Error(`GigaChat vision error ${res.status}: ${body}`);
+      throw new Error(`GigaChat error ${res.status}: ${body}`);
     }
 
     const data = await res.json();
