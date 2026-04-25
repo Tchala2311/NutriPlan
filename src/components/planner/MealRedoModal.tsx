@@ -39,7 +39,7 @@ export function MealRedoModal({
     setError(null);
 
     startTransition(async () => {
-      const result = await recordMealRedo(weekNumber, redoType, date, reason);
+      const result = await recordMealRedo(weekNumber, redoType, date, reason, mealType);
 
       if (!result.success) {
         setError("Не удалось переделать приём пищи. Попробуйте позже.");

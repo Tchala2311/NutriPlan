@@ -3,6 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { generateWeeklyMealPlan, type UserProfile, type MealRecipeRaw } from "@/lib/gigachat/client";
+import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
+import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
+import type { User } from "@supabase/supabase-js";
 
 export interface RecipeSummary {
   id: string;
@@ -296,6 +300,242 @@ export async function logRecipeMeal(
   return { success: !error };
 }
 
+/** Derive Sunday of a given date's week. */
+function getWeekEnd(weekStart: string): string {
+  const d = new Date(weekStart + "T00:00:00");
+  d.setDate(d.getDate() + 6);
+  return d.toISOString().split("T")[0];
+}
+
+/** Get all 7 dates in a week. */
+function getWeekDates(weekStart: string): string[] {
+  const dates: string[] = [];
+  const d = new Date(weekStart + "T00:00:00");
+  for (let i = 0; i < 7; i++) {
+    dates.push(d.toISOString().split("T")[0]);
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
+/** Compute per-100g values from per-serving + estimated weight. */
+function per100g(value: number, estimatedWeightG: number): number {
+  return Math.round((value / estimatedWeightG) * 100 * 10) / 10;
+}
+
+const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
+
+function buildRecipeRow(meal: MealRecipeRaw, mealType: string, userId: string) {
+  const weightEstimate = mealType === "snacks" ? 150 : 300;
+  return {
+    title: meal.title,
+    ingredients: meal.ingredients,
+    instructions: meal.steps,
+    servings: 1,
+    prep_time_min: meal.prep_min ?? null,
+    calories_per_serving: meal.kcal ?? null,
+    protein_per_serving: meal.p ?? null,
+    carbs_per_serving: meal.c ?? null,
+    fat_per_serving: meal.f ?? null,
+    calories_per_100g: meal.kcal ? per100g(meal.kcal, weightEstimate) : null,
+    protein_per_100g: meal.p ? per100g(meal.p, weightEstimate) : null,
+    carbs_per_100g: meal.c ? per100g(meal.c, weightEstimate) : null,
+    fat_per_100g: meal.f ? per100g(meal.f, weightEstimate) : null,
+    dietary_tags: meal.tags ?? [],
+    goal_tags: [],
+    substitutions: meal.substitutions ?? [],
+    source: "gigachat",
+    created_by_user_id: userId,
+  };
+}
+
+/** Regenerate meals via GigaChat for specific redo type. */
+async function regenerateMealsForRedo(
+  user: User,
+  weekStart: string,
+  redoType: "individual" | "daily" | "weekly",
+  affectedDate: string,
+  affectedMealType: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  // Load user profile data for GigaChat prompt
+  const [haRes, goalsRes, settingsRes, planRes] = await Promise.all([
+    supabase
+      .from("health_assessments")
+      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("user_goals")
+      .select("daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g, weight_kg, height_cm, age, sex, activity_level")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("user_settings")
+      .select("budget_preference")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("meal_plans")
+      .select("id, slots")
+      .eq("user_id", user.id)
+      .eq("week_start_date", weekStart)
+      .maybeSingle(),
+  ]);
+
+  const ha = haRes.data;
+  const goals = goalsRes.data;
+  const settings = settingsRes.data;
+  const existingPlan = planRes.data;
+
+  if (!existingPlan) {
+    return { success: false, error: "No meal plan found for this week" };
+  }
+
+  const primaryGoal = ha?.primary_goal ?? "general_wellness";
+  let tdeeKcal = goals?.daily_calorie_target ?? 2000;
+  let proteinG = goals?.protein_target_g ?? 120;
+  let carbsG = goals?.carbs_target_g ?? 200;
+  let fatG = goals?.fat_target_g ?? 70;
+
+  if (goals) {
+    const computedTDEE = calculateTDEE({
+      weight_kg: goals.weight_kg ?? undefined,
+      height_cm: goals.height_cm ?? undefined,
+      age: goals.age ?? undefined,
+      sex: (goals.sex ?? undefined) as "male" | "female" | undefined,
+      activity_level: goals.activity_level ?? "moderate",
+    });
+    if (computedTDEE) {
+      const m = calculateMacros(computedTDEE, primaryGoal);
+      tdeeKcal = m.daily_calorie_target;
+      proteinG = m.protein_target_g;
+      carbsG = m.carbs_target_g;
+      fatG = m.fat_target_g;
+    }
+  }
+
+  const userProfile: UserProfile & { avoided_ingredients?: string[] } = {
+    primary_goal: primaryGoal,
+    secondary_goals: ha?.secondary_goals ?? [],
+    dietary_restrictions: ha?.dietary_restrictions ?? [],
+    allergens: ha?.allergens ?? [],
+    avoided_ingredients: ha?.avoided_ingredients ?? [],
+    medical_conditions: ha?.medical_conditions ?? [],
+    eating_disorder_flag: ha?.eating_disorder_flag ?? false,
+    tdee_kcal: tdeeKcal,
+    target_protein_g: proteinG,
+    target_carbs_g: carbsG,
+    target_fat_g: fatG,
+  };
+
+  const weekEnd = getWeekEnd(weekStart);
+  const weekDates = getWeekDates(weekStart);
+
+  // Build goal-specific prompt
+  const promptParams: MealPlanPromptParams = {
+    primaryGoal: userProfile.primary_goal ?? "general_wellness",
+    tdeeKcal: userProfile.tdee_kcal ?? 2000,
+    targetProteinG: userProfile.target_protein_g ?? 120,
+    targetCarbsG: userProfile.target_carbs_g ?? 200,
+    targetFatG: userProfile.target_fat_g ?? 70,
+    dietaryRestrictions: userProfile.dietary_restrictions ?? [],
+    allergens: userProfile.allergens ?? [],
+    avoidedIngredients: userProfile.avoided_ingredients ?? [],
+    medicalConditions: userProfile.medical_conditions ?? [],
+    eatingDisorderFlag: userProfile.eating_disorder_flag ?? false,
+    weekStart,
+    weekEnd,
+    phaseNumber: 1, // Default phase; could be enhanced to use user's actual phase
+    phaseName: "Phase 1",
+    budgetPreference: (settings?.budget_preference as "low" | "moderate" | "high") ?? "moderate",
+  };
+  const goalPrompt = getMealPlanPrompt(promptParams);
+
+  // Generate full week plan via GigaChat
+  let weekPlan;
+  try {
+    weekPlan = await generateWeeklyMealPlan(userProfile, weekStart, weekEnd, goalPrompt);
+  } catch (err) {
+    console.error("GigaChat meal plan error:", err);
+    return { success: false, error: "AI generation failed" };
+  }
+
+  // Determine which dates/meals to update based on redoType
+  const datesToUpdate = new Set<string>();
+  const mealTypesToUpdate = new Set<string>();
+
+  if (redoType === "individual") {
+    datesToUpdate.add(affectedDate);
+    mealTypesToUpdate.add(affectedMealType);
+  } else if (redoType === "daily") {
+    datesToUpdate.add(affectedDate);
+    // Update all meal types for this day
+    for (const mt of MEAL_TYPES) {
+      mealTypesToUpdate.add(mt);
+    }
+  } else if (redoType === "weekly") {
+    // Update all dates and all meal types
+    for (const d of weekDates) {
+      datesToUpdate.add(d);
+    }
+    for (const mt of MEAL_TYPES) {
+      mealTypesToUpdate.add(mt);
+    }
+  }
+
+  // Update slots with new recipes from GigaChat
+  const slots = (existingPlan.slots ?? {}) as Record<string, Record<string, MealSlot>>;
+
+  for (const dayPlan of weekPlan.days) {
+    const date = dayPlan.date;
+    if (!datesToUpdate.has(date) || !weekDates.includes(date)) continue;
+
+    if (!slots[date]) slots[date] = {};
+
+    for (const mealType of MEAL_TYPES) {
+      // Skip if this meal type is not in the redo scope
+      if (!mealTypesToUpdate.has(mealType)) continue;
+
+      // Check if this meal is pinned - preserve if it is
+      const currentSlot = slots[date]?.[mealType];
+      if (currentSlot?.pinned) continue;
+
+      const mealData = dayPlan[mealType as keyof typeof dayPlan] as MealRecipeRaw | undefined;
+      if (!mealData) continue;
+
+      const recipeRow = buildRecipeRow(mealData, mealType, user.id);
+      const { data: inserted, error } = await admin
+        .from("recipes")
+        .insert(recipeRow)
+        .select("id")
+        .single();
+
+      if (error || !inserted) {
+        console.error("Recipe insert error:", error);
+        continue;
+      }
+
+      slots[date][mealType] = { recipe_id: inserted.id, pinned: false };
+    }
+  }
+
+  // Update meal plan with new slots
+  const { error: updateError } = await admin
+    .from("meal_plans")
+    .update({ slots })
+    .eq("id", existingPlan.id);
+
+  if (updateError) {
+    console.error("Meal plan update error:", updateError);
+    return { success: false, error: "Failed to save regenerated meals" };
+  }
+
+  return { success: true };
+}
+
 /** Get redo count for current week (for paywall logic: 3 free, then paid). */
 export async function getWeeklyRedoCount(
   weekNumber: number
@@ -323,7 +563,8 @@ export async function recordMealRedo(
   weekNumber: number,
   redoType: "individual" | "daily" | "weekly",
   affectedDate: string,
-  reason: string
+  reason: string,
+  affectedMealType?: string
 ): Promise<{ success: boolean; requiresPayment: boolean; paymentAmount?: number }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -344,6 +585,21 @@ export async function recordMealRedo(
   });
 
   if (error) return { success: false, requiresPayment: false };
+
+  // Regenerate meals via GigaChat for this redo
+  const weekStart = getWeekStart(affectedDate);
+  const regenResult = await regenerateMealsForRedo(
+    user,
+    weekStart,
+    redoType,
+    affectedDate,
+    affectedMealType ?? "breakfast"
+  );
+
+  if (!regenResult.success) {
+    console.error("Meal regeneration failed:", regenResult.error);
+    // Still return success for the redo record, but log the regeneration failure
+  }
 
   revalidatePath("/dashboard/planner");
 
