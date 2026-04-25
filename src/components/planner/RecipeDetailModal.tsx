@@ -312,9 +312,10 @@ export function RecipeDetailModal({
                 <div className="mb-5 p-3 rounded-lg bg-sage-50 border border-sage-100">
                   <h3 className="text-xs font-semibold text-bark-200 uppercase tracking-wide mb-2">Совместимость с вашим вкусом</h3>
                   <p className="text-sm text-stone-600 mb-3">{tastePortrait.taste_profile_summary}</p>
+
                   {tastePortrait.preferred_cuisines.length > 0 && (
                     <div className="mb-2">
-                      <p className="text-2xs font-medium text-stone-500 mb-1">Ваши предпочитаемые кухни:</p>
+                      <p className="text-2xs font-medium text-stone-500 mb-1">Предпочитаемые кухни:</p>
                       <div className="flex flex-wrap gap-1">
                         {tastePortrait.preferred_cuisines.map((cuisine, i) => (
                           <span key={i} className="px-2 py-1 text-2xs rounded-full bg-white text-sage-400 border border-sage-200">
@@ -323,6 +324,31 @@ export function RecipeDetailModal({
                         ))}
                       </div>
                     </div>
+                  )}
+
+                  {tastePortrait.flavor_preferences.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-2xs font-medium text-stone-500 mb-1">Вкусовые предпочтения:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tastePortrait.flavor_preferences.map((flavor, i) => (
+                          <span key={i} className="px-2 py-1 text-2xs rounded-full bg-white text-vital-400 border border-vital-100">
+                            {flavor}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {tastePortrait.dietary_fit && (
+                    <p className="text-2xs text-stone-600 mb-2">
+                      <span className="font-medium">Соответствие диете:</span> {tastePortrait.dietary_fit}
+                    </p>
+                  )}
+
+                  {tastePortrait.health_alignment && (
+                    <p className="text-2xs text-stone-600">
+                      <span className="font-medium">Соответствие здоровью:</span> {tastePortrait.health_alignment}
+                    </p>
                   )}
                 </div>
               )}
