@@ -131,19 +131,39 @@ export async function saveSettings(formData: FormData) {
     allergens: allergens,
   };
 
-  const [settingsError, healthError] = await Promise.all([
-    supabase
+  // Upsert user_settings: check if exists, then update or insert
+  const { data: existing, error: checkError } = await supabase
+    .from("user_settings")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (checkError) throw new Error(checkError.message);
+
+  let settingsError;
+  if (existing) {
+    // Row exists, update it
+    const result = await supabase
       .from("user_settings")
-      .upsert(settings, { onConflict: "user_id" })
-      .then((r) => r.error),
-    supabase
-      .from("health_assessments")
-      .update(healthSettings)
-      .eq("user_id", user.id)
-      .then((r) => r.error),
-  ]);
+      .update(settings)
+      .eq("id", existing.id);
+    settingsError = result.error;
+  } else {
+    // Row doesn't exist, insert new row
+    const result = await supabase
+      .from("user_settings")
+      .insert([settings]);
+    settingsError = result.error;
+  }
 
   if (settingsError) throw new Error(settingsError.message);
+
+  // Update health_assessments
+  const { error: healthError } = await supabase
+    .from("health_assessments")
+    .update(healthSettings)
+    .eq("user_id", user.id);
+
   if (healthError) throw new Error(healthError.message);
 
   revalidatePath("/dashboard/settings");
