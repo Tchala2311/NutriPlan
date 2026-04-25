@@ -80,6 +80,19 @@ export async function POST(req: Request) {
     );
 
     console.log(`[webhook] Premium activated for user ${userId} until ${periodEnd.toISOString()}`);
+
+    // Process referral rewards if this user was referred
+    try {
+      const origin = new URL(req.url).origin;
+      await fetch(`${origin}/api/referrals/process-rewards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referred_user_id: userId }),
+      });
+    } catch (err) {
+      console.error(`[webhook] Failed to process referral rewards for user ${userId}:`, err);
+      // Non-blocking: subscription activation succeeds even if reward processing fails
+    }
   } else if (event.event === "payment.canceled") {
     await supabase
       .from("subscriptions")

@@ -4,7 +4,8 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useTransition, useState, useEffect, useRef } from "react";
 import { AddFoodDialog } from "./AddFoodDialog";
 import { AISuggestionCard } from "./AISuggestionCard";
-import { deleteFoodEntry, getLogEntriesPage, LOG_PAGE_SIZE } from "@/app/dashboard/log/actions";
+import { deleteFoodEntry, getLogEntriesPage } from "@/app/dashboard/log/actions";
+import { LOG_PAGE_SIZE } from "@/app/dashboard/log/constants";
 import { cn } from "@/lib/utils";
 import type { UserGoals } from "@/app/dashboard/profile/actions";
 

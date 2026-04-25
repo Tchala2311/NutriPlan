@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getUserGoals } from "@/app/dashboard/profile/actions";
 import { NutritionLogClient } from "@/components/nutrition/NutritionLogClient";
-import { LOG_PAGE_SIZE } from "@/app/dashboard/log/actions";
+import { LOG_PAGE_SIZE } from "@/app/dashboard/log/constants";
 
 export const metadata: Metadata = { title: "Дневник питания — NutriPlan" };
 
