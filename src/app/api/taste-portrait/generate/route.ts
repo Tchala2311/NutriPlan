@@ -14,20 +14,30 @@ export async function POST() {
 
     const userId = user.id;
 
-    // Fetch user health profile
-    const { data: userGoals, error: goalsError } = await supabase
-      .from("user_goals")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+    // Fetch user health profile and assessment
+    const [goalsRes, assessmentRes] = await Promise.all([
+      supabase
+        .from("user_goals")
+        .select("*")
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("health_assessments")
+        .select("secondary_goals, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
 
-    if (goalsError) {
-      console.error("Fetch user goals error:", goalsError);
+    if (goalsRes.error) {
+      console.error("Fetch user goals error:", goalsRes.error);
       return NextResponse.json(
         { error: "Unable to load user profile" },
         { status: 400 }
       );
     }
+
+    const userGoals = goalsRes.data;
+    const assessment = assessmentRes.data;
 
     // Build UserProfile for Gigachat
     const userProfile: UserProfile = {
@@ -37,10 +47,19 @@ export async function POST() {
       weight_kg: userGoals.weight_kg,
       activity_level: userGoals.activity_level,
       primary_goal: userGoals.primary_goal,
-      secondary_goals: userGoals.secondary_goals || [],
-      dietary_restrictions: userGoals.dietary_restrictions || [],
-      allergens: userGoals.allergens || [],
-      medical_conditions: userGoals.medical_conditions || [],
+      secondary_goals: assessment?.secondary_goals || [],
+      dietary_restrictions: assessment?.dietary_restrictions || [],
+      allergens: assessment?.allergens || [],
+      medical_conditions: assessment?.medical_conditions || [],
+      eating_disorder_flag: assessment?.eating_disorder_flag || false,
+      // TES-154: Granular eating disorder flags
+      eating_disorder_anorexia_restrictive: assessment?.eating_disorder_anorexia_restrictive || false,
+      eating_disorder_binge: assessment?.eating_disorder_binge || false,
+      eating_disorder_orthorexia: assessment?.eating_disorder_orthorexia || false,
+      // TES-150: Pregnancy/breastfeeding for safety restrictions
+      is_pregnant:         assessment?.is_pregnant            || false,
+      pregnancy_trimester: (assessment?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
+      is_breastfeeding:    assessment?.is_breastfeeding       || false,
       tdee_kcal: userGoals.tdee_kcal,
       target_protein_g: userGoals.target_protein_g,
       target_carbs_g: userGoals.target_carbs_g,

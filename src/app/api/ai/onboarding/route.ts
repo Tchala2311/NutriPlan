@@ -44,6 +44,10 @@ export async function POST() {
     eating_disorder_orthorexia: assessment.eating_disorder_orthorexia ?? false,
     secondary_goals: assessment.secondary_goals ?? [],
     tone_mode: "подробный",
+    // TES-150: Pregnancy/breastfeeding for safety restrictions
+    is_pregnant:         assessment.is_pregnant         ?? false,
+    pregnancy_trimester: (assessment.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
+    is_breastfeeding:    assessment.is_breastfeeding    ?? false,
     // Anthropometric fields populated from assessment if stored
     age: assessment.age ?? undefined,
     sex: assessment.sex ?? undefined,

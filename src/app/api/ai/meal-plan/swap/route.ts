@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   // Load user profile
   const { data: ha } = await supabase
     .from("health_assessments")
-    .select("primary_goal, dietary_restrictions, allergens, avoided_ingredients, medical_conditions")
+    .select("primary_goal, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, is_pregnant, pregnancy_trimester, is_breastfeeding")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -75,6 +75,10 @@ export async function POST(req: Request) {
     dietary_restrictions: ha?.dietary_restrictions ?? [],
     allergens: ha?.allergens ?? [],
     medical_conditions: ha?.medical_conditions ?? [],
+    // TES-150: Pregnancy/breastfeeding for safety restrictions
+    is_pregnant:         ha?.is_pregnant            ?? false,
+    pregnancy_trimester: (ha?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
+    is_breastfeeding:    ha?.is_breastfeeding       ?? false,
     tdee_kcal: tdee,
     target_protein_g: goals?.protein_target_g ?? 120,
     target_carbs_g: goals?.carbs_target_g ?? 200,
