@@ -252,6 +252,10 @@ export async function POST(req: Request) {
     eating_disorder_anorexia_restrictive: ha?.eating_disorder_anorexia_restrictive ?? false,
     eating_disorder_binge: ha?.eating_disorder_binge ?? false,
     eating_disorder_orthorexia: ha?.eating_disorder_orthorexia ?? false,
+    // TES-150: Pregnancy/breastfeeding for safety restrictions
+    is_pregnant:         ha?.is_pregnant            ?? false,
+    pregnancy_trimester: (ha?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
+    is_breastfeeding:    ha?.is_breastfeeding       ?? false,
     tdee_kcal: tdeeKcal,
     target_protein_g: proteinG,
     target_carbs_g: carbsG,
