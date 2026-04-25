@@ -90,7 +90,7 @@ export async function POST(req: Request) {
   // Load health assessment for user profile
   const { data: ha } = await supabase
     .from("health_assessments")
-    .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag")
+    .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, is_pregnant, pregnancy_trimester, is_breastfeeding")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -115,11 +115,14 @@ export async function POST(req: Request) {
 
   if (goals) {
     const computedTDEE = calculateTDEE({
-      weight_kg:      goals.weight_kg      ?? undefined,
-      height_cm:      goals.height_cm      ?? undefined,
-      age:            goals.age            ?? undefined,
-      sex:            (goals.sex ?? undefined) as "male" | "female" | undefined,
-      activity_level: goals.activity_level ?? "moderate",
+      weight_kg:           goals.weight_kg           ?? undefined,
+      height_cm:           goals.height_cm           ?? undefined,
+      age:                 goals.age                 ?? undefined,
+      sex:                 (goals.sex ?? undefined) as "male" | "female" | undefined,
+      activity_level:      goals.activity_level      ?? "moderate",
+      is_pregnant:         ha?.is_pregnant            ?? false,
+      pregnancy_trimester: (ha?.pregnancy_trimester   ?? undefined) as 1 | 2 | 3 | undefined,
+      is_breastfeeding:    ha?.is_breastfeeding       ?? false,
     });
     if (computedTDEE) {
       const m = calculateMacros(computedTDEE, primaryGoal, (goals.sex ?? undefined) as "male" | "female" | undefined);
@@ -143,6 +146,9 @@ export async function POST(req: Request) {
     target_protein_g: proteinG,
     target_carbs_g:   carbsG,
     target_fat_g:     fatG,
+    is_pregnant:         ha?.is_pregnant            ?? false,
+    pregnancy_trimester: (ha?.pregnancy_trimester   ?? undefined) as 1 | 2 | 3 | undefined,
+    is_breastfeeding:    ha?.is_breastfeeding       ?? false,
   };
 
   // Load existing plan to respect pinned slots
@@ -186,6 +192,9 @@ export async function POST(req: Request) {
     phaseNumber: planPhase.number,
     phaseName: planPhase.nameRu,
     budgetPreference: (userProfile.budget_preference as "low" | "moderate" | "high") ?? "moderate",
+    isPregnant:         ha?.is_pregnant            ?? false,
+    pregnancyTrimester: (ha?.pregnancy_trimester   ?? undefined) as 1 | 2 | 3 | undefined,
+    isBreastfeeding:    ha?.is_breastfeeding       ?? false,
   };
   const goalPrompt = getMealPlanPrompt(promptParams);
 

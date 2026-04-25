@@ -264,6 +264,9 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     medical_conditions: [],
     medications: "",
     disclaimer_accepted: false,
+    is_pregnant: false,
+    pregnancy_trimester: null,
+    is_breastfeeding: false,
   });
 
   const [tdee, setTdee] = useState<TdeeInputs>({
@@ -631,6 +634,64 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
               )}
             />
+          </div>
+
+          {/* Pregnancy / Breastfeeding */}
+          <div className="mb-6">
+            <p className="text-sm font-medium text-foreground mb-3">
+              Беременность и кормление{" "}
+              <span className="font-normal text-muted-foreground">(необязательно)</span>
+            </p>
+            <div className="space-y-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_pregnant ?? false}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      is_pregnant: e.target.checked,
+                      pregnancy_trimester: e.target.checked ? p.pregnancy_trimester : null,
+                    }))
+                  }
+                  className="accent-bark-300"
+                />
+                <span className="text-sm text-bark-300">Беременна</span>
+              </label>
+              {form.is_pregnant && (
+                <div className="ml-7">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Триместр</p>
+                  <div className="flex gap-2">
+                    {([1, 2, 3] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setForm((p) => ({ ...p, pregnancy_trimester: t }))}
+                        className={cn(
+                          "rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors",
+                          form.pregnancy_trimester === t
+                            ? "border-bark-300 bg-bark-300 text-primary-foreground"
+                            : "border-parchment-200 bg-parchment-100 text-bark-200 hover:border-bark-100"
+                        )}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_breastfeeding ?? false}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, is_breastfeeding: e.target.checked }))
+                  }
+                  className="accent-bark-300"
+                />
+                <span className="text-sm text-bark-300">Кормлю грудью</span>
+              </label>
+            </div>
           </div>
 
           <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-8">

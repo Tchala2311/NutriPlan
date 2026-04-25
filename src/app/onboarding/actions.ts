@@ -22,6 +22,10 @@ export interface OnboardingFormData {
   age?: number | null;
   sex?: "male" | "female" | null;
   activity_level?: string | null;
+  // Step 2 – Pregnancy / Breastfeeding
+  is_pregnant?: boolean;
+  pregnancy_trimester?: 1 | 2 | 3 | null;
+  is_breastfeeding?: boolean;
 }
 
 const GOAL_DEFAULTS: Record<string, { daily_calorie_target: number; protein_target_g: number; carbs_target_g: number; fat_target_g: number }> = {
@@ -55,6 +59,10 @@ export async function saveOnboarding(data: OnboardingFormData) {
       medications_text: data.medications || null,
       disclaimer_accepted: data.disclaimer_accepted,
       disclaimer_accepted_at: data.disclaimer_accepted ? new Date().toISOString() : null,
+      // Pregnancy / breastfeeding
+      is_pregnant:          data.is_pregnant          ?? false,
+      pregnancy_trimester:  data.pregnancy_trimester  ?? null,
+      is_breastfeeding:     data.is_breastfeeding     ?? false,
       // Derived flags
       glucose_tracking_enabled: data.medical_conditions.includes("diabetes"),
       sodium_tracking_enabled: data.medical_conditions.some((c) =>
@@ -70,11 +78,14 @@ export async function saveOnboarding(data: OnboardingFormData) {
 
   // Compute TDEE + macros from biometrics if provided; fall back to goal averages.
   const bio = {
-    weight_kg:      data.weight_kg      ?? undefined,
-    height_cm:      data.height_cm      ?? undefined,
-    age:            data.age            ?? undefined,
-    sex:            (data.sex ?? undefined) as "male" | "female" | undefined,
-    activity_level: data.activity_level ?? "moderate",
+    weight_kg:           data.weight_kg           ?? undefined,
+    height_cm:           data.height_cm           ?? undefined,
+    age:                 data.age                 ?? undefined,
+    sex:                 (data.sex ?? undefined) as "male" | "female" | undefined,
+    activity_level:      data.activity_level      ?? "moderate",
+    is_pregnant:         data.is_pregnant         ?? false,
+    pregnancy_trimester: (data.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
+    is_breastfeeding:    data.is_breastfeeding    ?? false,
   };
   const tdeeKcal = calculateTDEE(bio);
   const macros   = tdeeKcal ? calculateMacros(tdeeKcal, data.primary_goal, bio.sex) : null;

@@ -55,6 +55,25 @@ export function buildCrossReactionWarnings(allergens: string[]): string {
   return `\n\nПЕРЕКРЁСТНЫЕ АЛЛЕРГИЧЕСКИЕ РЕАКЦИИ (строго соблюдать):\n${warnings.join("\n")}`;
 }
 
+/**
+ * Builds a Russian-language pregnancy / breastfeeding food-safety block for the
+ * GigaChat system prompt. Returns empty string when neither flag is set.
+ */
+export function buildPregnancyRestrictions(
+  isPregnant?: boolean,
+  isBreastfeeding?: boolean
+): string {
+  if (!isPregnant && !isBreastfeeding) return "";
+  return `
+
+ПОЛЬЗОВАТЕЛЬ БЕРЕМЕННА / КОРМИТ ГРУДЬЮ — СТРОГИЕ ОГРАНИЧЕНИЯ БЕЗОПАСНОСТИ:
+- Исключи: сырую/недоготовленную рыбу, мясо, яйца
+- Тунец и рыба с высоким содержанием ртути: не более 2 порций в неделю
+- Исключи: печень и продукты из печени (риск токсичности витамина А)
+- Исключи: непастеризованные сыры и колбасные изделия (риск листериоза)
+- Исключи: алкоголь`;
+}
+
 export const SYSTEM_PROMPT_RU = `Ты — NutriPlan, персональный ИИ-помощник по питанию. Ты помогаешь пользователям понять свои пищевые привычки и принимать обоснованные решения в области питания.
 
 Основные правила:

@@ -39,6 +39,7 @@ import {
   PROMPT_TASTE_PORTRAIT_RU,
   buildFoodPhotoPrompt,
   buildCrossReactionWarnings,
+  buildPregnancyRestrictions,
   getConditionInstructions,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
@@ -146,6 +147,9 @@ export interface UserProfile {
   protein_cap_g?: number;
   kidney_disease?: boolean;
   water_target_ml?: number;
+  is_pregnant?: boolean;
+  pregnancy_trimester?: 1 | 2 | 3;
+  is_breastfeeding?: boolean;
 }
 
 /** Replace {{key}} placeholders in a template string with values from a flat record. */
@@ -261,7 +265,7 @@ export async function getOnboardingInsight(
   user: UserProfile
 ): Promise<string> {
   const vars = buildVars(user);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_ONBOARDING_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("onboarding", user.tone_mode ?? "краткий"));
 }
@@ -288,7 +292,7 @@ export async function getDailyAnalysis(
       : "— (записи отсутствуют)";
 
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>, { meals_list: mealsList });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_DAILY_ANALYSIS_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("daily_analysis", user.tone_mode ?? "краткий"));
 }
@@ -316,7 +320,7 @@ export async function getSafetyAlert(
     .join("\n");
 
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>, { deficiencies_list: defList });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_SAFETY_ALERT_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("safety_alert", user.tone_mode ?? "краткий"));
 }
@@ -362,7 +366,7 @@ export async function getGoalInsight(
   }
 
   const vars = buildVars(user, analysis, extra);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(template, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens(promptId, user.tone_mode ?? "краткий"));
 }
@@ -378,7 +382,7 @@ export async function getTrendWarning(
   }
 ): Promise<string> {
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_TREND_WARNING_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("trend_warning", user.tone_mode ?? "краткий"));
 }
@@ -389,7 +393,7 @@ export async function getOptimisationTip(
   tipData: string
 ): Promise<string> {
   const vars = buildVars(user, {}, { tip_subtype_ru: tipSubtypeRu, tip_data: tipData });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_OPTIMISATION_TIP_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("optimisation_tip", user.tone_mode ?? "краткий"));
 }
@@ -406,7 +410,7 @@ export async function getMealSubstitution(
   }
 ): Promise<string> {
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_MEAL_SUBSTITUTION_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("meal_substitution", user.tone_mode ?? "краткий"));
 }
@@ -418,7 +422,7 @@ export async function getFreeAnswer(
   // Escape template delimiters in user input to prevent prompt injection
   const safeMessage = userMessage.replace(/\{\{/g, "{ {").replace(/\}\}/g, "} }");
   const vars = buildVars(user, {}, { user_message: safeMessage });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_FREE_QUESTION_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens("free_question", user.tone_mode ?? "краткий"));
 }
@@ -741,7 +745,7 @@ export async function getFoodSuggestion(
   };
 
   const vars = buildVars(user, {}, extra);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []);
+  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_FOOD_SUGGESTION_RU, vars);
   const result = await callGigaChat(
     system,

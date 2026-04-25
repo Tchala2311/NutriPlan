@@ -18,11 +18,14 @@ export const ACTIVITY_MULTIPLIERS: Record<string, number> = {
 };
 
 export interface Biometrics {
-  weight_kg:      number;
-  height_cm:      number;
-  age:            number;
-  sex:            "male" | "female";
-  activity_level?: string;
+  weight_kg:           number;
+  height_cm:           number;
+  age:                 number;
+  sex:                 "male" | "female";
+  activity_level?:     string;
+  is_pregnant?:        boolean;
+  pregnancy_trimester?: 1 | 2 | 3;
+  is_breastfeeding?:   boolean;
 }
 
 /**
@@ -40,7 +43,18 @@ export function calculateTDEE(bio: Partial<Biometrics>): number | null {
       : 10 * weight_kg + 6.25 * height_cm - 5 * age - 161;
 
   const multiplier = ACTIVITY_MULTIPLIERS[bio.activity_level ?? "moderate"] ?? 1.55;
-  return Math.round(bmr * multiplier);
+  const base = Math.round(bmr * multiplier);
+
+  // Pregnancy / breastfeeding TDEE uplift (TES-167)
+  let pregnancyUplift = 0;
+  if (bio.is_pregnant) {
+    if (bio.pregnancy_trimester === 2) pregnancyUplift = 340;
+    else if (bio.pregnancy_trimester === 3) pregnancyUplift = 452;
+    // Trimester 1: +0 kcal per clinical guidelines
+  }
+  if (bio.is_breastfeeding) pregnancyUplift = 500;
+
+  return base + pregnancyUplift;
 }
 
 export interface MacroTargets {
