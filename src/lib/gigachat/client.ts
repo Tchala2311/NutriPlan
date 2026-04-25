@@ -200,7 +200,7 @@ async function callGigaChat(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "GigaChat",
+      model: "GigaChat-Lite",
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
@@ -549,7 +549,8 @@ const FOOD_PHOTO_EXTENDED_NUMERIC_KEYS = new Set([
 ]);
 
 /**
- * Analyse a food photo using GigaChat-2-Max vision.
+ * Analyse a food photo using GigaChat vision.
+ * Tries GigaChat-2-Pro first, falls back to GigaChat-2-Max on failure.
  * Optionally accepts week recipe context for recipe matching.
  */
 export async function getFoodPhotoAnalysis(
@@ -562,35 +563,42 @@ export async function getFoodPhotoAnalysis(
   const fileId = await uploadImageFile(imageBuffer, token);
   const prompt = buildFoodPhotoPrompt(weekRecipes);
 
-  const res = await fetch(GIGACHAT_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "GigaChat-2-Max",
-      max_tokens: MAX_TOKENS.food_photo.краткий,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-          attachments: [fileId],
-        },
-      ],
-    }),
-  });
+  // Try Pro first, fall back to Max if unavailable
+  for (const model of ["GigaChat-2-Pro", "GigaChat-2-Max"]) {
+    const res = await fetch(GIGACHAT_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: MAX_TOKENS.food_photo.краткий,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+            attachments: [fileId],
+          },
+        ],
+      }),
+    });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GigaChat vision error ${res.status}: ${body}`);
+    if (!res.ok) {
+      // If Pro fails, try Max. Only throw if both fail.
+      if (model === "GigaChat-2-Pro") continue;
+      const body = await res.text();
+      throw new Error(`GigaChat vision error ${res.status}: ${body}`);
+    }
+
+    const data = await res.json();
+    const raw = data.choices[0].message.content as string;
+    const json = extractJson(raw);
+    const parsed = JSON.parse(json);
+    return sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoResult;
   }
 
-  const data = await res.json();
-  const raw = data.choices[0].message.content as string;
-  const json = extractJson(raw);
-  const parsed = JSON.parse(json);
-  return sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoResult;
+  throw new Error("GigaChat vision unavailable (both Pro and Max failed)");
 }
 
 /**
