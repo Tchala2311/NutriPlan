@@ -135,10 +135,13 @@ export type Database = {
           glucose_tracking_enabled: boolean
           health_goals: string[]
           id: string
+          is_breastfeeding: boolean
+          is_pregnant: boolean
           medical_conditions: string[]
           medical_conditions_other: string | null
           medications: string | null
           medications_text: string | null
+          pregnancy_trimester: number | null
           primary_goal: string | null
           protein_cap_g_per_kg: number | null
           protein_target_g: number | null
@@ -161,10 +164,13 @@ export type Database = {
           glucose_tracking_enabled?: boolean
           health_goals?: string[]
           id?: string
+          is_breastfeeding?: boolean
+          is_pregnant?: boolean
           medical_conditions?: string[]
           medical_conditions_other?: string | null
           medications?: string | null
           medications_text?: string | null
+          pregnancy_trimester?: number | null
           primary_goal?: string | null
           protein_cap_g_per_kg?: number | null
           protein_target_g?: number | null
@@ -187,10 +193,13 @@ export type Database = {
           glucose_tracking_enabled?: boolean
           health_goals?: string[]
           id?: string
+          is_breastfeeding?: boolean
+          is_pregnant?: boolean
           medical_conditions?: string[]
           medical_conditions_other?: string | null
           medications?: string | null
           medications_text?: string | null
+          pregnancy_trimester?: number | null
           primary_goal?: string | null
           protein_cap_g_per_kg?: number | null
           protein_target_g?: number | null
@@ -616,6 +625,41 @@ export type Database = {
           },
         ]
       }
+      shared_plans: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          meal_plan_id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          meal_plan_id: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          meal_plan_id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_plans_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shopping_items: {
         Row: {
           category: string
@@ -859,6 +903,7 @@ export type Database = {
           id: string
           language: string
           notification_prefs: Json
+          tone_mode: string | null
           training_days: number[]
           units: string
           updated_at: string
@@ -870,6 +915,7 @@ export type Database = {
           id?: string
           language?: string
           notification_prefs?: Json
+          tone_mode?: string | null
           training_days?: number[]
           units?: string
           updated_at?: string
@@ -881,6 +927,7 @@ export type Database = {
           id?: string
           language?: string
           notification_prefs?: Json
+          tone_mode?: string | null
           training_days?: number[]
           units?: string
           updated_at?: string
@@ -966,6 +1013,33 @@ export type Database = {
           id?: string
           logged_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          logged_date: string
+          updated_at: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logged_date: string
+          updated_at?: string | null
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logged_date?: string
+          updated_at?: string | null
+          user_id?: string
+          weight_kg?: number
         }
         Relationships: []
       }
@@ -1101,3 +1175,9 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

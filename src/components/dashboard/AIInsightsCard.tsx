@@ -61,9 +61,11 @@ export function AIInsightsCard({ dayTotals }: AIInsightsCardProps) {
     setLoading(true);
     const controller = new AbortController();
 
-    // Try goal_insight first, then optimisation_tip as fallback
-    // (safety_alert / trend_warning require complex server-side data not available here)
+    // Priority: safety_alert > trend_warning > goal_insight > optimisation_tip
+    // (safety_alert / trend_warning auto-detect from server-side nutrition data)
     const candidates: Array<{ type: InsightType; payload: Record<string, unknown> }> = [
+      { type: "safety_alert", payload: {} }, // Auto-detect on server
+      { type: "trend_warning", payload: {} }, // Auto-detect on server
       { type: "goal_insight", payload: { dayTotals } },
       {
         type: "optimisation_tip",

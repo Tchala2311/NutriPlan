@@ -22,6 +22,12 @@ import {
   getMealSubstitution,
   UserProfile,
 } from "@/lib/gigachat/client";
+import { getNutritionSummary, getWeightLogs } from "@/lib/nutrition/actions";
+import {
+  detectSafetyAlert,
+  detectTrendWarning,
+  detectPlateau,
+} from "@/lib/nutrition/detection";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -42,8 +48,8 @@ export async function POST(req: NextRequest) {
 
   const { type, ...payload } = body as { type: string; [k: string]: unknown };
 
-  // Build user profile from Supabase health_assessments + user_settings
-  const [{ data: assessment }, { data: settings }] = await Promise.all([
+  // Build user profile from Supabase health_assessments + user_settings + user_goals
+  const [{ data: assessment }, { data: settings }, { data: goals }] = await Promise.all([
     supabase
       .from("health_assessments")
       .select("*")
@@ -54,6 +60,11 @@ export async function POST(req: NextRequest) {
     supabase
       .from("user_settings")
       .select("tone_mode")
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("user_goals")
+      .select("daily_calorie_target, protein_target_g, fat_target_g")
       .eq("user_id", user.id)
       .single(),
   ]);
@@ -80,24 +91,76 @@ export async function POST(req: NextRequest) {
         break;
       }
       case "safety_alert": {
-        result = await getSafetyAlert(
-          profile,
-          payload as Parameters<typeof getSafetyAlert>[1]
-        );
+        let alertPayload = payload as Parameters<typeof getSafetyAlert>[1];
+
+        // Auto-detect if not explicitly provided
+        if (!alertPayload.critical_deficiencies) {
+          const nutrition = await getNutritionSummary(7);
+          const detection = detectSafetyAlert(
+            nutrition,
+            goals?.protein_target_g ?? 100,
+            goals?.fat_target_g ?? 70
+          );
+
+          if (detection.detected && detection.deficiencies.length > 0) {
+            alertPayload = {
+              window_days: detection.window_days,
+              critical_deficiencies: detection.deficiencies,
+            };
+          } else {
+            // No deficiencies detected, skip this insight
+            return NextResponse.json({ insight: "" });
+          }
+        }
+
+        result = await getSafetyAlert(profile, alertPayload);
         break;
       }
       case "goal_insight": {
-        result = await getGoalInsight(
-          profile,
-          payload as Record<string, unknown>
-        );
+        let goalPayload = payload as Record<string, unknown>;
+
+        // Auto-detect plateau for weight loss if not provided
+        if (profile.primary_goal === "weight_loss" && !goalPayload.plateau_detected) {
+          const nutrition = await getNutritionSummary(7);
+          const weights = await getWeightLogs(7);
+          const plateau = detectPlateau(
+            weights,
+            nutrition,
+            goals?.daily_calorie_target ?? 2000
+          );
+          goalPayload.plateau_detected = plateau.detected;
+        }
+
+        result = await getGoalInsight(profile, goalPayload);
         break;
       }
       case "trend_warning": {
-        result = await getTrendWarning(
-          profile,
-          payload as Parameters<typeof getTrendWarning>[1]
-        );
+        let trendPayload = payload as Parameters<typeof getTrendWarning>[1];
+
+        // Auto-detect if not explicitly provided
+        if (!trendPayload.trend_metric_name_ru) {
+          const nutrition = await getNutritionSummary(7);
+          const detection = detectTrendWarning(
+            nutrition,
+            goals?.daily_calorie_target ?? 2000,
+            profile.primary_goal ?? "general_wellness"
+          );
+
+          if (detection.detected) {
+            trendPayload = {
+              trend_metric_name_ru: detection.trend_metric_name_ru,
+              trend_category_ru: detection.trend_category_ru,
+              trend_direction_ru: detection.trend_direction_ru,
+              trend_magnitude_pct: detection.trend_magnitude_pct,
+              contributing_factors_ru: detection.contributing_factors_ru,
+            };
+          } else {
+            // No trends detected, skip this insight
+            return NextResponse.json({ insight: "" });
+          }
+        }
+
+        result = await getTrendWarning(profile, trendPayload);
         break;
       }
       case "optimisation_tip": {
