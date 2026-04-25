@@ -42,7 +42,11 @@ export function MealRedoModal({
       const result = await recordMealRedo(weekNumber, redoType, date, reason, mealType);
 
       if (!result.success) {
-        setError("Не удалось переделать приём пищи. Попробуйте позже.");
+        if (result.trialExpired) {
+          setError("Пробный период закончился. Оформите подписку, чтобы продолжить.");
+        } else {
+          setError("Не удалось переделать приём пищи. Попробуйте позже.");
+        }
         return;
       }
 

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { generateWeeklyMealPlan, type UserProfile, type MealRecipeRaw } from "@/lib/gigachat/client";
 import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
 import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
+import { canAccessPremiumFeatures } from "@/lib/subscription";
 import type { User } from "@supabase/supabase-js";
 
 export interface RecipeSummary {
@@ -565,10 +566,16 @@ export async function recordMealRedo(
   affectedDate: string,
   reason: string,
   affectedMealType?: string
-): Promise<{ success: boolean; requiresPayment: boolean; paymentAmount?: number }> {
+): Promise<{ success: boolean; requiresPayment: boolean; paymentAmount?: number; trialExpired?: boolean }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, requiresPayment: false };
+
+  // Paywall: check if trial has expired
+  const hasAccess = await canAccessPremiumFeatures();
+  if (!hasAccess) {
+    return { success: false, requiresPayment: false, trialExpired: true };
+  }
 
   const { count } = await getWeeklyRedoCount(weekNumber);
 

@@ -206,7 +206,17 @@ export function MealPlannerClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ week_start: currentWeekStart }),
       });
-      if (!res.ok) throw new Error("Ошибка генерации плана. Попробуйте снова.");
+      if (!res.ok) {
+        // Try to parse error response for specific messages (e.g., trial expired)
+        let errorMsg = "Ошибка генерации плана. Попробуйте снова.";
+        try {
+          const errorData = await res.json();
+          if (errorData.error) errorMsg = errorData.error;
+        } catch {
+          // Fall back to default error message
+        }
+        throw new Error(errorMsg);
+      }
       const data = await res.json();
       setPlanCache((prev) => ({ ...prev, [currentWeekStart]: data.plan }));
       setRecipesCache((prev) => ({ ...prev, ...data.recipes }));
