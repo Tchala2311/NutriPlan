@@ -40,6 +40,7 @@ import {
   buildFoodPhotoPrompt,
   buildCrossReactionWarnings,
   buildPregnancyRestrictions,
+  buildBreastfeedingGuidance,
   buildPostpartumGuidance,
   buildEatingDisorderInstruction,
   getConditionInstructions,
@@ -271,6 +272,7 @@ export async function getOnboardingInsight(user: UserProfile): Promise<string> {
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_ONBOARDING_RU, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens('onboarding', user.tone_mode ?? 'краткий'));
@@ -311,6 +313,7 @@ export async function getDailyAnalysis(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_DAILY_ANALYSIS_RU, vars);
   return callGigaChat(
@@ -349,6 +352,7 @@ export async function getSafetyAlert(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_SAFETY_ALERT_RU, vars);
   return callGigaChat(
@@ -403,6 +407,7 @@ export async function getGoalInsight(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(template, vars);
   return callGigaChat(system, userMsg, resolveMaxTokens(promptId, user.tone_mode ?? 'краткий'));
@@ -423,6 +428,7 @@ export async function getTrendWarning(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_TREND_WARNING_RU, vars);
   return callGigaChat(
@@ -442,6 +448,7 @@ export async function getOptimisationTip(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_OPTIMISATION_TIP_RU, vars);
   return callGigaChat(
@@ -467,6 +474,7 @@ export async function getMealSubstitution(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_MEAL_SUBSTITUTION_RU, vars);
   return callGigaChat(
@@ -484,6 +492,7 @@ export async function getFreeAnswer(user: UserProfile, userMessage: string): Pro
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_FREE_QUESTION_RU, vars);
   return callGigaChat(
@@ -816,6 +825,7 @@ export async function getFoodSuggestion(
     interpolate(SYSTEM_PROMPT_RU, vars) +
     buildCrossReactionWarnings(user.allergens ?? []) +
     buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding) +
+    buildBreastfeedingGuidance(user.is_breastfeeding) +
     buildPostpartumGuidance(user.is_postpartum, user.postpartum_weeks_since_birth);
   const userMsg = interpolate(PROMPT_FOOD_SUGGESTION_RU, vars);
   const result = await callGigaChat(
