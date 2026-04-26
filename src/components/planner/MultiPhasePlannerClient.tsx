@@ -209,7 +209,7 @@ export function MultiPhasePlannerClient({
       const dayOfWeek = startDate.getDay(); // 0=Sun, 1=Mon...6=Sat
       const dayMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Mon=0...Sun=6
       const count = 7 - dayMon;
-      return Array.from({ length: count }, (_, i) => i);
+      return Array.from({ length: count }, (_, i) => dayMon + i);
     }
     return [0, 1, 2, 3, 4, 5, 6];
   }, [globalWeek, planStartDate]);
@@ -469,12 +469,18 @@ export function MultiPhasePlannerClient({
           goalContext={goalContext}
           activeDays={activeDays}
           onToggleCompletion={toggleCompletion}
-          onRedoMeal={(mealType, date) => {
-            setSelectedRedoMeal({ mealType, date, redoType: "individual" });
+          onRedoMeal={(mealType, dayStr) => {
+            // MealCard passes "day${n}" — convert to real calendar date
+            const dayNum = parseInt(dayStr.replace("day", ""), 10);
+            const realDate = !isNaN(dayNum)
+              ? (getMealDate(globalWeek, dayNum, planStartDate) ?? dayStr)
+              : dayStr;
+            setSelectedRedoMeal({ mealType, date: realDate, redoType: "individual" });
             setRedoModalOpen(true);
           }}
           onRedoDay={(day) => {
-            setSelectedRedoMeal({ mealType: "", date: `day${day}`, redoType: "daily" });
+            const realDate = getMealDate(globalWeek, day, planStartDate) ?? `day${day}`;
+            setSelectedRedoMeal({ mealType: "", date: realDate, redoType: "daily" });
             setRedoModalOpen(true);
           }}
           isTrainingDay={isTrainingDay}
