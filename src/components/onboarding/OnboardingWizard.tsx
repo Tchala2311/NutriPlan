@@ -288,6 +288,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     is_pregnant: false,
     pregnancy_trimester: null,
     is_breastfeeding: false,
+    is_postpartum: false,
+    postpartum_weeks_since_birth: null,
   });
 
   const [tdee, setTdee] = useState<TdeeInputs>({
@@ -774,6 +776,43 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 />
                 <span className="text-sm text-bark-300">Кормлю грудью</span>
               </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_postpartum ?? false}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      is_postpartum: e.target.checked,
+                      postpartum_weeks_since_birth: e.target.checked ? p.postpartum_weeks_since_birth : null,
+                    }))
+                  }
+                  className="accent-bark-300"
+                />
+                <span className="text-sm text-bark-300">В послеродовом периоде (в течение 6 месяцев после родов)</span>
+              </label>
+              {form.is_postpartum && (
+                <div className="ml-7">
+                  <label htmlFor="postpartum_weeks" className="text-xs font-medium text-muted-foreground block mb-2">
+                    Недель после родов
+                  </label>
+                  <input
+                    id="postpartum_weeks"
+                    type="number"
+                    min="0"
+                    max="26"
+                    value={form.postpartum_weeks_since_birth ?? ''}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        postpartum_weeks_since_birth: e.target.value ? parseInt(e.target.value, 10) : null,
+                      }))
+                    }
+                    placeholder="Например, 4"
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

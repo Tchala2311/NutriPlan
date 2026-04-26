@@ -25,10 +25,12 @@ export interface OnboardingFormData {
   age?: number | null;
   sex?: 'male' | 'female' | null;
   activity_level?: string | null;
-  // Step 2 – Pregnancy / Breastfeeding
+  // Step 2 – Pregnancy / Breastfeeding / Postpartum
   is_pregnant?: boolean;
   pregnancy_trimester?: 1 | 2 | 3 | null;
   is_breastfeeding?: boolean;
+  is_postpartum?: boolean;
+  postpartum_weeks_since_birth?: number | null;
 }
 
 const GOAL_DEFAULTS: Record<
@@ -105,10 +107,12 @@ export async function saveOnboarding(data: OnboardingFormData) {
       medications_text: data.medications || null,
       disclaimer_accepted: data.disclaimer_accepted,
       disclaimer_accepted_at: data.disclaimer_accepted ? new Date().toISOString() : null,
-      // Pregnancy / breastfeeding
+      // Pregnancy / breastfeeding / postpartum
       is_pregnant: data.is_pregnant ?? false,
       pregnancy_trimester: data.pregnancy_trimester ?? null,
       is_breastfeeding: data.is_breastfeeding ?? false,
+      is_postpartum: data.is_postpartum ?? false,
+      postpartum_weeks_since_birth: data.postpartum_weeks_since_birth ?? null,
       // Derived flags
       glucose_tracking_enabled: data.medical_conditions.includes('diabetes'),
       sodium_tracking_enabled: data.medical_conditions.some((c) =>
