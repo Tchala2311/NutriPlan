@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/seed-build-manifests.js",
+    "dev": "next dev -p 3001 --turbo",
     "build": "node scripts/seed-build-manifests.js build",
     "start": "next start",
     "lint": "next lint",
