@@ -48,6 +48,8 @@ export async function POST() {
     is_pregnant: assessment.is_pregnant ?? false,
     pregnancy_trimester: (assessment.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
     is_breastfeeding: assessment.is_breastfeeding ?? false,
+    is_postpartum: assessment.is_postpartum ?? false,
+    postpartum_weeks_since_birth: assessment.postpartum_weeks_since_birth ?? null,
     // Anthropometric fields populated from assessment if stored
     age: assessment.age ?? undefined,
     sex: assessment.sex ?? undefined,

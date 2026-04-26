@@ -93,7 +93,7 @@ export async function POST(req: Request) {
   const { data: ha } = await supabase
     .from('health_assessments')
     .select(
-      'primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding'
+      'primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding, is_postpartum, postpartum_weeks_since_birth'
     )
     .eq('user_id', user.id)
     .maybeSingle();
@@ -164,6 +164,8 @@ export async function POST(req: Request) {
       is_pregnant: ha?.is_pregnant ?? false,
       pregnancy_trimester: (ha?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
       is_breastfeeding: ha?.is_breastfeeding ?? false,
+      is_postpartum: ha?.is_postpartum ?? false,
+      postpartum_weeks_since_birth: ha?.postpartum_weeks_since_birth ?? null,
     };
 
   // Load existing plan to respect pinned slots

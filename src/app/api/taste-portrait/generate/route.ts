@@ -23,7 +23,7 @@ export async function POST() {
       supabase
         .from('health_assessments')
         .select(
-          'secondary_goals, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding'
+          'secondary_goals, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding, is_postpartum, postpartum_weeks_since_birth'
         )
         .eq('user_id', userId)
         .maybeSingle(),
@@ -59,6 +59,8 @@ export async function POST() {
       is_pregnant: assessment?.is_pregnant || false,
       pregnancy_trimester: (assessment?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
       is_breastfeeding: assessment?.is_breastfeeding || false,
+      is_postpartum: assessment?.is_postpartum || false,
+      postpartum_weeks_since_birth: assessment?.postpartum_weeks_since_birth ?? null,
       tdee_kcal: userGoals.tdee_kcal,
       target_protein_g: userGoals.target_protein_g,
       target_carbs_g: userGoals.target_carbs_g,
