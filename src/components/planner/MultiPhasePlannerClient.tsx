@@ -201,6 +201,18 @@ export function MultiPhasePlannerClient({
   const phase = PHASES[activePhase - 1];
   const rawMeals = mealsCache[globalWeek] ?? [];
   const meals = filterMealsBeforeStart(rawMeals, globalWeek, planStartDate);
+
+  // Compute which day columns to show. For week 1, hide days before the plan start weekday.
+  const activeDays = useMemo((): number[] => {
+    if (globalWeek === 1 && planStartDate) {
+      const startDate = new Date(planStartDate + "T00:00:00");
+      const dayOfWeek = startDate.getDay(); // 0=Sun, 1=Mon...6=Sat
+      const dayMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Mon=0...Sun=6
+      const count = 7 - dayMon;
+      return Array.from({ length: count }, (_, i) => i);
+    }
+    return [0, 1, 2, 3, 4, 5, 6];
+  }, [globalWeek, planStartDate]);
   const completions = completionsCache[globalWeek] ?? new Set<string>();
   const shopping = shoppingCache[globalWeek] ?? [];
 
@@ -455,9 +467,14 @@ export function MultiPhasePlannerClient({
           phase={phase}
           config={initialConfig}
           goalContext={goalContext}
+          activeDays={activeDays}
           onToggleCompletion={toggleCompletion}
           onRedoMeal={(mealType, date) => {
             setSelectedRedoMeal({ mealType, date, redoType: "individual" });
+            setRedoModalOpen(true);
+          }}
+          onRedoDay={(day) => {
+            setSelectedRedoMeal({ mealType: "", date: `day${day}`, redoType: "daily" });
             setRedoModalOpen(true);
           }}
           isTrainingDay={isTrainingDay}
@@ -586,15 +603,17 @@ interface ScheduleViewProps {
   phase: Phase;
   config: UserPlanConfig | null;
   goalContext?: UserGoalContext;
+  activeDays: number[];
   onToggleCompletion: (day: number, meal_type: string) => void;
   onRedoMeal: (mealType: string, date: string) => void;
+  onRedoDay: (day: number) => void;
   isTrainingDay: (day: number) => boolean;
 }
 
 function ScheduleView({
-  meals, completions, batchMealNames, dayTotals, phase, config, goalContext, onToggleCompletion, onRedoMeal, isTrainingDay,
+  meals, completions, batchMealNames, dayTotals, phase, config, goalContext, activeDays, onToggleCompletion, onRedoMeal, onRedoDay, isTrainingDay,
 }: ScheduleViewProps) {
-  const [selectedDay, setSelectedDay] = useState<number>(0);
+  const [selectedDay, setSelectedDay] = useState<number>(() => activeDays[0] ?? 0);
 
   const byDay = useMemo(() => {
     const map: Record<number, Record<string, CatalogMeal>> = {};
@@ -605,25 +624,24 @@ function ScheduleView({
     return map;
   }, [meals]);
 
-  const days = Array.from({ length: 7 }, (_, i) => i);
   const edFlag = goalContext?.eatingDisorderFlag ?? false;
 
   const dayCompletionCounts = useMemo(() => {
     const counts: Record<number, { done: number; total: number }> = {};
-    for (const day of days) {
+    for (const day of activeDays) {
       const dayMeals = MEAL_TYPES.filter((mt) => byDay[day]?.[mt]);
       const done = dayMeals.filter((mt) => completions.has(completionKey(day, mt))).length;
       counts[day] = { done, total: dayMeals.length };
     }
     return counts;
-  }, [byDay, completions]);
+  }, [byDay, completions, activeDays]);
 
   return (
     <>
       {/* ── Mobile: Day picker strip ─────────────────────────────────────── */}
       <div className="md:hidden mb-4">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-          {days.map((day) => {
+          {activeDays.map((day) => {
             const isTraining = isTrainingDay(day);
             const isSelected = selectedDay === day;
             const { done, total } = dayCompletionCounts[day] ?? { done: 0, total: 0 };
@@ -667,8 +685,8 @@ function ScheduleView({
         {/* Day header + prev/next arrows */}
         <div className="flex items-center justify-between mt-3 mb-3">
           <button
-            onClick={() => setSelectedDay((d) => Math.max(0, d - 1))}
-            disabled={selectedDay === 0}
+            onClick={() => setSelectedDay((d) => Math.max(activeDays[0] ?? 0, d - 1))}
+            disabled={selectedDay === (activeDays[0] ?? 0)}
             className="p-1.5 rounded-lg text-stone-400 hover:text-bark-300 disabled:opacity-20 transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -691,13 +709,21 @@ function ScheduleView({
           </div>
 
           <button
-            onClick={() => setSelectedDay((d) => Math.min(6, d + 1))}
-            disabled={selectedDay === 6}
+            onClick={() => setSelectedDay((d) => Math.min(activeDays[activeDays.length - 1] ?? 6, d + 1))}
+            disabled={selectedDay === (activeDays[activeDays.length - 1] ?? 6)}
             className="p-1.5 rounded-lg text-stone-400 hover:text-bark-300 disabled:opacity-20 transition-colors"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Redo day button — mobile */}
+        <button
+          onClick={() => onRedoDay(selectedDay)}
+          className="mb-3 w-full flex items-center justify-center gap-1.5 rounded-xl border border-parchment-200 py-2 text-xs font-medium text-stone-400 hover:bg-parchment-100 hover:text-bark-300 transition-colors"
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Переделать день
+        </button>
 
         {/* Meal cards for selected day */}
         <div className="space-y-2">
@@ -761,8 +787,11 @@ function ScheduleView({
         <div className="overflow-x-auto -mx-4 px-4 pb-4">
           <div className="min-w-[700px]">
             {/* Day headers */}
-            <div className="grid grid-cols-7 gap-2 mb-3">
-              {days.map((day) => {
+            <div
+              className="grid gap-2 mb-3"
+              style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}
+            >
+              {activeDays.map((day) => {
                 const isTraining = isTrainingDay(day);
                 return (
                   <div key={day} className="text-center">
@@ -778,6 +807,16 @@ function ScheduleView({
                       }
                       <span>{isTraining ? "Зал" : "Отдых"}</span>
                     </div>
+                    {/* Redo day button */}
+                    <div className="mt-1">
+                      <button
+                        onClick={() => onRedoDay(day)}
+                        title="Переделать день"
+                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-parchment-100 text-stone-400 hover:bg-sage-50 hover:text-sage-600 transition-colors"
+                      >
+                        <RotateCcw className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -792,8 +831,11 @@ function ScheduleView({
                     {MEAL_LABEL_RU[mealType]}
                   </p>
                 </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {days.map((day) => {
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}
+                >
+                  {activeDays.map((day) => {
                     const meal = byDay[day]?.[mealType];
                     if (!meal) {
                       return (
@@ -833,8 +875,11 @@ function ScheduleView({
                 <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2 pl-1">
                   Итого за день
                 </p>
-                <div className="grid grid-cols-7 gap-2">
-                  {days.map((day) => {
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}
+                >
+                  {activeDays.map((day) => {
                     const totals = dayTotals[day] ?? { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
                     const isTraining = isTrainingDay(day);
                     const goalCalTarget = getPhaseCalorieTarget(

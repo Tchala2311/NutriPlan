@@ -204,6 +204,28 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
         </div>
       </form>
 
+      {/* ── Meal Planner ── */}
+      <Section title="Планировщик питания">
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Лимиты переделки меню:
+          </p>
+          <ul className="space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sage-100 text-sage-700 text-xs font-bold flex-shrink-0">3</span>
+              <span className="text-bark-200">Бесплатных переделок в неделю (отдельное блюдо, день или неделя)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-parchment-200 text-bark-200 text-xs font-bold flex-shrink-0">+</span>
+              <span className="text-bark-200">Дополнительные переделки — <span className="font-semibold text-bark-300">100 ₽</span> каждая</span>
+            </li>
+          </ul>
+          <p className="text-xs text-muted-foreground pt-1">
+            Счётчик переделок сбрасывается каждую неделю. Закреплённые блюда не переделываются.
+          </p>
+        </div>
+      </Section>
+
       {/* ── Account ── */}
       <Section title="Аккаунт">
         <div className="space-y-3 text-sm">
