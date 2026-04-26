@@ -1,39 +1,37 @@
-import { createClient } from "@/lib/supabase/server";
-import { generateTastePortrait, type UserProfile } from "@/lib/gigachat/client";
-import { NextResponse } from "next/server";
+import { createClient } from '@/lib/supabase/server';
+import { generateTastePortrait, type UserProfile } from '@/lib/gigachat/client';
+import { NextResponse } from 'next/server';
 
 const MEAL_HISTORY_DAYS = 30;
 
 export async function POST() {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = user.id;
 
     // Fetch user health profile and assessment
     const [goalsRes, assessmentRes] = await Promise.all([
+      supabase.from('user_goals').select('*').eq('user_id', userId).single(),
       supabase
-        .from("user_goals")
-        .select("*")
-        .eq("user_id", userId)
-        .single(),
-      supabase
-        .from("health_assessments")
-        .select("secondary_goals, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding")
-        .eq("user_id", userId)
+        .from('health_assessments')
+        .select(
+          'secondary_goals, dietary_restrictions, allergens, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding'
+        )
+        .eq('user_id', userId)
         .maybeSingle(),
     ]);
 
     if (goalsRes.error) {
-      console.error("Fetch user goals error:", goalsRes.error);
-      return NextResponse.json(
-        { error: "Unable to load user profile" },
-        { status: 400 }
-      );
+      console.error('Fetch user goals error:', goalsRes.error);
+      return NextResponse.json({ error: 'Unable to load user profile' }, { status: 400 });
     }
 
     const userGoals = goalsRes.data;
@@ -53,13 +51,14 @@ export async function POST() {
       medical_conditions: assessment?.medical_conditions || [],
       eating_disorder_flag: assessment?.eating_disorder_flag || false,
       // TES-154: Granular eating disorder flags
-      eating_disorder_anorexia_restrictive: assessment?.eating_disorder_anorexia_restrictive || false,
+      eating_disorder_anorexia_restrictive:
+        assessment?.eating_disorder_anorexia_restrictive || false,
       eating_disorder_binge: assessment?.eating_disorder_binge || false,
       eating_disorder_orthorexia: assessment?.eating_disorder_orthorexia || false,
       // TES-150: Pregnancy/breastfeeding for safety restrictions
-      is_pregnant:         assessment?.is_pregnant            || false,
+      is_pregnant: assessment?.is_pregnant || false,
       pregnancy_trimester: (assessment?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
-      is_breastfeeding:    assessment?.is_breastfeeding       || false,
+      is_breastfeeding: assessment?.is_breastfeeding || false,
       tdee_kcal: userGoals.tdee_kcal,
       target_protein_g: userGoals.target_protein_g,
       target_carbs_g: userGoals.target_carbs_g,
@@ -71,19 +70,16 @@ export async function POST() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - MEAL_HISTORY_DAYS);
 
     const { data: mealHistory, error: mealError } = await supabase
-      .from("nutrition_logs")
-      .select("food_title, calories, protein_g, carbs_g, fat_g, logged_at")
-      .eq("user_id", userId)
-      .gte("logged_at", thirtyDaysAgo.toISOString())
-      .order("logged_at", { ascending: false })
+      .from('nutrition_logs')
+      .select('food_title, calories, protein_g, carbs_g, fat_g, logged_at')
+      .eq('user_id', userId)
+      .gte('logged_at', thirtyDaysAgo.toISOString())
+      .order('logged_at', { ascending: false })
       .limit(500);
 
     if (mealError) {
-      console.error("Fetch meal history error:", mealError);
-      return NextResponse.json(
-        { error: "Unable to fetch meal history" },
-        { status: 500 }
-      );
+      console.error('Fetch meal history error:', mealError);
+      return NextResponse.json({ error: 'Unable to fetch meal history' }, { status: 500 });
     }
 
     // Format meal history for prompt
@@ -94,22 +90,19 @@ export async function POST() {
               (m) =>
                 `- ${m.food_title} (${m.calories} ккал, ${m.protein_g}г белка, ${m.carbs_g}г углеводов, ${m.fat_g}г жиров)`
             )
-            .join("\n")
-        : "Нет записей о приёмах пищи за последние 30 дней";
+            .join('\n')
+        : 'Нет записей о приёмах пищи за последние 30 дней';
 
     // Fetch rated dishes
     const { data: ratings, error: ratingsError } = await supabase
-      .from("dish_ratings")
-      .select("rating, recipes(title)")
-      .eq("user_id", userId)
-      .order("rating", { ascending: false });
+      .from('dish_ratings')
+      .select('rating, recipes(title)')
+      .eq('user_id', userId)
+      .order('rating', { ascending: false });
 
     if (ratingsError) {
-      console.error("Fetch ratings error:", ratingsError);
-      return NextResponse.json(
-        { error: "Unable to fetch dish ratings" },
-        { status: 500 }
-      );
+      console.error('Fetch ratings error:', ratingsError);
+      return NextResponse.json({ error: 'Unable to fetch dish ratings' }, { status: 500 });
     }
 
     // Format rated dishes for prompt
@@ -118,11 +111,11 @@ export async function POST() {
         ? ratings
             .map((r) => {
               const recipe = (r.recipes as { title: string }[] | null)?.[0];
-              const recipeName = recipe?.title || "Неизвестное блюдо";
-              return `- ${recipeName}: ${"⭐".repeat(r.rating)} (${r.rating}/5)`;
+              const recipeName = recipe?.title || 'Неизвестное блюдо';
+              return `- ${recipeName}: ${'⭐'.repeat(r.rating)} (${r.rating}/5)`;
             })
-            .join("\n")
-        : "Нет оценённых блюд";
+            .join('\n')
+        : 'Нет оценённых блюд';
 
     // Generate taste portrait via Gigachat
     const portrait = await generateTastePortrait(
@@ -134,45 +127,37 @@ export async function POST() {
 
     // Save or update taste portrait in database
     const { data: existingPortrait } = await supabase
-      .from("user_taste_portrait")
-      .select("id")
-      .eq("user_id", userId)
+      .from('user_taste_portrait')
+      .select('id')
+      .eq('user_id', userId)
       .single();
 
     if (existingPortrait) {
       // Update existing
       const { error: updateError } = await supabase
-        .from("user_taste_portrait")
+        .from('user_taste_portrait')
         .update({
           portrait_data: portrait,
           updated_at: new Date().toISOString(),
         })
-        .eq("user_id", userId);
+        .eq('user_id', userId);
 
       if (updateError) {
-        console.error("Update taste portrait error:", updateError);
-        return NextResponse.json(
-          { error: "Failed to save taste portrait" },
-          { status: 500 }
-        );
+        console.error('Update taste portrait error:', updateError);
+        return NextResponse.json({ error: 'Failed to save taste portrait' }, { status: 500 });
       }
     } else {
       // Insert new
-      const { error: insertError } = await supabase
-        .from("user_taste_portrait")
-        .insert({
-          user_id: userId,
-          portrait_data: portrait,
-          generated_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const { error: insertError } = await supabase.from('user_taste_portrait').insert({
+        user_id: userId,
+        portrait_data: portrait,
+        generated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (insertError) {
-        console.error("Insert taste portrait error:", insertError);
-        return NextResponse.json(
-          { error: "Failed to save taste portrait" },
-          { status: 500 }
-        );
+        console.error('Insert taste portrait error:', insertError);
+        return NextResponse.json({ error: 'Failed to save taste portrait' }, { status: 500 });
       }
     }
 
@@ -182,10 +167,7 @@ export async function POST() {
       generated_at: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Generate taste portrait error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Generate taste portrait error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
+import { useState, useTransition } from 'react';
 import {
   Search,
   Clock,
@@ -10,10 +10,10 @@ import {
   BookmarkX,
   Filter,
   CalendarDays,
-} from "lucide-react";
-import type { RecipeSummary } from "@/app/dashboard/planner/actions";
-import { saveRecipeToLibrary, unsaveRecipe } from "@/app/dashboard/planner/actions";
-import { RecipeDetailModal } from "./RecipeDetailModal";
+} from 'lucide-react';
+import type { RecipeSummary } from '@/app/dashboard/planner/actions';
+import { saveRecipeToLibrary, unsaveRecipe } from '@/app/dashboard/planner/actions';
+import { RecipeDetailModal } from './RecipeDetailModal';
 
 interface SavedRecipeRow {
   recipe: RecipeSummary;
@@ -29,12 +29,12 @@ interface RecipesClientProps {
 }
 
 const ALL_TAGS = [
-  "вегетарианское",
-  "веганское",
-  "без глютена",
-  "без лактозы",
-  "высокобелковое",
-  "низкоуглеводное",
+  'вегетарианское',
+  'веганское',
+  'без глютена',
+  'без лактозы',
+  'высокобелковое',
+  'низкоуглеводное',
 ];
 
 export function RecipesClient({
@@ -44,16 +44,16 @@ export function RecipesClient({
   isCatalogSource = false,
   catalogWeekLabel,
 }: RecipesClientProps) {
-  const [tab, setTab] = useState<"week" | "saved">("week");
+  const [tab, setTab] = useState<'week' | 'saved'>('week');
   const [savedIds, setSavedIds] = useState(new Set(initialSavedRecipeIds));
   const [savedRecipes, setSavedRecipes] = useState(initialSaved);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRecipe, setModalRecipe] = useState<RecipeSummary | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   function handleSaveToggle(recipeId: string, save: boolean) {
     startTransition(async () => {
@@ -94,22 +94,24 @@ export function RecipesClient({
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl bg-parchment-100 border border-parchment-200 w-fit mb-6">
         <button
-          onClick={() => setTab("week")}
+          onClick={() => setTab('week')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-            ${tab === "week"
-              ? "bg-bark-300 text-primary-foreground shadow-sm"
-              : "text-bark-200 hover:text-bark-300"
+            ${
+              tab === 'week'
+                ? 'bg-bark-300 text-primary-foreground shadow-sm'
+                : 'text-bark-200 hover:text-bark-300'
             }`}
         >
           <CalendarDays className="h-4 w-4" />
           Эта неделя
         </button>
         <button
-          onClick={() => setTab("saved")}
+          onClick={() => setTab('saved')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-            ${tab === "saved"
-              ? "bg-bark-300 text-primary-foreground shadow-sm"
-              : "text-bark-200 hover:text-bark-300"
+            ${
+              tab === 'saved'
+                ? 'bg-bark-300 text-primary-foreground shadow-sm'
+                : 'text-bark-200 hover:text-bark-300'
             }`}
         >
           <Bookmark className="h-4 w-4" />
@@ -117,9 +119,7 @@ export function RecipesClient({
           {savedRecipes.length > 0 && (
             <span
               className={`text-xs px-1.5 py-0.5 rounded-full ${
-                tab === "saved"
-                  ? "bg-white/20 text-white"
-                  : "bg-parchment-200 text-stone-500"
+                tab === 'saved' ? 'bg-white/20 text-white' : 'bg-parchment-200 text-stone-500'
               }`}
             >
               {savedRecipes.length}
@@ -150,8 +150,8 @@ export function RecipesClient({
               className={`px-2.5 py-1 text-2xs rounded-full border transition-colors
                 ${
                   activeTag === tag
-                    ? "bg-sage-300 border-sage-300 text-white"
-                    : "border-parchment-200 text-stone-400 hover:border-sage-200 hover:text-sage-400"
+                    ? 'bg-sage-300 border-sage-300 text-white'
+                    : 'border-parchment-200 text-stone-400 hover:border-sage-200 hover:text-sage-400'
                 }`}
             >
               {tag}
@@ -161,11 +161,13 @@ export function RecipesClient({
       </div>
 
       {/* Weekly tab content */}
-      {tab === "week" && (
-        weeklyRecipes.length === 0 ? (
+      {tab === 'week' &&
+        (weeklyRecipes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
             <CalendarDays className="mx-auto h-8 w-8 text-parchment-300 mb-3" />
-            <p className="font-display text-base font-semibold text-bark-200">Нет плана на эту неделю</p>
+            <p className="font-display text-base font-semibold text-bark-200">
+              Нет плана на эту неделю
+            </p>
             <p className="mt-1 text-sm text-muted-foreground max-w-xs mx-auto">
               Создайте план питания в планировщике — рецепты появятся здесь автоматически.
             </p>
@@ -173,13 +175,16 @@ export function RecipesClient({
         ) : filteredWeekly.length === 0 ? (
           <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
             <p className="font-display text-base font-semibold text-bark-200">Ничего не найдено</p>
-            <p className="mt-1 text-sm text-muted-foreground">Попробуйте другой запрос или фильтр.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Попробуйте другой запрос или фильтр.
+            </p>
           </div>
         ) : (
           <>
             {isCatalogSource && catalogWeekLabel && (
               <p className="mb-4 text-xs text-stone-400">
-                Показаны блюда каталога — <span className="font-medium text-bark-200">{catalogWeekLabel}</span>
+                Показаны блюда каталога —{' '}
+                <span className="font-medium text-bark-200">{catalogWeekLabel}</span>
               </p>
             )}
             <RecipeGrid
@@ -191,12 +196,11 @@ export function RecipesClient({
               hideSaveButton={isCatalogSource}
             />
           </>
-        )
-      )}
+        ))}
 
       {/* Saved tab content */}
-      {tab === "saved" && (
-        savedRecipes.length === 0 ? (
+      {tab === 'saved' &&
+        (savedRecipes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
             <Bookmark className="mx-auto h-8 w-8 text-parchment-300 mb-3" />
             <p className="font-display text-base font-semibold text-bark-200">Библиотека пуста</p>
@@ -207,7 +211,9 @@ export function RecipesClient({
         ) : filteredSaved.length === 0 ? (
           <div className="rounded-xl border border-dashed border-parchment-300 bg-parchment-50 p-10 text-center">
             <p className="font-display text-base font-semibold text-bark-200">Ничего не найдено</p>
-            <p className="mt-1 text-sm text-muted-foreground">Попробуйте другой запрос или фильтр.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Попробуйте другой запрос или фильтр.
+            </p>
           </div>
         ) : (
           <RecipeGrid
@@ -218,8 +224,7 @@ export function RecipesClient({
             isPending={isPending}
             showUnsaveButton
           />
-        )
-      )}
+        ))}
 
       {/* Recipe detail modal */}
       <RecipeDetailModal
@@ -274,7 +279,7 @@ function RecipeGrid({
           <div
             key={recipe.id}
             className={`group relative rounded-2xl border border-parchment-200 bg-parchment-50 overflow-hidden
-              hover:border-parchment-300 hover:shadow-warm-md transition-all ${hideSaveButton ? "" : "cursor-pointer"}`}
+              hover:border-parchment-300 hover:shadow-warm-md transition-all ${hideSaveButton ? '' : 'cursor-pointer'}`}
             onClick={() => !hideSaveButton && onOpen(recipe)}
           >
             <div className="p-4">
@@ -335,14 +340,14 @@ function RecipeGrid({
                   onSaveToggle(recipe.id, !isSaved);
                 }}
                 disabled={isPending}
-                title={isSaved ? "Убрать из избранного" : "В избранное"}
+                title={isSaved ? 'Убрать из избранного' : 'В избранное'}
                 className={`absolute top-3 right-3 p-1.5 rounded-lg transition-all
                   ${
                     showUnsaveButton
-                      ? "opacity-100 bg-parchment-100 text-stone-300 hover:bg-destructive/10 hover:text-destructive"
+                      ? 'opacity-100 bg-parchment-100 text-stone-300 hover:bg-destructive/10 hover:text-destructive'
                       : isSaved
-                        ? "opacity-100 bg-sage-50 text-sage-400 border border-sage-200"
-                        : "opacity-0 group-hover:opacity-100 bg-parchment-100 text-stone-300 hover:bg-sage-50 hover:text-sage-400"
+                        ? 'opacity-100 bg-sage-50 text-sage-400 border border-sage-200'
+                        : 'opacity-0 group-hover:opacity-100 bg-parchment-100 text-stone-300 hover:bg-sage-50 hover:text-sage-400'
                   }`}
               >
                 {showUnsaveButton ? (

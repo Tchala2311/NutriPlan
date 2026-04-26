@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { X, AlertCircle, Loader2, RotateCcw } from "lucide-react";
-import { recordMealRedo } from "@/app/dashboard/planner/actions";
+import { useState, useTransition } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { X, AlertCircle, Loader2, RotateCcw } from 'lucide-react';
+import { recordMealRedo } from '@/app/dashboard/planner/actions';
 
 interface MealRedoModalProps {
   open: boolean;
@@ -11,14 +11,14 @@ interface MealRedoModalProps {
   weekNumber: number;
   mealType: string;
   date: string;
-  redoType: "individual" | "daily" | "weekly";
+  redoType: 'individual' | 'daily' | 'weekly';
   onSuccess: () => void;
 }
 
 const REDO_TYPE_LABEL: Record<string, string> = {
-  individual: "Переделать приём пищи",
-  daily: "Переделать день",
-  weekly: "Переделать неделю",
+  individual: 'Переделать приём пищи',
+  daily: 'Переделать день',
+  weekly: 'Переделать неделю',
 };
 
 export function MealRedoModal({
@@ -30,7 +30,7 @@ export function MealRedoModal({
   redoType,
   onSuccess,
 }: MealRedoModalProps) {
-  const [reason, setReason] = useState("");
+  const [reason, setReason] = useState('');
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -43,9 +43,9 @@ export function MealRedoModal({
 
       if (!result.success) {
         if (result.trialExpired) {
-          setError("Пробный период закончился. Оформите подписку, чтобы продолжить.");
+          setError('Пробный период закончился. Оформите подписку, чтобы продолжить.');
         } else {
-          setError("Не удалось переделать приём пищи. Попробуйте позже.");
+          setError('Не удалось переделать приём пищи. Попробуйте позже.');
         }
         return;
       }
@@ -59,7 +59,7 @@ export function MealRedoModal({
       }
 
       // Success
-      setReason("");
+      setReason('');
       onOpenChange(false);
       onSuccess();
     });
@@ -76,7 +76,12 @@ export function MealRedoModal({
                 {REDO_TYPE_LABEL[redoType]}
               </Dialog.Title>
               <p className="text-sm text-stone-400 mt-1">
-                Расскажите, почему вы хотите переделать {redoType === "individual" ? "приём пищи" : redoType === "daily" ? "день" : "неделю"}
+                Расскажите, почему вы хотите переделать{' '}
+                {redoType === 'individual'
+                  ? 'приём пищи'
+                  : redoType === 'daily'
+                    ? 'день'
+                    : 'неделю'}
               </p>
             </div>
             <button
@@ -124,7 +129,7 @@ export function MealRedoModal({
                 className="flex-1 px-4 py-2 rounded-lg bg-sage-400 text-white font-medium text-sm hover:bg-sage-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isPending ? "Обработка..." : "Переделать"}
+                {isPending ? 'Обработка...' : 'Переделать'}
               </button>
             </div>
           </form>

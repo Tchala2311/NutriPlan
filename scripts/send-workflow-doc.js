@@ -9,24 +9,22 @@
  *   node scripts/send-workflow-doc.js  # Uses WORKFLOW_DOC_RECIPIENT from .env.local
  */
 
-const http = require("http");
-const dotenv = require("dotenv");
-const path = require("path");
+const http = require('http');
+const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, "../.env.local") });
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
 const recipientEmail =
-  process.argv[2] ||
-  process.env.WORKFLOW_DOC_RECIPIENT ||
-  "tsem7354@gmail.com";
+  process.argv[2] || process.env.WORKFLOW_DOC_RECIPIENT || 'tsem7354@gmail.com';
 
 const apiKey = process.env.RESEND_API_KEY;
 
 if (!apiKey) {
-  console.error("❌ Error: RESEND_API_KEY is not configured in .env.local");
-  console.error("Please add your Resend API key to .env.local:");
-  console.error("RESEND_API_KEY=re_xxxxxxxxxxxxx");
+  console.error('❌ Error: RESEND_API_KEY is not configured in .env.local');
+  console.error('Please add your Resend API key to .env.local:');
+  console.error('RESEND_API_KEY=re_xxxxxxxxxxxxx');
   process.exit(1);
 }
 
@@ -37,24 +35,24 @@ const requestData = JSON.stringify({
 });
 
 const options = {
-  hostname: "localhost",
+  hostname: 'localhost',
   port: 3001,
-  path: "/api/email-send/workflow-doc",
-  method: "POST",
+  path: '/api/email-send/workflow-doc',
+  method: 'POST',
   headers: {
-    "Content-Type": "application/json",
-    "Content-Length": Buffer.byteLength(requestData),
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(requestData),
   },
 };
 
 const req = http.request(options, (res) => {
-  let data = "";
+  let data = '';
 
-  res.on("data", (chunk) => {
+  res.on('data', (chunk) => {
     data += chunk;
   });
 
-  res.on("end", () => {
+  res.on('end', () => {
     try {
       const response = JSON.parse(data);
 
@@ -68,21 +66,17 @@ const req = http.request(options, (res) => {
         process.exit(1);
       }
     } catch (e) {
-      console.error("❌ Error: Could not parse response");
+      console.error('❌ Error: Could not parse response');
       console.error(data);
       process.exit(1);
     }
   });
 });
 
-req.on("error", (error) => {
-  if (error.code === "ECONNREFUSED") {
-    console.error(
-      "❌ Error: Could not connect to http://localhost:3001"
-    );
-    console.error(
-      "Make sure the development server is running: npm run dev"
-    );
+req.on('error', (error) => {
+  if (error.code === 'ECONNREFUSED') {
+    console.error('❌ Error: Could not connect to http://localhost:3001');
+    console.error('Make sure the development server is running: npm run dev');
   } else {
     console.error(`❌ Error: ${error.message}`);
   }

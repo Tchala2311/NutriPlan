@@ -6,8 +6,8 @@
  * Create new chat session
  */
 
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET() {
   const supabase = await createClient();
@@ -16,14 +16,14 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data: sessions, error } = await supabase
-    .from("chat_sessions")
-    .select("id, created_at, updated_at")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .from('chat_sessions')
+    .select('id, created_at, updated_at')
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -39,13 +39,13 @@ export async function POST() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data: session, error } = await supabase
-    .from("chat_sessions")
+    .from('chat_sessions')
     .insert([{ user_id: user.id }])
-    .select("id, created_at, updated_at")
+    .select('id, created_at, updated_at')
     .single();
 
   if (error) {

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { ShoppingCart, Minus, Plus, Store } from "lucide-react";
-import type { RecipeSummary } from "@/app/dashboard/planner/actions";
+import { useState, useMemo } from 'react';
+import { ShoppingCart, Minus, Plus, Store } from 'lucide-react';
+import type { RecipeSummary } from '@/app/dashboard/planner/actions';
 
-type MealType = "breakfast" | "lunch" | "dinner" | "snacks";
+type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 
 interface ShoppingListPanelProps {
   weekRecipes: Array<{ recipe: RecipeSummary; mealType: MealType; date: string }>;
@@ -13,26 +13,26 @@ interface ShoppingListPanelProps {
 }
 
 const STORES = [
-  { key: "all", label: "Все" },
-  { key: "vkusvill", label: "ВкусВилл" },
-  { key: "perekrestok", label: "Перекрёсток" },
-  { key: "ozon", label: "Озон" },
-  { key: "rynok", label: "Рынок" },
-  { key: "azbuka", label: "Азбука Вкуса" },
-  { key: "none", label: "Без магазина" },
+  { key: 'all', label: 'Все' },
+  { key: 'vkusvill', label: 'ВкусВилл' },
+  { key: 'perekrestok', label: 'Перекрёсток' },
+  { key: 'ozon', label: 'Озон' },
+  { key: 'rynok', label: 'Рынок' },
+  { key: 'azbuka', label: 'Азбука Вкуса' },
+  { key: 'none', label: 'Без магазина' },
 ] as const;
 
-type StoreKey = (typeof STORES)[number]["key"];
+type StoreKey = (typeof STORES)[number]['key'];
 
 // Day range options: 3 days, 5 days, full week
 const RANGE_OPTIONS = [
-  { label: "Дни 1–3", days: 3 },
-  { label: "Дни 1–5", days: 5 },
-  { label: "Вся неделя", days: 7 },
+  { label: 'Дни 1–3', days: 3 },
+  { label: 'Дни 1–5', days: 5 },
+  { label: 'Вся неделя', days: 7 },
 ];
 
 export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
-  const [activeStore, setActiveStore] = useState<StoreKey>("all");
+  const [activeStore, setActiveStore] = useState<StoreKey>('all');
   const [portions, setPortions] = useState(1);
   const [rangeDays, setRangeDays] = useState(7);
 
@@ -55,11 +55,11 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
     for (const { recipe } of filteredRecipes) {
       const recipeStores = recipe.stores ?? [];
       // Skip if store filter active and recipe doesn't match
-      if (activeStore !== "all" && recipeStores.length > 0 && !recipeStores.includes(activeStore)) {
+      if (activeStore !== 'all' && recipeStores.length > 0 && !recipeStores.includes(activeStore)) {
         continue;
       }
       // Assign "none" if no stores tagged and filter is "none"
-      if (activeStore === "none" && recipeStores.length > 0) continue;
+      if (activeStore === 'none' && recipeStores.length > 0) continue;
 
       for (const ingredient of recipe.ingredients ?? []) {
         const key = ingredient.toLowerCase().trim();
@@ -79,7 +79,8 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
   function toggleChecked(ingredient: string) {
     setChecked((prev) => {
       const next = new Set(prev);
-      if (next.has(ingredient)) next.delete(ingredient); else next.add(ingredient);
+      if (next.has(ingredient)) next.delete(ingredient);
+      else next.add(ingredient);
       return next;
     });
   }
@@ -99,8 +100,8 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
               onClick={() => setRangeDays(opt.days)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 rangeDays === opt.days
-                  ? "bg-white shadow-warm-sm text-bark-300"
-                  : "text-stone-400 hover:text-bark-300"
+                  ? 'bg-white shadow-warm-sm text-bark-300'
+                  : 'text-stone-400 hover:text-bark-300'
               }`}
             >
               {opt.label}
@@ -129,7 +130,9 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
             </button>
           </div>
           {portions > 1 && (
-            <span className="text-2xs text-stone-400">× {portions} = {portions} чел.</span>
+            <span className="text-2xs text-stone-400">
+              × {portions} = {portions} чел.
+            </span>
           )}
         </div>
       </div>
@@ -143,11 +146,11 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
               onClick={() => setActiveStore(store.key)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
                 activeStore === store.key
-                  ? "bg-bark-300 text-primary-foreground"
-                  : "bg-parchment-100 text-stone-400 hover:text-bark-300 hover:bg-parchment-200"
+                  ? 'bg-bark-300 text-primary-foreground'
+                  : 'bg-parchment-100 text-stone-400 hover:text-bark-300 hover:bg-parchment-200'
               }`}
             >
-              {store.key !== "all" && store.key !== "none" && <Store className="h-3 w-3" />}
+              {store.key !== 'all' && store.key !== 'none' && <Store className="h-3 w-3" />}
               {store.label}
             </button>
           ))}
@@ -168,7 +171,7 @@ export function ShoppingListPanel({ weekRecipes }: ShoppingListPanelProps) {
             <ShoppingCart className="h-3.5 w-3.5" />
             <span>
               {unchecked.length} из {shoppingItems.length} продуктов
-              {portions > 1 ? ` · ×${portions} порций` : ""}
+              {portions > 1 ? ` · ×${portions} порций` : ''}
             </span>
           </div>
 
@@ -232,18 +235,21 @@ function ShoppingItem({
   // Try to scale quantity. Parse "200г" → "400г" for 2 portions etc.
   const scaledIngredient = useMemo(() => {
     if (portions === 1) return ingredient;
-    return ingredient.replace(/(\d+(?:[.,]\d+)?)\s*(г|кг|мл|л|шт|ст\.л\.|ч\.л\.|стакан)/g, (_, num, unit) => {
-      const scaled = Math.round(parseFloat(num.replace(",", ".")) * portions * count);
-      return `${scaled} ${unit}`;
-    });
+    return ingredient.replace(
+      /(\d+(?:[.,]\d+)?)\s*(г|кг|мл|л|шт|ст\.л\.|ч\.л\.|стакан)/g,
+      (_, num, unit) => {
+        const scaled = Math.round(parseFloat(num.replace(',', '.')) * portions * count);
+        return `${scaled} ${unit}`;
+      }
+    );
   }, [ingredient, portions, count]);
 
   const storeLabels: Record<string, string> = {
-    vkusvill: "ВкусВилл",
-    perekrestok: "Перекрёсток",
-    ozon: "Озон",
-    rynok: "Рынок",
-    azbuka: "Азбука",
+    vkusvill: 'ВкусВилл',
+    perekrestok: 'Перекрёсток',
+    ozon: 'Озон',
+    rynok: 'Рынок',
+    azbuka: 'Азбука',
   };
 
   return (
@@ -251,24 +257,32 @@ function ShoppingItem({
       onClick={onToggle}
       className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-parchment-50 transition-colors"
     >
-      <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 transition-colors ${
-        checked ? "bg-sage-400 border-sage-400" : "border-parchment-300"
-      }`}>
+      <div
+        className={`h-4 w-4 rounded-full border-2 flex-shrink-0 transition-colors ${
+          checked ? 'bg-sage-400 border-sage-400' : 'border-parchment-300'
+        }`}
+      >
         {checked && (
-          <svg viewBox="0 0 12 12" className="w-full h-full p-0.5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            viewBox="0 0 12 12"
+            className="w-full h-full p-0.5 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <polyline points="2,6 5,9 10,3" />
           </svg>
         )}
       </div>
-      <span className={`flex-1 text-sm ${checked ? "line-through text-stone-400" : "text-bark-300"}`}>
+      <span
+        className={`flex-1 text-sm ${checked ? 'line-through text-stone-400' : 'text-bark-300'}`}
+      >
         {scaledIngredient}
-        {count > 1 && portions === 1 && (
-          <span className="text-stone-400 ml-1">×{count}</span>
-        )}
+        {count > 1 && portions === 1 && <span className="text-stone-400 ml-1">×{count}</span>}
       </span>
       {stores.length > 0 && (
         <span className="text-2xs text-stone-400 flex-shrink-0">
-          {stores.map((s) => storeLabels[s] ?? s).join(", ")}
+          {stores.map((s) => storeLabels[s] ?? s).join(', ')}
         </span>
       )}
     </button>

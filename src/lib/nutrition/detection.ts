@@ -72,9 +72,9 @@ export function detectSafetyAlert(
   if (avgProtein < proteinClinicalMin) {
     const daysBelow = window.filter((d) => d.protein_g < proteinClinicalMin).length;
     deficiencies.push({
-      nutrient_name_ru: "Белок",
+      nutrient_name_ru: 'Белок',
       actual_avg: Math.round(avgProtein * 10) / 10,
-      unit: "г",
+      unit: 'г',
       clinical_min: Math.round(proteinClinicalMin * 10) / 10,
       pct_of_minimum: Math.round((avgProtein / proteinClinicalMin) * 100),
       days_below: daysBelow,
@@ -87,9 +87,9 @@ export function detectSafetyAlert(
   if (avgFat < fatClinicalMin) {
     const daysBelow = window.filter((d) => d.fat_g < fatClinicalMin).length;
     deficiencies.push({
-      nutrient_name_ru: "Жиры (необходимы для витаминов A, D, E, K)",
+      nutrient_name_ru: 'Жиры (необходимы для витаминов A, D, E, K)',
       actual_avg: Math.round(avgFat * 10) / 10,
-      unit: "г",
+      unit: 'г',
       clinical_min: Math.round(fatClinicalMin * 10) / 10,
       pct_of_minimum: Math.round((avgFat / fatClinicalMin) * 100),
       days_below: daysBelow,
@@ -101,14 +101,14 @@ export function detectSafetyAlert(
   if (window.some((d) => d.carbs_g === 0)) {
     const daysZero = window.filter((d) => d.carbs_g === 0).length;
     deficiencies.push({
-      nutrient_name_ru: "Углеводы (полное отсутствие может вызвать усталость и дефицит электролитов)",
-      actual_avg: Math.round(
-        (window.reduce((sum, d) => sum + d.carbs_g, 0) / windowDays) * 10
-      ) / 10,
-      unit: "г",
+      nutrient_name_ru:
+        'Углеводы (полное отсутствие может вызвать усталость и дефицит электролитов)',
+      actual_avg:
+        Math.round((window.reduce((sum, d) => sum + d.carbs_g, 0) / windowDays) * 10) / 10,
+      unit: 'г',
       clinical_min: 50, // Minimum for basic brain function
       pct_of_minimum: Math.round(
-        ((window.reduce((sum, d) => sum + d.carbs_g, 0) / windowDays) / 50) * 100
+        (window.reduce((sum, d) => sum + d.carbs_g, 0) / windowDays / 50) * 100
       ),
       days_below: daysZero,
       window_days: windowDays,
@@ -134,11 +134,11 @@ export function detectTrendWarning(
   if (dailyLogs.length < 7) {
     return {
       detected: false,
-      trend_metric_name_ru: "",
-      trend_category_ru: "",
-      trend_direction_ru: "",
+      trend_metric_name_ru: '',
+      trend_category_ru: '',
+      trend_direction_ru: '',
       trend_magnitude_pct: 0,
-      contributing_factors_ru: "",
+      contributing_factors_ru: '',
     };
   }
 
@@ -158,47 +158,39 @@ export function detectTrendWarning(
   // CALORIE TREND: Large drop below target (e.g., -30%)
   if (avgCal2 < targetCalories * 0.7 && calorieTrendPct < -15) {
     const factors = [];
-    if (avgProtein2 < avgProtein1 * 0.8) factors.push("снижение белка");
-    factors.push("сокращение приёмов пищи");
+    if (avgProtein2 < avgProtein1 * 0.8) factors.push('снижение белка');
+    factors.push('сокращение приёмов пищи');
     return {
       detected: true,
-      trend_metric_name_ru: "Суточные калории",
-      trend_category_ru: "Калорийность",
+      trend_metric_name_ru: 'Суточные калории',
+      trend_category_ru: 'Калорийность',
       trend_direction_ru: `Резкое падение (на ${Math.abs(Math.round(calorieTrendPct))}%)`,
       trend_magnitude_pct: calorieTrendPct,
-      contributing_factors_ru: factors.join(", "),
+      contributing_factors_ru: factors.join(', '),
     };
   }
 
   // PROTEIN TREND: Significant drop (for muscle gain goal)
-  if (
-    primaryGoal === "muscle_gain" &&
-    proteinTrendPct < -20 &&
-    avgProtein2 < 120
-  ) {
+  if (primaryGoal === 'muscle_gain' && proteinTrendPct < -20 && avgProtein2 < 120) {
     return {
       detected: true,
-      trend_metric_name_ru: "Белок",
-      trend_category_ru: "Макронутриенты",
+      trend_metric_name_ru: 'Белок',
+      trend_category_ru: 'Макронутриенты',
       trend_direction_ru: `Снижение на ${Math.abs(Math.round(proteinTrendPct))}%`,
       trend_magnitude_pct: proteinTrendPct,
-      contributing_factors_ru: "смена продуктов, пропуск приёмов пищи",
+      contributing_factors_ru: 'смена продуктов, пропуск приёмов пищи',
     };
   }
 
   // CALORIE SPIKE: Significant increase (may indicate loss of control for weight loss)
-  if (
-    primaryGoal === "weight_loss" &&
-    calorieTrendPct > 25 &&
-    avgCal2 > targetCalories * 1.2
-  ) {
+  if (primaryGoal === 'weight_loss' && calorieTrendPct > 25 && avgCal2 > targetCalories * 1.2) {
     return {
       detected: true,
-      trend_metric_name_ru: "Суточные калории",
-      trend_category_ru: "Калорийность",
+      trend_metric_name_ru: 'Суточные калории',
+      trend_category_ru: 'Калорийность',
       trend_direction_ru: `Скачок вверх на ${Math.round(calorieTrendPct)}%`,
       trend_magnitude_pct: calorieTrendPct,
-      contributing_factors_ru: "увеличение размера порций, частые снеки, сладкие напитки",
+      contributing_factors_ru: 'увеличение размера порций, частые снеки, сладкие напитки',
     };
   }
 
@@ -210,21 +202,21 @@ export function detectTrendWarning(
   if (cv > 40) {
     return {
       detected: true,
-      trend_metric_name_ru: "Вариативность калорийности",
-      trend_category_ru: "Консистентность",
+      trend_metric_name_ru: 'Вариативность калорийности',
+      trend_category_ru: 'Консистентность',
       trend_direction_ru: `Высокая нестабильность (CV ${Math.round(cv)}%)`,
       trend_magnitude_pct: cv,
-      contributing_factors_ru: "нерегулярное питание, переедание в выходные, пропуски приёмов",
+      contributing_factors_ru: 'нерегулярное питание, переедание в выходные, пропуски приёмов',
     };
   }
 
   return {
     detected: false,
-    trend_metric_name_ru: "",
-    trend_category_ru: "",
-    trend_direction_ru: "",
+    trend_metric_name_ru: '',
+    trend_category_ru: '',
+    trend_direction_ru: '',
     trend_magnitude_pct: 0,
-    contributing_factors_ru: "",
+    contributing_factors_ru: '',
   };
 }
 
@@ -248,7 +240,8 @@ export function detectPlateau(
 
   // Check if in calorie deficit
   const recentCalories = dailyNutrition.slice(-7);
-  const avgCalories = recentCalories.reduce((sum, d) => sum + d.calories, 0) / recentCalories.length;
+  const avgCalories =
+    recentCalories.reduce((sum, d) => sum + d.calories, 0) / recentCalories.length;
   const inDeficit = avgCalories < targetCalories * 0.95;
 
   // Plateau: no weight change (<0.1 kg) despite deficit for 7+ days

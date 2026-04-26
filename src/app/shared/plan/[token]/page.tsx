@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -26,23 +26,23 @@ type RecipeRow = {
   prep_time_min: number | null;
 };
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
+const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
 type MealType = (typeof MEAL_TYPES)[number];
 
 const MEAL_LABEL: Record<MealType, string> = {
-  breakfast: "Завтрак",
-  lunch: "Обед",
-  dinner: "Ужин",
-  snacks: "Перекус",
+  breakfast: 'Завтрак',
+  lunch: 'Обед',
+  dinner: 'Ужин',
+  snacks: 'Перекус',
 };
 
-const DAY_NAMES_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const DAY_NAMES_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 function getWeekDates(weekStart: string): string[] {
   const dates: string[] = [];
-  const d = new Date(weekStart + "T00:00:00");
+  const d = new Date(weekStart + 'T00:00:00');
   for (let i = 0; i < 7; i++) {
-    dates.push(d.toISOString().split("T")[0]);
+    dates.push(d.toISOString().split('T')[0]);
     d.setDate(d.getDate() + 1);
   }
   return dates;
@@ -53,30 +53,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createAdminClient();
 
   const { data: shared } = await supabase
-    .from("shared_plans")
-    .select("meal_plan_id, expires_at")
-    .eq("token", token)
+    .from('shared_plans')
+    .select('meal_plan_id, expires_at')
+    .eq('token', token)
     .maybeSingle();
 
   if (!shared || new Date((shared as { expires_at: string }).expires_at) < new Date()) {
-    return { title: "Ссылка недействительна — NutriPlan" };
+    return { title: 'Ссылка недействительна — NutriPlan' };
   }
 
   const { data: plan } = await supabase
-    .from("meal_plans")
-    .select("week_start_date, slots")
-    .eq("id", (shared as { meal_plan_id: string }).meal_plan_id)
+    .from('meal_plans')
+    .select('week_start_date, slots')
+    .eq('id', (shared as { meal_plan_id: string }).meal_plan_id)
     .maybeSingle();
 
-  if (!plan) return { title: "План питания — NutriPlan" };
+  if (!plan) return { title: 'План питания — NutriPlan' };
 
   const p = plan as MealPlanRow;
   const recipeIds = Object.values(p.slots ?? {}).flatMap((day) =>
     Object.values(day ?? {}).map((s) => s.recipe_id)
   );
   const totalSlots = recipeIds.length;
-  const from = new Date(p.week_start_date + "T00:00:00");
-  const dateStr = from.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  const from = new Date(p.week_start_date + 'T00:00:00');
+  const dateStr = from.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 
   return {
     title: `Меню на неделю с ${dateStr} — NutriPlan`,
@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `Меню на неделю с ${dateStr}`,
       description: `${totalSlots} приёмов пищи · Создан в NutriPlan`,
-      siteName: "NutriPlan",
+      siteName: 'NutriPlan',
     },
   };
 }
@@ -94,9 +94,9 @@ export default async function SharedPlanPage({ params }: Props) {
   const supabase = createAdminClient();
 
   const { data: shared } = await supabase
-    .from("shared_plans")
-    .select("meal_plan_id, expires_at")
-    .eq("token", token)
+    .from('shared_plans')
+    .select('meal_plan_id, expires_at')
+    .eq('token', token)
     .maybeSingle();
 
   if (!shared) notFound();
@@ -124,9 +124,9 @@ export default async function SharedPlanPage({ params }: Props) {
   }
 
   const { data: planRaw } = await supabase
-    .from("meal_plans")
-    .select("id, week_start_date, slots")
-    .eq("id", s.meal_plan_id)
+    .from('meal_plans')
+    .select('id, week_start_date, slots')
+    .eq('id', s.meal_plan_id)
     .maybeSingle();
 
   if (!planRaw) notFound();
@@ -135,31 +135,40 @@ export default async function SharedPlanPage({ params }: Props) {
   const weekDates = getWeekDates(plan.week_start_date);
 
   // Collect recipe IDs
-  const recipeIds = Array.from(new Set(
-    weekDates.flatMap((date) =>
-      MEAL_TYPES.map((mt) => plan.slots?.[date]?.[mt]?.recipe_id).filter(Boolean) as string[]
+  const recipeIds = Array.from(
+    new Set(
+      weekDates.flatMap(
+        (date) =>
+          MEAL_TYPES.map((mt) => plan.slots?.[date]?.[mt]?.recipe_id).filter(Boolean) as string[]
+      )
     )
-  ));
+  );
 
   const { data: recipesRaw } = await supabase
-    .from("recipes")
-    .select("id, title, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, prep_time_min")
-    .in("id", recipeIds.length > 0 ? recipeIds : ["00000000-0000-0000-0000-000000000000"]);
+    .from('recipes')
+    .select(
+      'id, title, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, prep_time_min'
+    )
+    .in('id', recipeIds.length > 0 ? recipeIds : ['00000000-0000-0000-0000-000000000000']);
 
   const recipes: Record<string, RecipeRow> = {};
   for (const r of (recipesRaw ?? []) as RecipeRow[]) {
     recipes[r.id] = r;
   }
 
-  const fromDate = new Date(plan.week_start_date + "T00:00:00");
-  const toDate = new Date(weekDates[6] + "T00:00:00");
-  const dateRange = `${fromDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} – ${toDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}`;
+  const fromDate = new Date(plan.week_start_date + 'T00:00:00');
+  const toDate = new Date(weekDates[6] + 'T00:00:00');
+  const dateRange = `${fromDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })} – ${toDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`;
 
   // Count total calories across all recipes in plan (rough estimate)
-  const allSlotRecipes = weekDates.flatMap((date) =>
-    MEAL_TYPES.map((mt) => plan.slots?.[date]?.[mt]?.recipe_id).filter(Boolean) as string[]
+  const allSlotRecipes = weekDates.flatMap(
+    (date) =>
+      MEAL_TYPES.map((mt) => plan.slots?.[date]?.[mt]?.recipe_id).filter(Boolean) as string[]
   );
-  const totalKcal = allSlotRecipes.reduce((sum, rid) => sum + (recipes[rid]?.calories_per_serving ?? 0), 0);
+  const totalKcal = allSlotRecipes.reduce(
+    (sum, rid) => sum + (recipes[rid]?.calories_per_serving ?? 0),
+    0
+  );
   const avgDailyKcal = allSlotRecipes.length > 0 ? Math.round(totalKcal / 7) : 0;
 
   return (
@@ -186,9 +195,7 @@ export default async function SharedPlanPage({ params }: Props) {
           <p className="text-xs font-semibold uppercase tracking-widest text-sage-400 mb-1">
             Меню на неделю
           </p>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-bark-300">
-            {dateRange}
-          </h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-bark-300">{dateRange}</h1>
           {avgDailyKcal > 0 && (
             <p className="mt-1 text-sm text-muted-foreground">
               В среднем ~{avgDailyKcal} ккал/день · {allSlotRecipes.length} приёмов пищи
@@ -202,12 +209,18 @@ export default async function SharedPlanPage({ params }: Props) {
             const daySlots = plan.slots?.[date] ?? {};
             const hasMeals = MEAL_TYPES.some((mt) => daySlots[mt]?.recipe_id);
             return (
-              <div key={date} className="rounded-xl border border-parchment-200 bg-parchment-100 overflow-hidden">
+              <div
+                key={date}
+                className="rounded-xl border border-parchment-200 bg-parchment-100 overflow-hidden"
+              >
                 {/* Day header */}
                 <div className="px-3 py-2 border-b border-parchment-200 bg-parchment-50">
                   <p className="text-xs font-semibold text-bark-300">{DAY_NAMES_RU[i]}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                    {new Date(date + 'T00:00:00').toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
                   </p>
                 </div>
 

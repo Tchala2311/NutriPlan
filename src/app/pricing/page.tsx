@@ -1,32 +1,32 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { getUserSubscription } from "@/lib/subscription";
-import { UpgradeButton } from "@/components/subscription/UpgradeButton";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { getUserSubscription } from '@/lib/subscription';
+import { UpgradeButton } from '@/components/subscription/UpgradeButton';
 
 export const metadata: Metadata = {
-  title: "Тарифы — NutriPlan",
-  description: "Выберите план NutriPlan: Free или Premium",
+  title: 'Тарифы — NutriPlan',
+  description: 'Выберите план NutriPlan: Free или Premium',
 };
 
 const FREE_FEATURES = [
-  "Ежедневный дневник питания",
-  "Подсчёт КБЖУ",
-  "Цели по нутриентам",
-  "История за 7 дней",
+  'Ежедневный дневник питания',
+  'Подсчёт КБЖУ',
+  'Цели по нутриентам',
+  'История за 7 дней',
 ];
 
 const PREMIUM_FEATURES = [
-  "Всё из Free-плана",
-  "Планировщик питания на неделю",
-  "База рецептов с нутриентами",
-  "AI-рекомендации по питанию",
-  "История без ограничений",
-  "Приоритетная поддержка",
+  'Всё из Free-плана',
+  'Планировщик питания на неделю',
+  'База рецептов с нутриентами',
+  'AI-рекомендации по питанию',
+  'История без ограничений',
+  'Приоритетная поддержка',
 ];
 
 export default async function PricingPage() {
   const sub = await getUserSubscription();
-  const isPremium = sub?.plan === "premium" && sub?.status === "active";
+  const isPremium = sub?.plan === 'premium' && sub?.status === 'active';
 
   return (
     <div className="min-h-screen bg-cream-100 py-16 px-4">
@@ -40,8 +40,8 @@ export default async function PricingPage() {
             Простые, прозрачные цены
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Начните бесплатно. Перейдите на Premium, когда будете готовы
-            раскрыть весь потенциал своего питания.
+            Начните бесплатно. Перейдите на Premium, когда будете готовы раскрыть весь потенциал
+            своего питания.
           </p>
         </div>
 
@@ -118,7 +118,10 @@ export default async function PricingPage() {
 
         {/* Back link */}
         <div className="text-center mt-10">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-bark-300 transition-colors">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-bark-300 transition-colors"
+          >
             ← Назад
           </Link>
         </div>
@@ -129,7 +132,14 @@ export default async function PricingPage() {
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      aria-hidden="true"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );

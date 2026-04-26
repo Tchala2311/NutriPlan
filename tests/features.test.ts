@@ -10,7 +10,7 @@ describe('NutriPlan Features', () => {
   describe('Dish Ratings (TES-128)', () => {
     it('should validate rating is between 1-5 stars', () => {
       const validRatings = [1, 2, 3, 4, 5];
-      validRatings.forEach(rating => {
+      validRatings.forEach((rating) => {
         expect(rating).toBeGreaterThanOrEqual(1);
         expect(rating).toBeLessThanOrEqual(5);
       });
@@ -20,7 +20,7 @@ describe('NutriPlan Features', () => {
       const rating = {
         recipe_id: 'test-recipe-1',
         stars: 4,
-        comment: 'Great flavor profile'
+        comment: 'Great flavor profile',
       };
       expect(rating.comment).toBeDefined();
       expect(typeof rating.comment).toBe('string');
@@ -37,7 +37,7 @@ describe('NutriPlan Features', () => {
   describe('Budget Preference (TES-129)', () => {
     it('should validate budget preference is one of low/moderate/high', () => {
       const validBudgets = ['low', 'moderate', 'high'];
-      validBudgets.forEach(budget => {
+      validBudgets.forEach((budget) => {
         expect(['low', 'moderate', 'high']).toContain(budget);
       });
     });
@@ -51,9 +51,9 @@ describe('NutriPlan Features', () => {
       const budgets = {
         low: 'cheap staples (rice, beans, chicken breast)',
         moderate: 'balanced sourcing (seasonal veggies)',
-        high: 'premium ingredients (wild fish, organic)'
+        high: 'premium ingredients (wild fish, organic)',
       };
-      
+
       Object.entries(budgets).forEach(([budget, guidance]) => {
         expect(guidance).toBeDefined();
         expect(guidance.length).toBeGreaterThan(0);
@@ -73,7 +73,7 @@ describe('NutriPlan Features', () => {
       const redoCount = 4;
       const freeLimit = 3;
       const price = 100; // RUB
-      
+
       if (redoCount > freeLimit) {
         expect(price).toBe(100);
       }
@@ -83,9 +83,9 @@ describe('NutriPlan Features', () => {
       const redoRequest = {
         meal_id: 'test-meal-1',
         reason: 'Too spicy for my taste',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       expect(redoRequest.reason).toBeDefined();
       expect(redoRequest.reason.length).toBeGreaterThan(0);
     });
@@ -96,10 +96,10 @@ describe('NutriPlan Features', () => {
         { week_number: weekNumber, used: true },
         { week_number: weekNumber, used: true },
         { week_number: weekNumber, used: true },
-        { week_number: weekNumber + 1, used: true } // Different week
+        { week_number: weekNumber + 1, used: true }, // Different week
       ];
-      
-      const thisWeekRedos = redos.filter(r => r.week_number === weekNumber);
+
+      const thisWeekRedos = redos.filter((r) => r.week_number === weekNumber);
       expect(thisWeekRedos.length).toBe(3);
     });
   });
@@ -110,9 +110,9 @@ describe('NutriPlan Features', () => {
       const mealPlanContext = {
         budget_preference: 'low',
         user_id: 'test-user',
-        week_number: 17
+        week_number: 17,
       };
-      
+
       expect(mealPlanContext.budget_preference).toBe('low');
       expect(mealPlanContext.user_id).toBeDefined();
       expect(mealPlanContext.week_number).toBeGreaterThan(0);
@@ -122,14 +122,14 @@ describe('NutriPlan Features', () => {
       const ratingHistory = [
         { recipe_id: 'curry', stars: 5 },
         { recipe_id: 'sushi', stars: 4 },
-        { recipe_id: 'pasta', stars: 3 }
+        { recipe_id: 'pasta', stars: 3 },
       ];
-      
+
       const tasteProfile = {
-        cuisine_preferences: ratingHistory.map(r => r.recipe_id),
-        avg_rating: ratingHistory.reduce((a, b) => a + b.stars, 0) / ratingHistory.length
+        cuisine_preferences: ratingHistory.map((r) => r.recipe_id),
+        avg_rating: ratingHistory.reduce((a, b) => a + b.stars, 0) / ratingHistory.length,
       };
-      
+
       expect(tasteProfile.cuisine_preferences.length).toBe(3);
       expect(tasteProfile.avg_rating).toBeCloseTo(4, 1);
     });
@@ -138,12 +138,12 @@ describe('NutriPlan Features', () => {
       const redoState = {
         count: 4,
         paid: false,
-        freeLimit: 3
+        freeLimit: 3,
       };
-      
+
       const canApplyFreeRedo = redoState.count <= redoState.freeLimit;
       const mustPay = redoState.count > redoState.freeLimit && !redoState.paid;
-      
+
       expect(canApplyFreeRedo).toBe(false);
       expect(mustPay).toBe(true);
     });
@@ -155,10 +155,10 @@ describe('NutriPlan Features', () => {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const validUUIDs = [
         'a0b1c2d3-e4f5-6789-abcd-ef0123456789',
-        '550e8400-e29b-41d4-a716-446655440000'
+        '550e8400-e29b-41d4-a716-446655440000',
       ];
-      
-      validUUIDs.forEach(uuid => {
+
+      validUUIDs.forEach((uuid) => {
         expect(uuidRegex.test(uuid)).toBe(true);
       });
     });
@@ -177,7 +177,7 @@ describe('NutriPlan Features', () => {
 
     it('should reject rating outside 1-5 range', () => {
       const invalidRatings = [0, 6, -1, 10];
-      invalidRatings.forEach(rating => {
+      invalidRatings.forEach((rating) => {
         expect(rating < 1 || rating > 5).toBe(true);
       });
     });

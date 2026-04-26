@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { WORKFLOW_DOC_HTML } from "@/lib/workflow-doc";
-import { sendEmail, isUsingMockEmail } from "@/lib/email-service";
+import { NextRequest, NextResponse } from 'next/server';
+import { WORKFLOW_DOC_HTML } from '@/lib/workflow-doc';
+import { sendEmail, isUsingMockEmail } from '@/lib/email-service';
 
 /**
  * POST /api/email-send/workflow-doc
@@ -12,20 +12,20 @@ import { sendEmail, isUsingMockEmail } from "@/lib/email-service";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const to = body.to || process.env.WORKFLOW_DOC_RECIPIENT || "tsem7354@gmail.com";
+    const to = body.to || process.env.WORKFLOW_DOC_RECIPIENT || 'tsem7354@gmail.com';
 
     // Use centralized email service
     const result = await sendEmail({
-      from: "noreply@nutriplan.app",
+      from: 'noreply@nutriplan.app',
       to,
-      subject: "NutriPlan — Основной сценарий и отклонения (TES-119)",
+      subject: 'NutriPlan — Основной сценарий и отклонения (TES-119)',
       html: WORKFLOW_DOC_HTML,
     });
 
     if (!result.success) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.error?.includes("Invalid") ? 400 : 500 }
+        { status: result.error?.includes('Invalid') ? 400 : 500 }
       );
     }
 
@@ -37,15 +37,13 @@ export async function POST(req: NextRequest) {
 
     // Add debug info in development
     if (isUsingMockEmail()) {
-      response.note = "Using mock email service (RESEND_API_KEY not configured). In production, configure RESEND_API_KEY to send real emails.";
+      response.note =
+        'Using mock email service (RESEND_API_KEY not configured). In production, configure RESEND_API_KEY to send real emails.';
     }
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    console.error("Email API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Email API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

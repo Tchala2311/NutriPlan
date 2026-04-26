@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { sendEmail, isUsingMockEmail } from "@/lib/email-service";
+import { NextRequest, NextResponse } from 'next/server';
+import { sendEmail, isUsingMockEmail } from '@/lib/email-service';
 
 /**
  * POST /api/email-send
@@ -14,7 +14,7 @@ import { sendEmail, isUsingMockEmail } from "@/lib/email-service";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { to, subject, html, from = "noreply@nutriplan.app" } = body;
+    const { to, subject, html, from = 'noreply@nutriplan.app' } = body;
 
     // Use centralized email service
     const result = await sendEmail({
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!result.success) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.error?.includes("Invalid") ? 400 : 500 }
+        { status: result.error?.includes('Invalid') ? 400 : 500 }
       );
     }
 
@@ -38,15 +38,12 @@ export async function POST(req: NextRequest) {
 
     // Add debug info in development
     if (isUsingMockEmail()) {
-      response.note = "Using mock email service (RESEND_API_KEY not configured)";
+      response.note = 'Using mock email service (RESEND_API_KEY not configured)';
     }
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    console.error("Email API error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Email API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

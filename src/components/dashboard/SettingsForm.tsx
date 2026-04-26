@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { cn } from "@/lib/utils";
-import { saveSettings, deleteAccount } from "@/app/dashboard/settings/actions";
-import type { UserSettings } from "@/app/dashboard/settings/actions";
+import { useState, useTransition } from 'react';
+import { cn } from '@/lib/utils';
+import { saveSettings, deleteAccount } from '@/app/dashboard/settings/actions';
+import type { UserSettings } from '@/app/dashboard/settings/actions';
 
 interface SettingsFormProps {
   initial: UserSettings;
@@ -37,7 +37,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } catch (err) {
-        setSaveError(err instanceof Error ? err.message : "Ошибка сохранения");
+        setSaveError(err instanceof Error ? err.message : 'Ошибка сохранения');
       }
     });
   }
@@ -46,16 +46,20 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
     setCancelError(null);
     setCancelPending(true);
     try {
-      const res = await fetch("/api/subscribe/cancel", { method: "POST" });
-      const data = await res.json() as { success?: boolean; error?: string; accessUntil?: string | null };
+      const res = await fetch('/api/subscribe/cancel', { method: 'POST' });
+      const data = (await res.json()) as {
+        success?: boolean;
+        error?: string;
+        accessUntil?: string | null;
+      };
       if (!res.ok || !data.success) {
-        setCancelError(data.error ?? "Не удалось отменить подписку");
+        setCancelError(data.error ?? 'Не удалось отменить подписку');
       } else {
         setCancelDone(true);
         setCancelConfirm(false);
       }
     } catch {
-      setCancelError("Ошибка соединения. Попробуйте позже.");
+      setCancelError('Ошибка соединения. Попробуйте позже.');
     } finally {
       setCancelPending(false);
     }
@@ -67,7 +71,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
       try {
         await deleteAccount();
       } catch (err) {
-        setDeleteError(err instanceof Error ? err.message : "Ошибка удаления");
+        setDeleteError(err instanceof Error ? err.message : 'Ошибка удаления');
       }
     });
   }
@@ -81,7 +85,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
             <input
               type="time"
               name="meal_reminder_time"
-              defaultValue={initial.notification_prefs.meal_reminder_time ?? ""}
+              defaultValue={initial.notification_prefs.meal_reminder_time ?? ''}
               className={inputClass}
             />
             <p className="mt-1 text-xs text-muted-foreground">Оставьте пустым, чтобы отключить</p>
@@ -90,7 +94,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
           <Field label="Напоминание о воде (интервал, мин)">
             <select
               name="water_reminder_interval_min"
-              defaultValue={String(initial.notification_prefs.water_reminder_interval_min ?? "")}
+              defaultValue={String(initial.notification_prefs.water_reminder_interval_min ?? '')}
               className={inputClass}
             >
               <option value="">Отключено</option>
@@ -120,14 +124,14 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
             <RadioCard
               name="units"
               value="metric"
-              defaultChecked={initial.units === "metric"}
+              defaultChecked={initial.units === 'metric'}
               label="Метрическая"
               description="кг, см, мл"
             />
             <RadioCard
               name="units"
               value="imperial"
-              defaultChecked={initial.units === "imperial"}
+              defaultChecked={initial.units === 'imperial'}
               label="Имперская"
               description="фунты, дюймы, унции"
             />
@@ -141,21 +145,21 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
               <RadioCard
                 name="budget_preference"
                 value="low"
-                defaultChecked={initial.budget_preference === "low"}
+                defaultChecked={initial.budget_preference === 'low'}
                 label="Экономный"
                 description="Доступные ингредиенты"
               />
               <RadioCard
                 name="budget_preference"
                 value="moderate"
-                defaultChecked={initial.budget_preference === "moderate"}
+                defaultChecked={initial.budget_preference === 'moderate'}
                 label="Средний"
                 description="Баланс цены и качества"
               />
               <RadioCard
                 name="budget_preference"
                 value="high"
-                defaultChecked={initial.budget_preference === "high"}
+                defaultChecked={initial.budget_preference === 'high'}
                 label="Премиум"
                 description="Качественные ингредиенты"
               />
@@ -169,14 +173,14 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
             <RadioCard
               name="language"
               value="ru"
-              defaultChecked={initial.language === "ru"}
+              defaultChecked={initial.language === 'ru'}
               label="Русский"
               description="Интерфейс на русском"
             />
             <RadioCard
               name="language"
               value="en"
-              defaultChecked={initial.language === "en"}
+              defaultChecked={initial.language === 'en'}
               label="English"
               description="Interface in English"
             />
@@ -189,35 +193,38 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
             type="submit"
             disabled={isPending}
             className={cn(
-              "rounded-lg bg-bark-300 px-5 py-2 text-sm font-medium text-white",
-              "hover:bg-bark-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              'rounded-lg bg-bark-300 px-5 py-2 text-sm font-medium text-white',
+              'hover:bg-bark-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >
-            {isPending ? "Сохранение…" : "Сохранить настройки"}
+            {isPending ? 'Сохранение…' : 'Сохранить настройки'}
           </button>
-          {saved && (
-            <span className="text-sm text-sage-500 font-medium">✓ Сохранено</span>
-          )}
-          {saveError && (
-            <span className="text-sm text-red-600">{saveError}</span>
-          )}
+          {saved && <span className="text-sm text-sage-500 font-medium">✓ Сохранено</span>}
+          {saveError && <span className="text-sm text-red-600">{saveError}</span>}
         </div>
       </form>
 
       {/* ── Meal Planner ── */}
       <Section title="Планировщик питания">
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">
-            Лимиты переделки меню:
-          </p>
+          <p className="text-muted-foreground">Лимиты переделки меню:</p>
           <ul className="space-y-2">
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sage-100 text-sage-700 text-xs font-bold flex-shrink-0">3</span>
-              <span className="text-bark-200">Бесплатных переделок в неделю (отдельное блюдо, день или неделя)</span>
+              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sage-100 text-sage-700 text-xs font-bold flex-shrink-0">
+                3
+              </span>
+              <span className="text-bark-200">
+                Бесплатных переделок в неделю (отдельное блюдо, день или неделя)
+              </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-parchment-200 text-bark-200 text-xs font-bold flex-shrink-0">+</span>
-              <span className="text-bark-200">Дополнительные переделки — <span className="font-semibold text-bark-300">100 ₽</span> каждая</span>
+              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-parchment-200 text-bark-200 text-xs font-bold flex-shrink-0">
+                +
+              </span>
+              <span className="text-bark-200">
+                Дополнительные переделки —{' '}
+                <span className="font-semibold text-bark-300">100 ₽</span> каждая
+              </span>
             </li>
           </ul>
           <p className="text-xs text-muted-foreground pt-1">
@@ -292,12 +299,11 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
                 <p className="text-sm font-medium text-red-800">Подтвердите отмену подписки</p>
                 {periodEnd && (
                   <p className="text-xs text-red-700">
-                    Доступ к Premium сохранится до {periodEnd}. После этой даты аккаунт перейдёт на Free.
+                    Доступ к Premium сохранится до {periodEnd}. После этой даты аккаунт перейдёт на
+                    Free.
                   </p>
                 )}
-                {cancelError && (
-                  <p className="text-xs text-red-600">{cancelError}</p>
-                )}
+                {cancelError && <p className="text-xs text-red-600">{cancelError}</p>}
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -305,11 +311,14 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
                     disabled={cancelPending}
                     className="rounded-lg bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    {cancelPending ? "Отменяем…" : "Да, отменить"}
+                    {cancelPending ? 'Отменяем…' : 'Да, отменить'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setCancelConfirm(false); setCancelError(null); }}
+                    onClick={() => {
+                      setCancelConfirm(false);
+                      setCancelError(null);
+                    }}
                     className="text-sm text-muted-foreground hover:text-bark-300 transition-colors"
                   >
                     Оставить подписку
@@ -332,8 +341,8 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
               href="/api/export-data"
               download
               className={cn(
-                "inline-flex items-center gap-2 rounded-lg border border-sage-300 px-4 py-2",
-                "text-sm font-medium text-sage-600 hover:bg-sage-50 transition-colors"
+                'inline-flex items-center gap-2 rounded-lg border border-sage-300 px-4 py-2',
+                'text-sm font-medium text-sage-600 hover:bg-sage-50 transition-colors'
               )}
             >
               <DownloadIcon className="h-4 w-4" />
@@ -362,7 +371,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
                   disabled={isDeleting}
                   className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
-                  {isDeleting ? "Удаление…" : "Подтвердить удаление"}
+                  {isDeleting ? 'Удаление…' : 'Подтвердить удаление'}
                 </button>
                 <button
                   type="button"
@@ -371,9 +380,7 @@ export function SettingsForm({ initial, userEmail, isPremium, periodEnd }: Setti
                 >
                   Отмена
                 </button>
-                {deleteError && (
-                  <span className="text-sm text-red-600">{deleteError}</span>
-                )}
+                {deleteError && <span className="text-sm text-red-600">{deleteError}</span>}
               </div>
             )}
           </div>
@@ -427,9 +434,9 @@ function RadioCard({
       />
       <div
         className={cn(
-          "h-full rounded-lg border border-parchment-200 px-4 py-3 text-sm transition-colors",
-          "peer-checked:border-bark-300 peer-checked:bg-bark-50/30",
-          "hover:bg-parchment-200"
+          'h-full rounded-lg border border-parchment-200 px-4 py-3 text-sm transition-colors',
+          'peer-checked:border-bark-300 peer-checked:bg-bark-50/30',
+          'hover:bg-parchment-200'
         )}
       >
         <p className="font-medium text-bark-300">{label}</p>
@@ -440,12 +447,23 @@ function RadioCard({
 }
 
 const inputClass =
-  "w-full rounded-lg border border-parchment-200 bg-white px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-ring";
+  'w-full rounded-lg border border-parchment-200 bg-white px-3 py-2 text-sm text-bark-300 focus:outline-none focus:ring-2 focus:ring-ring';
 
 function DownloadIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
     </svg>
   );
 }

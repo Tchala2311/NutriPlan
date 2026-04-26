@@ -1,6 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { cache } from "react";
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 // cache() deduplicates calls within a single React render pass (one HTTP request).
 // All server components that call createClient() in the same request share one instance.
@@ -15,7 +15,9 @@ export const createClient = cache(async () => {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
+        setAll(
+          cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>
+        ) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               // eslint-disable-next-line @typescript-eslint/no-explicit-any

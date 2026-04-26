@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { updateDisplayName } from "@/app/dashboard/profile/actions";
+import { useState, useTransition } from 'react';
+import { updateDisplayName } from '@/app/dashboard/profile/actions';
 
 interface DisplayNameFormProps {
   initialName?: string | null;
@@ -9,8 +9,8 @@ interface DisplayNameFormProps {
 
 export function DisplayNameForm({ initialName }: DisplayNameFormProps) {
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(initialName ?? "");
-  const [saved, setSaved] = useState(initialName ?? "");
+  const [name, setName] = useState(initialName ?? '');
+  const [saved, setSaved] = useState(initialName ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -65,8 +65,8 @@ export function DisplayNameForm({ initialName }: DisplayNameFormProps) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleSave();
-            if (e.key === "Escape") handleCancel();
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') handleCancel();
           }}
           placeholder="Ваше имя"
           className="flex-1 rounded-lg border border-parchment-200 bg-parchment-50 px-3 py-2 text-bark-300 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-bark-200 text-sm"
@@ -76,7 +76,7 @@ export function DisplayNameForm({ initialName }: DisplayNameFormProps) {
           disabled={isPending}
           className="rounded-lg bg-bark-300 text-primary-foreground px-3 py-2 text-sm font-medium hover:bg-bark-400 transition-colors disabled:opacity-50"
         >
-          {isPending ? "…" : "Сохранить"}
+          {isPending ? '…' : 'Сохранить'}
         </button>
         <button
           onClick={handleCancel}

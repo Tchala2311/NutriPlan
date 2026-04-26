@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirm) {
-      setError("Пароли не совпадают.");
+      setError('Пароли не совпадают.');
       return;
     }
     setLoading(true);
@@ -30,7 +30,7 @@ export default function UpdatePasswordPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push('/dashboard');
     router.refresh();
   }
 
@@ -62,8 +62,8 @@ export default function UpdatePasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={cn(
-                "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
               )}
               placeholder="••••••••"
             />
@@ -82,8 +82,8 @@ export default function UpdatePasswordPage() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className={cn(
-                "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
               )}
               placeholder="••••••••"
             />
@@ -93,11 +93,11 @@ export default function UpdatePasswordPage() {
             type="submit"
             disabled={loading}
             className={cn(
-              "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-              "hover:bg-primary/90 transition-colors disabled:opacity-60"
+              'w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+              'hover:bg-primary/90 transition-colors disabled:opacity-60'
             )}
           >
-            {loading ? "Сохраняем…" : "Сохранить пароль"}
+            {loading ? 'Сохраняем…' : 'Сохранить пароль'}
           </button>
         </form>
       </div>

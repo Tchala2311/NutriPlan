@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
-import { isPremium } from "@/lib/subscription";
-import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
-import { createClient, getUser } from "@/lib/supabase/server";
-import { getMealPlan } from "@/app/dashboard/planner/actions";
-import type { RecipeSummary } from "@/app/dashboard/planner/actions";
-import { RecipesClient } from "@/components/planner/RecipesClient";
+import type { Metadata } from 'next';
+import { isPremium } from '@/lib/subscription';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { getMealPlan } from '@/app/dashboard/planner/actions';
+import type { RecipeSummary } from '@/app/dashboard/planner/actions';
+import { RecipesClient } from '@/components/planner/RecipesClient';
 
 /** Compute catalog week (1–8) from plan_start_date. */
 function computeCatalogWeek(planStartDate: string): number {
-  const start = new Date(planStartDate + "T00:00:00");
+  const start = new Date(planStartDate + 'T00:00:00');
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const daysElapsed = Math.floor((today.getTime() - start.getTime()) / 86_400_000);
@@ -16,7 +16,7 @@ function computeCatalogWeek(planStartDate: string): number {
   return Math.min(Math.max(week, 1), 8);
 }
 
-export const metadata: Metadata = { title: "Рецепты — NutriPlan" };
+export const metadata: Metadata = { title: 'Рецепты — NutriPlan' };
 
 export default async function RecipesPage() {
   const premium = await isPremium();
@@ -36,19 +36,21 @@ export default async function RecipesPage() {
     );
   }
 
-  const { data: { user } } = await getUser();
+  const {
+    data: { user },
+  } = await getUser();
   const supabase = await createClient();
 
   const [mealPlanData, savedResult] = await Promise.all([
     getMealPlan(),
     user
       ? supabase
-          .from("saved_recipes")
+          .from('saved_recipes')
           .select(
-            "saved_at, recipe:recipe_id(id, title, prep_time_min, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, ingredients, instructions, dietary_tags, substitutions)"
+            'saved_at, recipe:recipe_id(id, title, prep_time_min, calories_per_serving, protein_per_serving, carbs_per_serving, fat_per_serving, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, ingredients, instructions, dietary_tags, substitutions)'
           )
-          .eq("user_id", user.id)
-          .order("saved_at", { ascending: false })
+          .eq('user_id', user.id)
+          .order('saved_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -60,9 +62,9 @@ export default async function RecipesPage() {
   // Fallback: if AI plan has no recipes, show catalog meals for the current week (TES-103)
   if (weeklyRecipes.length === 0 && user) {
     const configResult = await supabase
-      .from("user_plan_config")
-      .select("plan_start_date")
-      .eq("user_id", user.id)
+      .from('user_plan_config')
+      .select('plan_start_date')
+      .eq('user_id', user.id)
       .maybeSingle();
 
     const planStartDate = configResult.data?.plan_start_date as string | null | undefined;
@@ -72,11 +74,11 @@ export default async function RecipesPage() {
       catalogWeekLabel = `Неделя ${catalogWeek} каталога`;
 
       const { data: catalogMeals } = await supabase
-        .from("meals")
-        .select("id, name, kcal, protein_g, carbs_g, fat_g")
-        .eq("week", catalogWeek)
-        .order("day")
-        .order("meal_type");
+        .from('meals')
+        .select('id, name, kcal, protein_g, carbs_g, fat_g')
+        .eq('week', catalogWeek)
+        .order('day')
+        .order('meal_type');
 
       if (catalogMeals && catalogMeals.length > 0) {
         // Deduplicate by name (same dish appears across multiple days)

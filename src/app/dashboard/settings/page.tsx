@@ -1,25 +1,24 @@
-import type { Metadata } from "next";
-import { getUserSettings } from "./actions";
-import { getUserSubscription } from "@/lib/subscription";
-import { SettingsForm } from "@/components/dashboard/SettingsForm";
-import { getUser } from "@/lib/supabase/server";
+import type { Metadata } from 'next';
+import { getUserSettings } from './actions';
+import { getUserSubscription } from '@/lib/subscription';
+import { SettingsForm } from '@/components/dashboard/SettingsForm';
+import { getUser } from '@/lib/supabase/server';
 
-export const metadata: Metadata = { title: "Настройки — NutriPlan" };
+export const metadata: Metadata = { title: 'Настройки — NutriPlan' };
 
 export default async function SettingsPage() {
-  const { data: { user } } = await getUser();
+  const {
+    data: { user },
+  } = await getUser();
 
-  const [settings, sub] = await Promise.all([
-    getUserSettings(),
-    getUserSubscription(),
-  ]);
+  const [settings, sub] = await Promise.all([getUserSettings(), getUserSubscription()]);
 
-  const isPremium = sub?.plan === "premium" && sub?.status === "active";
+  const isPremium = sub?.plan === 'premium' && sub?.status === 'active';
   const periodEnd = sub?.current_period_end
-    ? new Date(sub.current_period_end).toLocaleDateString("ru-RU", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+    ? new Date(sub.current_period_end).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       })
     : null;
 
@@ -34,7 +33,7 @@ export default async function SettingsPage() {
 
       <SettingsForm
         initial={settings}
-        userEmail={user?.email ?? ""}
+        userEmail={user?.email ?? ''}
         isPremium={isPremium}
         periodEnd={periodEnd}
       />

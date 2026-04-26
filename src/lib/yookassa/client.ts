@@ -7,12 +7,12 @@
  *   YOOKASSA_SECRET_KEY  — secret key from YooKassa dashboard
  */
 
-const BASE_URL = "https://api.yookassa.ru/v3";
+const BASE_URL = 'https://api.yookassa.ru/v3';
 
 function basicAuth(): string {
   const shopId = process.env.YOOKASSA_SHOP_ID!;
   const secretKey = process.env.YOOKASSA_SECRET_KEY!;
-  return "Basic " + Buffer.from(`${shopId}:${secretKey}`).toString("base64");
+  return 'Basic ' + Buffer.from(`${shopId}:${secretKey}`).toString('base64');
 }
 
 async function request<T>(
@@ -23,10 +23,10 @@ async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     Authorization: basicAuth(),
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
   if (idempotencyKey) {
-    headers["Idempotence-Key"] = idempotencyKey;
+    headers['Idempotence-Key'] = idempotencyKey;
   }
 
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -45,12 +45,12 @@ async function request<T>(
 
 export interface YooKassaAmount {
   value: string;
-  currency: "RUB";
+  currency: 'RUB';
 }
 
 export interface YooKassaPayment {
   id: string;
-  status: "pending" | "waiting_for_capture" | "succeeded" | "canceled";
+  status: 'pending' | 'waiting_for_capture' | 'succeeded' | 'canceled';
   amount: YooKassaAmount;
   payment_method?: { id: string; type: string; saved: boolean };
   confirmation?: { type: string; confirmation_url?: string };
@@ -69,16 +69,14 @@ export interface CreatePaymentParams {
   savePaymentMethod?: boolean;
 }
 
-export async function createPayment(
-  params: CreatePaymentParams
-): Promise<YooKassaPayment> {
+export async function createPayment(params: CreatePaymentParams): Promise<YooKassaPayment> {
   return request<YooKassaPayment>(
-    "POST",
-    "/payments",
+    'POST',
+    '/payments',
     {
-      amount: { value: params.amountValue, currency: "RUB" },
+      amount: { value: params.amountValue, currency: 'RUB' },
       confirmation: {
-        type: "redirect",
+        type: 'redirect',
         return_url: params.returnUrl,
       },
       capture: true,
@@ -99,14 +97,12 @@ export interface ChargeParams {
 }
 
 /** Charge a saved payment method (recurring). */
-export async function chargePaymentMethod(
-  params: ChargeParams
-): Promise<YooKassaPayment> {
+export async function chargePaymentMethod(params: ChargeParams): Promise<YooKassaPayment> {
   return request<YooKassaPayment>(
-    "POST",
-    "/payments",
+    'POST',
+    '/payments',
     {
-      amount: { value: params.amountValue, currency: "RUB" },
+      amount: { value: params.amountValue, currency: 'RUB' },
       payment_method_id: params.paymentMethodId,
       capture: true,
       description: params.description,
@@ -117,7 +113,7 @@ export async function chargePaymentMethod(
 }
 
 export async function getPayment(paymentId: string): Promise<YooKassaPayment> {
-  return request<YooKassaPayment>("GET", `/payments/${paymentId}`);
+  return request<YooKassaPayment>('GET', `/payments/${paymentId}`);
 }
 
 export interface YooKassaWebhookEvent {

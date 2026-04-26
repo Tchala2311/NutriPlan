@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
-import { useState } from "react";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 interface UserMenuProps {
   email: string;
@@ -26,7 +26,7 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
     setLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push('/login');
     router.refresh();
   }
 
@@ -35,9 +35,9 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-2 rounded-lg px-2 py-1.5",
-          "hover:bg-bark-50/40 transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+          'flex items-center gap-2 rounded-lg px-2 py-1.5',
+          'hover:bg-bark-50/40 transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
         )}
         aria-expanded={open}
         aria-haspopup="true"
@@ -57,7 +57,9 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
         <span className="hidden sm:block max-w-[140px] truncate text-sm text-bark-300">
           {displayName}
         </span>
-        <ChevronIcon className={cn("h-3.5 w-3.5 text-bark-200 transition-transform", open && "rotate-180")} />
+        <ChevronIcon
+          className={cn('h-3.5 w-3.5 text-bark-200 transition-transform', open && 'rotate-180')}
+        />
       </button>
 
       {open && (
@@ -66,8 +68,8 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div
             className={cn(
-              "absolute right-0 z-20 mt-1 w-48 rounded-xl border border-parchment-200",
-              "bg-parchment-50 shadow-md py-1"
+              'absolute right-0 z-20 mt-1 w-48 rounded-xl border border-parchment-200',
+              'bg-parchment-50 shadow-md py-1'
             )}
           >
             <div className="px-3 py-2 border-b border-parchment-200">
@@ -84,11 +86,11 @@ export function UserMenu({ email, avatarUrl, firstName }: UserMenuProps) {
               onClick={handleSignOut}
               disabled={loading}
               className={cn(
-                "w-full text-left px-3 py-2 text-sm text-bark-300 hover:bg-parchment-100 transition-colors border-t border-parchment-200",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
+                'w-full text-left px-3 py-2 text-sm text-bark-300 hover:bg-parchment-100 transition-colors border-t border-parchment-200',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
             >
-              {loading ? "Выходим…" : "Выйти"}
+              {loading ? 'Выходим…' : 'Выйти'}
             </button>
           </div>
         </>

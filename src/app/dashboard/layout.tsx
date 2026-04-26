@@ -1,33 +1,31 @@
-import { redirect } from "next/navigation";
-import { createClient, getUser } from "@/lib/supabase/server";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { redirect } from 'next/navigation';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { data: { user } } = await getUser();
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const {
+    data: { user },
+  } = await getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect('/login');
   }
 
   // Gate dashboard until onboarding is complete
   const supabase = await createClient();
   const { data: assessment } = await supabase
-    .from("health_assessments")
-    .select("id")
-    .eq("user_id", user.id)
+    .from('health_assessments')
+    .select('id')
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (!assessment) {
-    redirect("/onboarding?from=dashboard");
+    redirect('/onboarding?from=dashboard');
   }
 
-  const email = user.email ?? "";
+  const email = user.email ?? '';
   const avatarUrl = user.user_metadata?.avatar_url ?? null;
-  const firstName = (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? null;
+  const firstName = (user.user_metadata?.full_name as string | undefined)?.split(' ')[0] ?? null;
 
   return (
     <DashboardShell userEmail={email} userAvatarUrl={avatarUrl} userFirstName={firstName}>

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import type { DayData, TrendsData, UserGoals } from "@/app/dashboard/profile/actions";
+import { useState } from 'react';
+import type { DayData, TrendsData, UserGoals } from '@/app/dashboard/profile/actions';
 
 type Props = { trends: TrendsData; goals: UserGoals };
 
-type Range = "7d" | "30d";
+type Range = '7d' | '30d';
 
 // ─── SVG helpers ─────────────────────────────────────────────────────────────
 
@@ -24,9 +24,7 @@ function CalorieChart({ days, target }: { days: DayData[]; target: number }) {
   if (days.length === 0) return null;
   const max = Math.max(...days.map((d) => d.calories), target) * 1.15;
 
-  const points = days
-    .map((d, i) => `${normX(i, days.length)},${normY(d.calories, max)}`)
-    .join(" ");
+  const points = days.map((d, i) => `${normX(i, days.length)},${normY(d.calories, max)}`).join(' ');
 
   const targetY = normY(target, max);
 
@@ -34,17 +32,13 @@ function CalorieChart({ days, target }: { days: DayData[]; target: number }) {
   const firstX = normX(0, days.length);
   const lastX = normX(days.length - 1, days.length);
   const bottomY = CHART_H - PAD.bottom;
-  const fillPath = `M ${firstX},${normY(days[0].calories, max)} L ${points.split(" ").slice(1).join(" L ")} L ${lastX},${bottomY} L ${firstX},${bottomY} Z`;
+  const fillPath = `M ${firstX},${normY(days[0].calories, max)} L ${points.split(' ').slice(1).join(' L ')} L ${lastX},${bottomY} L ${firstX},${bottomY} Z`;
 
   // Y-axis labels
   const yLabels = [0, Math.round(max / 2), Math.round(max)];
 
   return (
-    <svg
-      viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-      className="w-full"
-      aria-label="Калории по дням"
-    >
+    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full" aria-label="Калории по дням">
       {/* Y axis labels */}
       {yLabels.map((v) => (
         <text
@@ -122,9 +116,9 @@ function CalorieChart({ days, target }: { days: DayData[]; target: number }) {
 }
 
 const MACRO_COLORS = {
-  protein: "#4e7c59",  // sage green
-  carbs: "#c8a96e",    // bark/amber
-  fat: "#7c9dbf",      // slate blue
+  protein: '#4e7c59', // sage green
+  carbs: '#c8a96e', // bark/amber
+  fat: '#7c9dbf', // slate blue
 };
 
 function MacroChart({ days }: { days: DayData[] }) {
@@ -134,11 +128,7 @@ function MacroChart({ days }: { days: DayData[] }) {
   const barW = Math.max(4, (CHART_W - PAD.left - PAD.right) / days.length - 3);
 
   return (
-    <svg
-      viewBox={`0 0 ${CHART_W} ${CHART_H}`}
-      className="w-full"
-      aria-label="Макросы по дням"
-    >
+    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full" aria-label="Макросы по дням">
       {/* Y axis labels */}
       {[0, Math.round(maxTotal / 2), Math.round(maxTotal)].map((v) => (
         <text
@@ -159,9 +149,9 @@ function MacroChart({ days }: { days: DayData[] }) {
         if (total === 0) return null;
 
         const segments = [
-          { key: "fat", val: d.fat_g, color: MACRO_COLORS.fat },
-          { key: "carbs", val: d.carbs_g, color: MACRO_COLORS.carbs },
-          { key: "protein", val: d.protein_g, color: MACRO_COLORS.protein },
+          { key: 'fat', val: d.fat_g, color: MACRO_COLORS.fat },
+          { key: 'carbs', val: d.carbs_g, color: MACRO_COLORS.carbs },
+          { key: 'protein', val: d.protein_g, color: MACRO_COLORS.protein },
         ];
 
         let stackY = CHART_H - PAD.bottom;
@@ -208,8 +198,8 @@ function MacroChart({ days }: { days: DayData[] }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TrendsSection({ trends, goals }: Props) {
-  const [range, setRange] = useState<Range>("7d");
-  const days = range === "7d" ? trends.days.slice(-7) : trends.days;
+  const [range, setRange] = useState<Range>('7d');
+  const days = range === '7d' ? trends.days.slice(-7) : trends.days;
 
   const hasAnyData = trends.days.some((d) => d.calories > 0);
 
@@ -217,21 +207,17 @@ export function TrendsSection({ trends, goals }: Props) {
     <div className="space-y-6">
       {/* Header row with range toggle */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide">
-          Тренды
-        </h2>
+        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide">Тренды</h2>
         <div className="flex items-center gap-1 rounded-lg border border-parchment-300 p-0.5">
-          {(["7d", "30d"] as Range[]).map((r) => (
+          {(['7d', '30d'] as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-                range === r
-                  ? "bg-bark-300 text-white"
-                  : "text-muted-foreground hover:text-bark-200"
+                range === r ? 'bg-bark-300 text-white' : 'text-muted-foreground hover:text-bark-200'
               }`}
             >
-              {r === "7d" ? "7 дней" : "30 дней"}
+              {r === '7d' ? '7 дней' : '30 дней'}
             </button>
           ))}
         </div>
@@ -251,19 +237,21 @@ export function TrendsSection({ trends, goals }: Props) {
             <div className="rounded-lg border border-parchment-200 bg-parchment-50 p-3 text-center">
               <p className="text-2xl font-bold text-bark-300">{trends.streak}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {trends.streak === 1 ? "день подряд" : trends.streak >= 2 && trends.streak <= 4 ? "дня подряд" : "дней подряд"}
+                {trends.streak === 1
+                  ? 'день подряд'
+                  : trends.streak >= 2 && trends.streak <= 4
+                    ? 'дня подряд'
+                    : 'дней подряд'}
               </p>
             </div>
             <div className="rounded-lg border border-parchment-200 bg-parchment-50 p-3 text-center">
               <p className="text-2xl font-bold text-bark-300">
-                {trends.avgCalories7d > 0 ? trends.avgCalories7d : "—"}
+                {trends.avgCalories7d > 0 ? trends.avgCalories7d : '—'}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">ккал / день (7д)</p>
             </div>
             <div className="rounded-lg border border-parchment-200 bg-parchment-50 p-3 text-center">
-              <p className="text-2xl font-bold text-bark-300">
-                {trends.bestMacroDay ?? "—"}
-              </p>
+              <p className="text-2xl font-bold text-bark-300">{trends.bestMacroDay ?? '—'}</p>
               <p className="text-xs text-muted-foreground mt-0.5">лучший день по БЖУ</p>
             </div>
           </div>
@@ -282,9 +270,9 @@ export function TrendsSection({ trends, goals }: Props) {
               <p className="text-xs font-medium text-muted-foreground">Макросы, г</p>
               <div className="flex items-center gap-3">
                 {[
-                  { label: "Белки", color: MACRO_COLORS.protein },
-                  { label: "Углеводы", color: MACRO_COLORS.carbs },
-                  { label: "Жиры", color: MACRO_COLORS.fat },
+                  { label: 'Белки', color: MACRO_COLORS.protein },
+                  { label: 'Углеводы', color: MACRO_COLORS.carbs },
+                  { label: 'Жиры', color: MACRO_COLORS.fat },
                 ].map((l) => (
                   <div key={l.label} className="flex items-center gap-1">
                     <span
@@ -304,9 +292,7 @@ export function TrendsSection({ trends, goals }: Props) {
           {/* Top foods */}
           {trends.topFoods.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                Часто за 7 дней
-              </p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Часто за 7 дней</p>
               <div className="flex flex-wrap gap-2">
                 {trends.topFoods.map((f) => (
                   <span

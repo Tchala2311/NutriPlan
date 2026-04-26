@@ -4,9 +4,9 @@
  * Sends one email per user whose trial expires in 3 days.
  */
 
-import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email-service";
+import { NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { sendEmail } from '@/lib/email-service';
 
 const TRIAL_DURATION_DAYS = 14;
 const WARNING_DAYS_BEFORE = 3;
@@ -14,11 +14,11 @@ const WARNING_TRIGGER_DAY = TRIAL_DURATION_DAYS - WARNING_DAYS_BEFORE; // Day 11
 
 export async function POST(req: Request) {
   // Verify request is from cron or internal
-  const authHeader = req.headers.get("authorization");
+  const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const admin = createAdminClient();
@@ -31,8 +31,8 @@ export async function POST(req: Request) {
   // Get users on free plan created in target window
   const { data: users, error } = await admin.auth.admin.listUsers();
   if (error) {
-    console.error("Failed to list users:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    console.error('Failed to list users:', error);
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 
   const usersToNotify = (users?.users ?? []).filter((u) => {
@@ -51,17 +51,18 @@ export async function POST(req: Request) {
 
     // Check subscription status
     const { data: sub } = await admin
-      .from("subscriptions")
-      .select("plan, status")
-      .eq("user_id", user.id)
+      .from('subscriptions')
+      .select('plan, status')
+      .eq('user_id', user.id)
       .maybeSingle();
 
     // Only warn free users
-    if (sub?.plan === "premium" && sub?.status === "active") {
+    if (sub?.plan === 'premium' && sub?.status === 'active') {
       continue;
     }
 
-    const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] ?? user.email.split("@")[0];
+    const firstName =
+      (user.user_metadata?.full_name as string)?.split(' ')[0] ?? user.email.split('@')[0];
 
     const html = `
 <!DOCTYPE html>
@@ -115,7 +116,7 @@ export async function POST(req: Request) {
 
     const result = await sendEmail({
       to: user.email,
-      subject: "⏰ Ваш пробный период заканчивается через 3 дня",
+      subject: '⏰ Ваш пробный период заканчивается через 3 дня',
       html,
     });
 

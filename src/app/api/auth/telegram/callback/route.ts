@@ -1,25 +1,19 @@
-import { NextResponse } from "next/server";
-import crypto from "crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-function verifyTelegramHash(
-  data: Record<string, string>,
-  botToken: string
-): boolean {
+function verifyTelegramHash(data: Record<string, string>, botToken: string): boolean {
   const { hash, ...rest } = data;
   if (!hash) return false;
 
   const dataCheckString = Object.keys(rest)
     .sort()
-    .filter((k) => rest[k] !== undefined && rest[k] !== "")
+    .filter((k) => rest[k] !== undefined && rest[k] !== '')
     .map((k) => `${k}=${rest[k]}`)
-    .join("\n");
+    .join('\n');
 
-  const secretKey = crypto.createHash("sha256").update(botToken).digest();
-  const hmac = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
-    .digest("hex");
+  const secretKey = crypto.createHash('sha256').update(botToken).digest();
+  const hmac = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
   return hmac === hash;
 }
@@ -27,9 +21,9 @@ function verifyTelegramHash(
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
 
-  const id = searchParams.get("id");
-  const hash = searchParams.get("hash");
-  const authDate = searchParams.get("auth_date");
+  const id = searchParams.get('id');
+  const hash = searchParams.get('hash');
+  const authDate = searchParams.get('auth_date');
 
   if (!id || !hash || !authDate) {
     return NextResponse.redirect(`${origin}/login?error=telegram_missing_data`);
@@ -60,33 +54,32 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  const firstName = searchParams.get("first_name") ?? "";
-  const lastName = searchParams.get("last_name") ?? "";
-  const username = searchParams.get("username") ?? undefined;
-  const photoUrl = searchParams.get("photo_url") ?? undefined;
+  const firstName = searchParams.get('first_name') ?? '';
+  const lastName = searchParams.get('last_name') ?? '';
+  const username = searchParams.get('username') ?? undefined;
+  const photoUrl = searchParams.get('photo_url') ?? undefined;
 
   const { error: createError } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
     user_metadata: {
-      provider: "telegram",
+      provider: 'telegram',
       provider_id: id,
-      full_name: [firstName, lastName].filter(Boolean).join(" ") || undefined,
+      full_name: [firstName, lastName].filter(Boolean).join(' ') || undefined,
       username,
       avatar_url: photoUrl,
     },
   });
 
-  if (createError && !createError.message.toLowerCase().includes("already")) {
+  if (createError && !createError.message.toLowerCase().includes('already')) {
     return NextResponse.redirect(`${origin}/login?error=oauth_create_failed`);
   }
 
-  const { data: linkData, error: linkError } =
-    await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo: `${origin}/auth/callback` },
-    });
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+    options: { redirectTo: `${origin}/auth/callback` },
+  });
 
   if (linkError || !linkData?.properties?.action_link) {
     return NextResponse.redirect(`${origin}/login?error=oauth_link_failed`);

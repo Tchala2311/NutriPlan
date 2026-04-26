@@ -1,79 +1,79 @@
-"use client";
+'use client';
 
-import { useState, useTransition, useEffect } from "react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { saveOnboarding, type OnboardingFormData } from "@/app/onboarding/actions";
+import { useState, useTransition, useEffect } from 'react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { saveOnboarding, type OnboardingFormData } from '@/app/onboarding/actions';
 
-export const ONBOARDING_STORAGE_KEY = "nutriplan_onboarding";
+export const ONBOARDING_STORAGE_KEY = 'nutriplan_onboarding';
 
 /* ── Option lists ── */
 
 const HEALTH_GOAL_OPTIONS = [
-  { value: "weight_loss", label: "Похудеть" },
-  { value: "muscle_gain", label: "Набрать мышцы" },
-  { value: "maintenance", label: "Поддержать вес" },
-  { value: "disease_management", label: "Управление здоровьем" },
-  { value: "general_wellness", label: "Здоровый образ жизни" },
-  { value: "improve_energy", label: "Больше энергии" },
-  { value: "better_sleep", label: "Лучший сон" },
-  { value: "reduce_stress", label: "Снизить стресс" },
+  { value: 'weight_loss', label: 'Похудеть' },
+  { value: 'muscle_gain', label: 'Набрать мышцы' },
+  { value: 'maintenance', label: 'Поддержать вес' },
+  { value: 'disease_management', label: 'Управление здоровьем' },
+  { value: 'general_wellness', label: 'Здоровый образ жизни' },
+  { value: 'improve_energy', label: 'Больше энергии' },
+  { value: 'better_sleep', label: 'Лучший сон' },
+  { value: 'reduce_stress', label: 'Снизить стресс' },
 ];
 
 const PRIMARY_GOAL_OPTIONS = [
-  { value: "weight_loss", label: "Похудение" },
-  { value: "muscle_gain", label: "Набор мышц" },
-  { value: "maintenance", label: "Поддержание веса" },
-  { value: "disease_management", label: "Управление здоровьем" },
-  { value: "general_wellness", label: "Здоровый образ жизни" },
+  { value: 'weight_loss', label: 'Похудение' },
+  { value: 'muscle_gain', label: 'Набор мышц' },
+  { value: 'maintenance', label: 'Поддержание веса' },
+  { value: 'disease_management', label: 'Управление здоровьем' },
+  { value: 'general_wellness', label: 'Здоровый образ жизни' },
 ];
 
 const DIETARY_OPTIONS = [
-  { value: "vegetarian", label: "Вегетарианство" },
-  { value: "vegan", label: "Веганство" },
-  { value: "gluten_free", label: "Без глютена" },
-  { value: "dairy_free", label: "Без лактозы" },
-  { value: "halal", label: "Халяль" },
-  { value: "kosher", label: "Кошерное" },
-  { value: "low_carb", label: "Низкоуглеводное" },
-  { value: "keto", label: "Кето" },
-  { value: "paleo", label: "Палео" },
+  { value: 'vegetarian', label: 'Вегетарианство' },
+  { value: 'vegan', label: 'Веганство' },
+  { value: 'gluten_free', label: 'Без глютена' },
+  { value: 'dairy_free', label: 'Без лактозы' },
+  { value: 'halal', label: 'Халяль' },
+  { value: 'kosher', label: 'Кошерное' },
+  { value: 'low_carb', label: 'Низкоуглеводное' },
+  { value: 'keto', label: 'Кето' },
+  { value: 'paleo', label: 'Палео' },
 ];
 
 const ALLERGEN_OPTIONS = [
-  { value: "peanuts", label: "Арахис" },
-  { value: "tree_nuts", label: "Орехи" },
-  { value: "milk", label: "Молоко / Лактоза" },
-  { value: "eggs", label: "Яйца" },
-  { value: "wheat", label: "Пшеница / Глютен" },
-  { value: "soy", label: "Соя" },
-  { value: "fish", label: "Рыба" },
-  { value: "shellfish", label: "Морепродукты" },
-  { value: "sesame", label: "Кунжут" },
+  { value: 'peanuts', label: 'Арахис' },
+  { value: 'tree_nuts', label: 'Орехи' },
+  { value: 'milk', label: 'Молоко / Лактоза' },
+  { value: 'eggs', label: 'Яйца' },
+  { value: 'wheat', label: 'Пшеница / Глютен' },
+  { value: 'soy', label: 'Соя' },
+  { value: 'fish', label: 'Рыба' },
+  { value: 'shellfish', label: 'Морепродукты' },
+  { value: 'sesame', label: 'Кунжут' },
 ];
 
 const MEDICAL_OPTIONS = [
-  { value: "diabetes", label: "Диабет (1 или 2 тип)" },
-  { value: "hypertension", label: "Гипертония / Высокое давление" },
-  { value: "high_cholesterol", label: "Высокий холестерин" },
-  { value: "kidney_disease", label: "Болезни почек" },
-  { value: "celiac", label: "Целиакия" },
-  { value: "ibs", label: "СРК / Расстройства пищеварения" },
-  { value: "heart_disease", label: "Болезни сердца" },
+  { value: 'diabetes', label: 'Диабет (1 или 2 тип)' },
+  { value: 'hypertension', label: 'Гипертония / Высокое давление' },
+  { value: 'high_cholesterol', label: 'Высокий холестерин' },
+  { value: 'kidney_disease', label: 'Болезни почек' },
+  { value: 'celiac', label: 'Целиакия' },
+  { value: 'ibs', label: 'СРК / Расстройства пищеварения' },
+  { value: 'heart_disease', label: 'Болезни сердца' },
 ];
 
 const EATING_DISORDER_OPTIONS = [
-  { value: "anorexia_restrictive", label: "Анорексия / Ограничивающее питание" },
-  { value: "binge_eating", label: "Приступы переедания (BED)" },
-  { value: "orthorexia", label: "Орторексия (зацикленность на 'здоровом' питании)" },
+  { value: 'anorexia_restrictive', label: 'Анорексия / Ограничивающее питание' },
+  { value: 'binge_eating', label: 'Приступы переедания (BED)' },
+  { value: 'orthorexia', label: "Орторексия (зацикленность на 'здоровом' питании)" },
 ];
 
 const ACTIVITY_OPTIONS = [
-  { value: "sedentary", label: "Сидячий", sub: "Минимум движения" },
-  { value: "light", label: "Лёгкий", sub: "1–3 дня в неделю" },
-  { value: "moderate", label: "Умеренный", sub: "3–5 дней в неделю" },
-  { value: "active", label: "Активный", sub: "6–7 дней в неделю" },
-  { value: "very_active", label: "Очень активный", sub: "Интенсивные тренировки ежедневно" },
+  { value: 'sedentary', label: 'Сидячий', sub: 'Минимум движения' },
+  { value: 'light', label: 'Лёгкий', sub: '1–3 дня в неделю' },
+  { value: 'moderate', label: 'Умеренный', sub: '3–5 дней в неделю' },
+  { value: 'active', label: 'Активный', sub: '6–7 дней в неделю' },
+  { value: 'very_active', label: 'Очень активный', sub: 'Интенсивные тренировки ежедневно' },
 ];
 
 const ACTIVITY_MULTIPLIERS: Record<string, number> = {
@@ -90,7 +90,7 @@ interface TdeeInputs {
   age: string;
   weight_kg: string;
   height_cm: string;
-  sex: "male" | "female" | "";
+  sex: 'male' | 'female' | '';
   activity_level: string;
 }
 
@@ -109,14 +109,14 @@ function computeTdee(
   inputs: TdeeInputs,
   isPregnant?: boolean,
   pregnancyTrimester?: number | null,
-  isBreastfeeding?: boolean,
+  isBreastfeeding?: boolean
 ): number | null {
   const age = parseInt(inputs.age, 10);
   const weight = parseFloat(inputs.weight_kg);
   const height = parseFloat(inputs.height_cm);
   if (!inputs.sex || isNaN(age) || isNaN(weight) || isNaN(height)) return null;
   const bmr =
-    inputs.sex === "male"
+    inputs.sex === 'male'
       ? 10 * weight + 6.25 * height - 5 * age + 5
       : 10 * weight + 6.25 * height - 5 * age - 161;
   const multiplier = ACTIVITY_MULTIPLIERS[inputs.activity_level] ?? 1.55;
@@ -136,29 +136,29 @@ function computeMacros(tdee: number | null, primaryGoal: string): MacroTargets |
   let fatPct = 0.25;
 
   switch (primaryGoal) {
-    case "weight_loss":
+    case 'weight_loss':
       calories = Math.max(1200, tdee - 400);
       proteinPct = 0.3;
       carbsPct = 0.4;
       fatPct = 0.3;
       break;
-    case "muscle_gain":
+    case 'muscle_gain':
       calories = tdee + 300;
       proteinPct = 0.35;
       carbsPct = 0.45;
       fatPct = 0.2;
       break;
-    case "maintenance":
+    case 'maintenance':
       proteinPct = 0.25;
       carbsPct = 0.5;
       fatPct = 0.25;
       break;
-    case "disease_management":
+    case 'disease_management':
       proteinPct = 0.25;
       carbsPct = 0.45;
       fatPct = 0.3;
       break;
-    case "general_wellness":
+    case 'general_wellness':
       proteinPct = 0.25;
       carbsPct = 0.5;
       fatPct = 0.25;
@@ -182,12 +182,12 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
         <div
           key={i}
           className={cn(
-            "h-2 rounded-full transition-all duration-300",
+            'h-2 rounded-full transition-all duration-300',
             i < current
-              ? "w-6 bg-sage-300"
+              ? 'w-6 bg-sage-300'
               : i === current
-              ? "w-8 bg-bark-300"
-              : "w-6 bg-parchment-200"
+                ? 'w-8 bg-bark-300'
+                : 'w-6 bg-parchment-200'
           )}
         />
       ))}
@@ -212,10 +212,10 @@ function MultiSelectChip({
       type="button"
       onClick={onToggle}
       className={cn(
-        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+        'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
         selected
-          ? "border-bark-300 bg-bark-300 text-primary-foreground"
-          : "border-parchment-200 bg-parchment-100 text-bark-200 hover:border-bark-100 hover:text-bark-300"
+          ? 'border-bark-300 bg-bark-300 text-primary-foreground'
+          : 'border-parchment-200 bg-parchment-100 text-bark-200 hover:border-bark-100 hover:text-bark-300'
       )}
     >
       {label}
@@ -237,7 +237,7 @@ function MacroBar({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className={cn("h-3 w-3 rounded-full", color)} />
+        <span className={cn('h-3 w-3 rounded-full', color)} />
         <span className="text-sm text-bark-200">{label}</span>
       </div>
       <span className="text-sm font-semibold text-bark-300">
@@ -257,7 +257,7 @@ interface OnboardingWizardProps {
 
 const TOTAL_STEPS = 5; // Name, Goals, Dietary, Medical+Disclaimer, Results
 
-const DRAFT_STORAGE_KEY = "nutriplan_onboarding_draft";
+const DRAFT_STORAGE_KEY = 'nutriplan_onboarding_draft';
 
 function loadDraft(): { form: OnboardingFormData; tdee: TdeeInputs; step: number } | null {
   try {
@@ -275,15 +275,15 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<OnboardingFormData>({
-    first_name: "",
+    first_name: '',
     health_goals: [],
-    primary_goal: "",
+    primary_goal: '',
     dietary_restrictions: [],
     allergens: [],
-    avoided_ingredients: "",
+    avoided_ingredients: '',
     medical_conditions: [],
     eating_disorder_types: [],
-    medications: "",
+    medications: '',
     disclaimer_accepted: false,
     is_pregnant: false,
     pregnancy_trimester: null,
@@ -291,11 +291,11 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
   });
 
   const [tdee, setTdee] = useState<TdeeInputs>({
-    age: "",
-    weight_kg: "",
-    height_cm: "",
-    sex: "",
-    activity_level: "moderate",
+    age: '',
+    weight_kg: '',
+    height_cm: '',
+    sex: '',
+    activity_level: 'moderate',
   });
 
   // Restore draft on first render (step-by-step persistence for UF-1)
@@ -307,7 +307,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       // Only restore step if not yet at results page (step 4 = results)
       if (draft.step > 0 && draft.step < 4) setStep(draft.step);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save draft to localStorage on every change (UF-1)
@@ -329,7 +329,12 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
     });
   }
 
-  const tdeeValue = computeTdee(tdee, form.is_pregnant, form.pregnancy_trimester, form.is_breastfeeding);
+  const tdeeValue = computeTdee(
+    tdee,
+    form.is_pregnant,
+    form.pregnancy_trimester,
+    form.is_breastfeeding
+  );
   const macros = computeMacros(tdeeValue, form.primary_goal);
 
   /** Persist to localStorage and advance to results (step 3) */
@@ -351,16 +356,20 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       try {
         await saveOnboarding({
           ...form,
-          weight_kg:      tdee.weight_kg ? parseFloat(tdee.weight_kg) : null,
-          height_cm:      tdee.height_cm ? parseInt(tdee.height_cm, 10) : null,
-          age:            tdee.age ? parseInt(tdee.age, 10) : null,
-          sex:            tdee.sex || null,
-          activity_level: tdee.activity_level || "moderate",
+          weight_kg: tdee.weight_kg ? parseFloat(tdee.weight_kg) : null,
+          height_cm: tdee.height_cm ? parseInt(tdee.height_cm, 10) : null,
+          age: tdee.age ? parseInt(tdee.age, 10) : null,
+          sex: tdee.sex || null,
+          activity_level: tdee.activity_level || 'moderate',
         });
         // Clear draft on success — saveOnboarding redirects to /dashboard (replace)
-        try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ok */ }
+        try {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch {
+          /* ok */
+        }
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Что-то пошло не так. Попробуйте снова.");
+        setError(e instanceof Error ? e.message : 'Что-то пошло не так. Попробуйте снова.');
       }
     });
   }
@@ -372,9 +381,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {/* ── Step 0: First Name ── */}
       {step === 0 && (
         <div>
-          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            Как вас зовут?
-          </h2>
+          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">Как вас зовут?</h2>
           <p className="text-sm text-muted-foreground mb-6">
             Мы будем обращаться к вам по имени в приложении.
           </p>
@@ -388,9 +395,11 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               type="text"
               autoComplete="given-name"
               autoFocus
-              value={form.first_name ?? ""}
+              value={form.first_name ?? ''}
               onChange={(e) => setForm((prev) => ({ ...prev, first_name: e.target.value }))}
-              onKeyDown={(e) => { if (e.key === "Enter" && (form.first_name ?? "").trim()) setStep(1); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (form.first_name ?? '').trim()) setStep(1);
+              }}
               placeholder="Например, Алексей"
               className="w-full rounded-xl border border-parchment-200 bg-parchment-50 px-4 py-3 text-bark-300 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-bark-200 text-base"
             />
@@ -403,7 +412,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
             onClick={() => setStep(1)}
             className="w-full rounded-xl bg-bark-300 text-primary-foreground py-3 text-sm font-semibold hover:bg-bark-400 transition-colors"
           >
-            {(form.first_name ?? "").trim() ? "Продолжить" : "Пропустить"}
+            {(form.first_name ?? '').trim() ? 'Продолжить' : 'Пропустить'}
           </button>
         </div>
       )}
@@ -411,12 +420,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {/* ── Step 1: Health Goals + TDEE ── */}
       {step === 1 && (
         <div>
-          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            Каковы ваши цели?
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Выберите всё подходящее.
-          </p>
+          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">Каковы ваши цели?</h2>
+          <p className="text-sm text-muted-foreground mb-6">Выберите всё подходящее.</p>
 
           <div className="flex flex-wrap gap-2 mb-6">
             {HEALTH_GOAL_OPTIONS.map((opt) => (
@@ -424,7 +429,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 key={opt.value}
                 label={opt.label}
                 selected={form.health_goals.includes(opt.value)}
-                onToggle={() => toggleArray("health_goals", opt.value)}
+                onToggle={() => toggleArray('health_goals', opt.value)}
               />
             ))}
           </div>
@@ -436,10 +441,10 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 <label
                   key={opt.value}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors",
+                    'flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors',
                     form.primary_goal === opt.value
-                      ? "border-bark-300 bg-parchment-200"
-                      : "border-parchment-200 bg-parchment-100 hover:border-bark-100"
+                      ? 'border-bark-300 bg-parchment-200'
+                      : 'border-parchment-200 bg-parchment-100 hover:border-bark-100'
                   )}
                 >
                   <input
@@ -474,8 +479,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   onChange={(e) => setTdee((t) => ({ ...t, age: e.target.value }))}
                   placeholder="Напр. 30"
                   className={cn(
-                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                    'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
                   )}
                 />
               </div>
@@ -491,8 +496,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   onChange={(e) => setTdee((t) => ({ ...t, weight_kg: e.target.value }))}
                   placeholder="Напр. 75"
                   className={cn(
-                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                    'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
                   )}
                 />
               </div>
@@ -508,23 +513,21 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   onChange={(e) => setTdee((t) => ({ ...t, height_cm: e.target.value }))}
                   placeholder="Напр. 175"
                   className={cn(
-                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                    "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                    'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
                   )}
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Пол
-                </label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1">Пол</label>
                 <select
                   value={tdee.sex}
                   onChange={(e) =>
-                    setTdee((t) => ({ ...t, sex: e.target.value as "male" | "female" | "" }))
+                    setTdee((t) => ({ ...t, sex: e.target.value as 'male' | 'female' | '' }))
                   }
                   className={cn(
-                    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                    'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
                   )}
                 >
                   <option value="">Выбрать</option>
@@ -541,14 +544,12 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() =>
-                        setTdee((t) => ({ ...t, activity_level: opt.value }))
-                      }
+                      onClick={() => setTdee((t) => ({ ...t, activity_level: opt.value }))}
                       className={cn(
-                        "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                        'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
                         tdee.activity_level === opt.value
-                          ? "border-sage-300 bg-sage-300 text-primary-foreground"
-                          : "border-parchment-200 bg-parchment-100 text-bark-200 hover:border-sage-200"
+                          ? 'border-sage-300 bg-sage-300 text-primary-foreground'
+                          : 'border-parchment-200 bg-parchment-100 text-bark-200 hover:border-sage-200'
                       )}
                     >
                       {opt.label}
@@ -561,11 +562,11 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <button
             type="button"
-            disabled={form.health_goals.length === 0 || form.primary_goal === ""}
+            disabled={form.health_goals.length === 0 || form.primary_goal === ''}
             onClick={() => setStep(2)}
             className={cn(
-              "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-              "hover:bg-primary/90 transition-colors disabled:opacity-40"
+              'w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+              'hover:bg-primary/90 transition-colors disabled:opacity-40'
             )}
           >
             Продолжить
@@ -591,7 +592,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   key={opt.value}
                   label={opt.label}
                   selected={form.dietary_restrictions.includes(opt.value)}
-                  onToggle={() => toggleArray("dietary_restrictions", opt.value)}
+                  onToggle={() => toggleArray('dietary_restrictions', opt.value)}
                 />
               ))}
             </div>
@@ -605,7 +606,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   key={opt.value}
                   label={opt.label}
                   selected={form.allergens.includes(opt.value)}
-                  onToggle={() => toggleArray("allergens", opt.value)}
+                  onToggle={() => toggleArray('allergens', opt.value)}
                 />
               ))}
             </div>
@@ -613,19 +614,17 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <div className="mb-8">
             <label className="text-sm font-medium text-foreground block mb-1.5">
-              Другие нежелательные ингредиенты{" "}
+              Другие нежелательные ингредиенты{' '}
               <span className="font-normal text-muted-foreground">(необязательно)</span>
             </label>
             <input
               type="text"
               value={form.avoided_ingredients}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, avoided_ingredients: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, avoided_ingredients: e.target.value }))}
               placeholder="Напр. кинза, грибы"
               className={cn(
-                "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-                "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+                'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
               )}
             />
           </div>
@@ -642,8 +641,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               type="button"
               onClick={() => setStep(3)}
               className={cn(
-                "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-                "hover:bg-primary/90 transition-colors"
+                'flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+                'hover:bg-primary/90 transition-colors'
               )}
             >
               Продолжить
@@ -655,16 +654,14 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
       {/* ── Step 3: Medical + Disclaimer ── */}
       {step === 3 && (
         <div>
-          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">
-            Здоровье
-          </h2>
+          <h2 className="font-display text-xl font-bold text-bark-300 mb-1">Здоровье</h2>
           <p className="text-sm text-muted-foreground mb-6">
             Помогает давать более безопасные рекомендации. Данные конфиденциальны.
           </p>
 
           <div className="mb-5">
             <p className="text-sm font-medium text-foreground mb-3">
-              Заболевания{" "}
+              Заболевания{' '}
               <span className="font-normal text-muted-foreground">(выберите все подходящие)</span>
             </p>
             <div className="flex flex-wrap gap-2">
@@ -673,7 +670,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                   key={opt.value}
                   label={opt.label}
                   selected={form.medical_conditions.includes(opt.value)}
-                  onToggle={() => toggleArray("medical_conditions", opt.value)}
+                  onToggle={() => toggleArray('medical_conditions', opt.value)}
                 />
               ))}
             </div>
@@ -682,7 +679,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           {/* TES-154: Granular eating disorder types */}
           <div className="mb-6">
             <p className="text-sm font-medium text-foreground mb-3">
-              Расстройства пищевого поведения{" "}
+              Расстройства пищевого поведения{' '}
               <span className="font-normal text-muted-foreground">(выберите все подходящие)</span>
             </p>
             <div className="flex flex-wrap gap-2">
@@ -709,7 +706,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
 
           <div className="mb-6">
             <label className="text-sm font-medium text-foreground block mb-1.5">
-              Принимаемые препараты{" "}
+              Принимаемые препараты{' '}
               <span className="font-normal text-muted-foreground">(необязательно)</span>
             </label>
             <textarea
@@ -718,8 +715,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               rows={2}
               placeholder="Напр. Метформин, Лизиноприл"
               className={cn(
-                "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none",
-                "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none',
+                'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
               )}
             />
           </div>
@@ -727,7 +724,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           {/* Pregnancy / Breastfeeding */}
           <div className="mb-6">
             <p className="text-sm font-medium text-foreground mb-3">
-              Беременность и кормление{" "}
+              Беременность и кормление{' '}
               <span className="font-normal text-muted-foreground">(необязательно)</span>
             </p>
             <div className="space-y-2">
@@ -756,10 +753,10 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                         type="button"
                         onClick={() => setForm((p) => ({ ...p, pregnancy_trimester: t }))}
                         className={cn(
-                          "rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors",
+                          'rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors',
                           form.pregnancy_trimester === t
-                            ? "border-bark-300 bg-bark-300 text-primary-foreground"
-                            : "border-parchment-200 bg-parchment-100 text-bark-200 hover:border-bark-100"
+                            ? 'border-bark-300 bg-bark-300 text-primary-foreground'
+                            : 'border-parchment-200 bg-parchment-100 text-bark-200 hover:border-bark-100'
                         )}
                       >
                         {t}
@@ -772,9 +769,7 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 <input
                   type="checkbox"
                   checked={form.is_breastfeeding ?? false}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, is_breastfeeding: e.target.checked }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, is_breastfeeding: e.target.checked }))}
                   className="accent-bark-300"
                 />
                 <span className="text-sm text-bark-300">Кормлю грудью</span>
@@ -785,17 +780,15 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
           <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-4 mb-8">
             <p className="text-xs text-muted-foreground leading-relaxed mb-3">
               NutriPlan предоставляет информацию о питании и инструменты для планирования меню
-              исключительно в целях общего оздоровления. Это <strong>не заменяет</strong> консультацию
-              врача, диагностику или лечение. Перед значительными изменениями в питании, особенно при
-              наличии заболеваний, проконсультируйтесь со специалистом.
+              исключительно в целях общего оздоровления. Это <strong>не заменяет</strong>{' '}
+              консультацию врача, диагностику или лечение. Перед значительными изменениями в
+              питании, особенно при наличии заболеваний, проконсультируйтесь со специалистом.
             </p>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.disclaimer_accepted}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, disclaimer_accepted: e.target.checked }))
-                }
+                onChange={(e) => setForm((p) => ({ ...p, disclaimer_accepted: e.target.checked }))}
                 className="mt-0.5 accent-bark-300"
               />
               <span className="text-sm text-bark-300 font-medium">
@@ -820,8 +813,8 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                 setStep(4);
               }}
               className={cn(
-                "flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-                "hover:bg-primary/90 transition-colors disabled:opacity-40"
+                'flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+                'hover:bg-primary/90 transition-colors disabled:opacity-40'
               )}
             >
               Показать план
@@ -842,8 +835,12 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               Ваш персональный план готов
             </h2>
             <p className="text-sm text-muted-foreground">
-              На основе вашей цели:{" "}
-              <strong>{PRIMARY_GOAL_OPTIONS.find((o) => o.value === form.primary_goal)?.label ?? "общее здоровье"}</strong>.
+              На основе вашей цели:{' '}
+              <strong>
+                {PRIMARY_GOAL_OPTIONS.find((o) => o.value === form.primary_goal)?.label ??
+                  'общее здоровье'}
+              </strong>
+              .
             </p>
           </div>
 
@@ -854,35 +851,15 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
             </p>
             {macros ? (
               <div className="space-y-3">
-                <MacroBar
-                  label="Калории"
-                  value={macros.calories}
-                  unit="ккал"
-                  color="bg-bark-300"
-                />
-                <MacroBar
-                  label="Белки"
-                  value={macros.protein_g}
-                  unit="г"
-                  color="bg-sage-300"
-                />
-                <MacroBar
-                  label="Углеводы"
-                  value={macros.carbs_g}
-                  unit="г"
-                  color="bg-amber-400"
-                />
-                <MacroBar
-                  label="Жиры"
-                  value={macros.fat_g}
-                  unit="г"
-                  color="bg-rose-400"
-                />
+                <MacroBar label="Калории" value={macros.calories} unit="ккал" color="bg-bark-300" />
+                <MacroBar label="Белки" value={macros.protein_g} unit="г" color="bg-sage-300" />
+                <MacroBar label="Углеводы" value={macros.carbs_g} unit="г" color="bg-amber-400" />
+                <MacroBar label="Жиры" value={macros.fat_g} unit="г" color="bg-rose-400" />
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                Укажите параметры тела на первом шаге для расчёта калорий, или создайте аккаунт
-                для ручной настройки.
+                Укажите параметры тела на первом шаге для расчёта калорий, или создайте аккаунт для
+                ручной настройки.
               </p>
             )}
           </div>
@@ -894,10 +871,10 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
             </p>
             <ul className="space-y-2">
               {[
-                "ИИ-планировщик недельного меню под ваши цели",
-                "Дневник питания с трекингом макросов",
-                "Распознавание блюд по фото",
-                "Графики прогресса и аналитика",
+                'ИИ-планировщик недельного меню под ваши цели',
+                'Дневник питания с трекингом макросов',
+                'Распознавание блюд по фото',
+                'Графики прогресса и аналитика',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm text-bark-200">
                   <CheckIcon className="h-4 w-4 text-sage-300 shrink-0 mt-0.5" />
@@ -920,19 +897,19 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
               disabled={isPending}
               onClick={handleAuthenticatedSave}
               className={cn(
-                "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-                "hover:bg-primary/90 transition-colors disabled:opacity-40 mb-3"
+                'w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+                'hover:bg-primary/90 transition-colors disabled:opacity-40 mb-3'
               )}
             >
-              {isPending ? "Сохраняем…" : "Сохранить план и перейти в кабинет"}
+              {isPending ? 'Сохраняем…' : 'Сохранить план и перейти в кабинет'}
             </button>
           ) : (
             /* Unauthenticated: CTA to register */
             <Link
               href="/register?from=onboarding"
               className={cn(
-                "block w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground text-center",
-                "hover:bg-primary/90 transition-colors mb-3"
+                'block w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground text-center',
+                'hover:bg-primary/90 transition-colors mb-3'
               )}
             >
               Создать бесплатный аккаунт для сохранения плана

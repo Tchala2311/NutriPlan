@@ -36,50 +36,50 @@ export interface Phase {
 export const PHASES: Phase[] = [
   {
     number: 1,
-    nameEn: "Foundation",
-    nameRu: "Основа",
-    goal: "Базовые привычки, адаптация пищеварения",
+    nameEn: 'Foundation',
+    nameRu: 'Основа',
+    goal: 'Базовые привычки, адаптация пищеварения',
     weeks: [1, 2],
     calorie_target: { training: 2200, rest: 2050 },
     macros: {
       training: { protein_g: 165, carbs_g: 248, fat_g: 61, calories: 2200 },
-      rest:     { protein_g: 165, carbs_g: 231, fat_g: 57, calories: 2050 },
+      rest: { protein_g: 165, carbs_g: 231, fat_g: 57, calories: 2050 },
     },
   },
   {
     number: 2,
-    nameEn: "Cut",
-    nameRu: "Сушка",
-    goal: "Снижение жира, дефицит калорий",
+    nameEn: 'Cut',
+    nameRu: 'Сушка',
+    goal: 'Снижение жира, дефицит калорий',
     weeks: [3, 4],
     calorie_target: { training: 2000, rest: 1800 },
     macros: {
       training: { protein_g: 175, carbs_g: 175, fat_g: 60, calories: 2000 },
-      rest:     { protein_g: 175, carbs_g: 158, fat_g: 53, calories: 1800 },
+      rest: { protein_g: 175, carbs_g: 158, fat_g: 53, calories: 1800 },
     },
   },
   {
     number: 3,
-    nameEn: "Performance",
-    nameRu: "Прогресс",
-    goal: "Сохранение мышц, углеводная загрузка",
+    nameEn: 'Performance',
+    nameRu: 'Прогресс',
+    goal: 'Сохранение мышц, углеводная загрузка',
     weeks: [5, 6],
     calorie_target: { training: 2200, rest: 2000 },
     macros: {
       training: { protein_g: 165, carbs_g: 275, fat_g: 49, calories: 2200 },
-      rest:     { protein_g: 165, carbs_g: 250, fat_g: 44, calories: 2000 },
+      rest: { protein_g: 165, carbs_g: 250, fat_g: 44, calories: 2000 },
     },
   },
   {
     number: 4,
-    nameEn: "Maintenance",
-    nameRu: "Поддержание",
-    goal: "Устойчивый долгосрочный рацион",
+    nameEn: 'Maintenance',
+    nameRu: 'Поддержание',
+    goal: 'Устойчивый долгосрочный рацион',
     weeks: [7, 8],
     calorie_target: { training: 2100, rest: 1950 },
     macros: {
       training: { protein_g: 158, carbs_g: 210, fat_g: 70, calories: 2100 },
-      rest:     { protein_g: 158, carbs_g: 195, fat_g: 65, calories: 1950 },
+      rest: { protein_g: 158, carbs_g: 195, fat_g: 65, calories: 1950 },
     },
   },
 ];
@@ -92,7 +92,7 @@ export function toGlobalWeek(phaseNumber: number, weekInPhase: 1 | 2): number {
 /** Convert global week (1–8) → { phase, weekInPhase }. */
 export function fromGlobalWeek(week: number): { phase: Phase; weekInPhase: 1 | 2 } {
   const phaseIndex = Math.floor((week - 1) / 2);
-  const weekInPhase = ((week - 1) % 2 + 1) as 1 | 2;
+  const weekInPhase = (((week - 1) % 2) + 1) as 1 | 2;
   return { phase: PHASES[phaseIndex] ?? PHASES[0], weekInPhase };
 }
 
@@ -134,15 +134,15 @@ export function isCatalogTrainingDay(day: number, userDays?: Set<number>): boole
   return (userDays ?? DEFAULT_TRAINING_DAYS).has(day);
 }
 
-export type DayType = "training" | "rest";
+export type DayType = 'training' | 'rest';
 
-export const DAY_NAMES_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-export const MEAL_TYPES = ["breakfast", "lunch", "snack", "dinner"] as const;
+export const DAY_NAMES_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+export const MEAL_TYPES = ['breakfast', 'lunch', 'snack', 'dinner'] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
 
 export const MEAL_LABEL_RU: Record<MealType, string> = {
-  breakfast: "Завтрак",
-  lunch: "Обед",
-  snack: "Перекус",
-  dinner: "Ужин",
+  breakfast: 'Завтрак',
+  lunch: 'Обед',
+  snack: 'Перекус',
+  dinner: 'Ужин',
 };

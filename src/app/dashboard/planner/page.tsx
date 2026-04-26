@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import { isPremium } from "@/lib/subscription";
-import { UpgradePrompt } from "@/components/subscription/UpgradePrompt";
-import { createClient, getUser } from "@/lib/supabase/server";
+import type { Metadata } from 'next';
+import { isPremium } from '@/lib/subscription';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
+import { createClient, getUser } from '@/lib/supabase/server';
 import {
   MultiPhasePlannerClient,
   type CatalogMeal,
   type ShoppingItem,
   type UserPlanConfig,
   type UserGoalContext,
-} from "@/components/planner/MultiPhasePlannerClient";
-import { getUserSettings } from "@/app/dashboard/settings/actions";
+} from '@/components/planner/MultiPhasePlannerClient';
+import { getUserSettings } from '@/app/dashboard/settings/actions';
 
-export const metadata: Metadata = { title: "Планировщик питания — NutriPlan" };
+export const metadata: Metadata = { title: 'Планировщик питания — NutriPlan' };
 
 export default async function MealPlannerPage() {
   const premium = await isPremium();
@@ -21,7 +21,9 @@ export default async function MealPlannerPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="font-display text-2xl font-bold text-bark-300">Планировщик питания</h1>
-          <p className="mt-1 text-sm text-muted-foreground">8-недельная программа питания с учётом тренировок.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            8-недельная программа питания с учётом тренировок.
+          </p>
         </div>
         <UpgradePrompt
           feature="Планировщик питания"
@@ -32,7 +34,9 @@ export default async function MealPlannerPage() {
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await getUser();
+  const {
+    data: { user },
+  } = await getUser();
 
   if (!user) {
     return null;
@@ -42,35 +46,38 @@ export default async function MealPlannerPage() {
   const trainingDays = userSettings.training_days;
 
   // Load week 1 (Phase 1, Week 1) as initial data
-  const [mealsResult, completionsResult, shoppingResult, configResult, haResult] = await Promise.all([
-    supabase
-      .from("meals")
-      .select("id, day, meal_type, name, description, kcal, protein_g, carbs_g, fat_g, is_batch")
-      .eq("week", 1)
-      .order("day")
-      .order("meal_type"),
-    supabase
-      .from("catalog_completions")
-      .select("day, meal_type")
-      .eq("user_id", user.id)
-      .eq("week", 1),
-    supabase
-      .from("shopping_items")
-      .select("category, category_order, item_name, quantity_per_person, shopping_window")
-      .eq("week", 1)
-      .order("category_order")
-      .order("item_name"),
-    supabase
-      .from("user_plan_config")
-      .select("tdee_kcal, reference_tdee, plan_start_date")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("health_assessments")
-      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-  ]);
+  const [mealsResult, completionsResult, shoppingResult, configResult, haResult] =
+    await Promise.all([
+      supabase
+        .from('meals')
+        .select('id, day, meal_type, name, description, kcal, protein_g, carbs_g, fat_g, is_batch')
+        .eq('week', 1)
+        .order('day')
+        .order('meal_type'),
+      supabase
+        .from('catalog_completions')
+        .select('day, meal_type')
+        .eq('user_id', user.id)
+        .eq('week', 1),
+      supabase
+        .from('shopping_items')
+        .select('category, category_order, item_name, quantity_per_person, shopping_window')
+        .eq('week', 1)
+        .order('category_order')
+        .order('item_name'),
+      supabase
+        .from('user_plan_config')
+        .select('tdee_kcal, reference_tdee, plan_start_date')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('health_assessments')
+        .select(
+          'primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag'
+        )
+        .eq('user_id', user.id)
+        .maybeSingle(),
+    ]);
 
   const initialMeals: CatalogMeal[] = (mealsResult.data ?? []) as CatalogMeal[];
   const initialCompletions: string[] = (completionsResult.data ?? []).map(
@@ -81,7 +88,7 @@ export default async function MealPlannerPage() {
 
   const ha = haResult.data;
   const goalContext: UserGoalContext = {
-    primaryGoal: ha?.primary_goal ?? "general_wellness",
+    primaryGoal: ha?.primary_goal ?? 'general_wellness',
     secondaryGoals: ha?.secondary_goals ?? [],
     dietaryRestrictions: ha?.dietary_restrictions ?? [],
     allergens: ha?.allergens ?? [],

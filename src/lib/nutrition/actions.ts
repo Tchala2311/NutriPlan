@@ -3,16 +3,14 @@
  * These power the safety alert, trend warning, and plateau detection endpoints.
  */
 
-import { createClient } from "@/lib/supabase/server";
-import type { DailyNutrition } from "./detection";
+import { createClient } from '@/lib/supabase/server';
+import type { DailyNutrition } from './detection';
 
 /**
  * Fetch nutrition logs for a date range, aggregated by day.
  * Defaults to last 7 days when window is omitted.
  */
-export async function getNutritionSummary(
-  windowDays: number = 7
-): Promise<DailyNutrition[]> {
+export async function getNutritionSummary(windowDays: number = 7): Promise<DailyNutrition[]> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,16 +20,16 @@ export async function getNutritionSummary(
   const today = new Date();
   const fromDate = new Date(today);
   fromDate.setDate(fromDate.getDate() - (windowDays - 1));
-  const fromStr = fromDate.toISOString().split("T")[0];
-  const todayStr = today.toISOString().split("T")[0];
+  const fromStr = fromDate.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0];
 
   const { data: entries, error } = await supabase
-    .from("nutrition_logs")
-    .select("logged_date, calories, protein_g, carbs_g, fat_g")
-    .eq("user_id", user.id)
-    .gte("logged_date", fromStr)
-    .lte("logged_date", todayStr)
-    .order("logged_date", { ascending: true });
+    .from('nutrition_logs')
+    .select('logged_date, calories, protein_g, carbs_g, fat_g')
+    .eq('user_id', user.id)
+    .gte('logged_date', fromStr)
+    .lte('logged_date', todayStr)
+    .order('logged_date', { ascending: true });
 
   if (error || !entries) return [];
 
@@ -58,7 +56,7 @@ export async function getNutritionSummary(
   for (let i = windowDays - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = d.toISOString().split('T')[0];
     const agg = byDate.get(dateStr);
     result.push(
       agg || {
@@ -93,16 +91,16 @@ export async function getWeightLogs(windowDays: number = 7): Promise<
   const today = new Date();
   const fromDate = new Date(today);
   fromDate.setDate(fromDate.getDate() - (windowDays - 1));
-  const fromStr = fromDate.toISOString().split("T")[0];
-  const todayStr = today.toISOString().split("T")[0];
+  const fromStr = fromDate.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0];
 
   const { data: logs, error } = await supabase
-    .from("weight_logs")
-    .select("logged_date, weight_kg")
-    .eq("user_id", user.id)
-    .gte("logged_date", fromStr)
-    .lte("logged_date", todayStr)
-    .order("logged_date", { ascending: true });
+    .from('weight_logs')
+    .select('logged_date, weight_kg')
+    .eq('user_id', user.id)
+    .gte('logged_date', fromStr)
+    .lte('logged_date', todayStr)
+    .order('logged_date', { ascending: true });
 
   if (error || !logs) return [];
 
@@ -123,11 +121,11 @@ export async function logWeight(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!user) return { success: false, error: 'Unauthorized' };
 
-  const logged_date = date || new Date().toISOString().split("T")[0];
+  const logged_date = date || new Date().toISOString().split('T')[0];
 
-  const { error } = await supabase.from("weight_logs").insert({
+  const { error } = await supabase.from('weight_logs').insert({
     user_id: user.id,
     logged_date,
     weight_kg,

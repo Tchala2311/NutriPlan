@@ -5,14 +5,14 @@
  * Used by client components after payment return.
  */
 
-import { NextResponse } from "next/server";
-import { getUserSubscription } from "@/lib/subscription";
+import { NextResponse } from 'next/server';
+import { getUserSubscription } from '@/lib/subscription';
 
 export async function GET() {
   const sub = await getUserSubscription();
 
   if (!sub) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   return NextResponse.json({

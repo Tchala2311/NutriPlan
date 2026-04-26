@@ -6,9 +6,9 @@
  * Returns: { insight: string }
  */
 
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { getOnboardingInsight, UserProfile } from "@/lib/gigachat/client";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getOnboardingInsight, UserProfile } from '@/lib/gigachat/client';
 
 export async function POST() {
   const supabase = await createClient();
@@ -17,19 +17,19 @@ export async function POST() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data: assessment } = await supabase
-    .from("health_assessments")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+    .from('health_assessments')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
   if (!assessment) {
-    return NextResponse.json({ error: "No health assessment found" }, { status: 404 });
+    return NextResponse.json({ error: 'No health assessment found' }, { status: 404 });
   }
 
   const profile: UserProfile = {
@@ -43,11 +43,11 @@ export async function POST() {
     eating_disorder_binge: assessment.eating_disorder_binge ?? false,
     eating_disorder_orthorexia: assessment.eating_disorder_orthorexia ?? false,
     secondary_goals: assessment.secondary_goals ?? [],
-    tone_mode: "подробный",
+    tone_mode: 'подробный',
     // TES-150: Pregnancy/breastfeeding for safety restrictions
-    is_pregnant:         assessment.is_pregnant         ?? false,
+    is_pregnant: assessment.is_pregnant ?? false,
     pregnancy_trimester: (assessment.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
-    is_breastfeeding:    assessment.is_breastfeeding    ?? false,
+    is_breastfeeding: assessment.is_breastfeeding ?? false,
     // Anthropometric fields populated from assessment if stored
     age: assessment.age ?? undefined,
     sex: assessment.sex ?? undefined,
@@ -62,7 +62,7 @@ export async function POST() {
     const insight = await getOnboardingInsight(profile);
     return NextResponse.json({ insight });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

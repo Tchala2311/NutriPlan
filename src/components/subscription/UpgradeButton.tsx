@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface UpgradeButtonProps {
   className?: string;
-  variant?: "dark" | "light";
+  variant?: 'dark' | 'light';
 }
 
-export function UpgradeButton({ className, variant = "dark" }: UpgradeButtonProps) {
+export function UpgradeButton({ className, variant = 'dark' }: UpgradeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,15 +16,15 @@ export function UpgradeButton({ className, variant = "dark" }: UpgradeButtonProp
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/subscribe", { method: "POST" });
+      const res = await fetch('/api/subscribe', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Что-то пошло не так. Попробуйте снова.");
+        setError(data.error ?? 'Что-то пошло не так. Попробуйте снова.');
         return;
       }
       window.location.href = data.confirmationUrl;
     } catch {
-      setError("Не удалось подключиться к платёжной системе.");
+      setError('Не удалось подключиться к платёжной системе.');
     } finally {
       setLoading(false);
     }
@@ -36,16 +36,16 @@ export function UpgradeButton({ className, variant = "dark" }: UpgradeButtonProp
         onClick={handleUpgrade}
         disabled={loading}
         className={cn(
-          "w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          "disabled:opacity-60 disabled:cursor-not-allowed",
-          variant === "dark"
-            ? "bg-parchment-100 text-bark-300 hover:bg-parchment-200"
-            : "bg-bark-300 text-white hover:bg-bark-400",
+          'w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
+          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'disabled:opacity-60 disabled:cursor-not-allowed',
+          variant === 'dark'
+            ? 'bg-parchment-100 text-bark-300 hover:bg-parchment-200'
+            : 'bg-bark-300 text-white hover:bg-bark-400',
           className
         )}
       >
-        {loading ? "Перенаправление…" : "Перейти на Premium"}
+        {loading ? 'Перенаправление…' : 'Перейти на Premium'}
       </button>
       {error && <p className="text-xs text-red-400 text-center">{error}</p>}
     </div>

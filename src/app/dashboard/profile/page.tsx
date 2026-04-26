@@ -1,35 +1,37 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { getUser, createClient } from "@/lib/supabase/server";
-import { GoalSettingsForm } from "@/components/dashboard/GoalSettingsForm";
-import { TrendsSection } from "@/components/dashboard/TrendsSection";
-import { DisplayNameForm } from "@/components/dashboard/DisplayNameForm";
-import { UserPreferencesForm } from "@/components/dashboard/UserPreferencesForm";
-import { getUserGoals, getTrendsData } from "./actions";
-import { getUserSubscription } from "@/lib/subscription";
-import { UpgradeButton } from "@/components/subscription/UpgradeButton";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { getUser, createClient } from '@/lib/supabase/server';
+import { GoalSettingsForm } from '@/components/dashboard/GoalSettingsForm';
+import { TrendsSection } from '@/components/dashboard/TrendsSection';
+import { DisplayNameForm } from '@/components/dashboard/DisplayNameForm';
+import { UserPreferencesForm } from '@/components/dashboard/UserPreferencesForm';
+import { getUserGoals, getTrendsData } from './actions';
+import { getUserSubscription } from '@/lib/subscription';
+import { UpgradeButton } from '@/components/subscription/UpgradeButton';
 
-export const metadata: Metadata = { title: "Профиль и цели — NutriPlan" };
+export const metadata: Metadata = { title: 'Профиль и цели — NutriPlan' };
 
 export default async function ProfilePage() {
-  const { data: { user } } = await getUser();
+  const {
+    data: { user },
+  } = await getUser();
 
   const supabase = await createClient();
-  const email = user?.email ?? "";
+  const email = user?.email ?? '';
   const fullName = user?.user_metadata?.full_name as string | undefined;
   const goals = await getUserGoals();
   const [sub, trends, settingsRow, healthRow] = await Promise.all([
     getUserSubscription(),
     getTrendsData(goals),
     supabase
-      .from("user_settings")
-      .select("training_days")
-      .eq("user_id", user?.id ?? "")
+      .from('user_settings')
+      .select('training_days')
+      .eq('user_id', user?.id ?? '')
       .maybeSingle(),
     supabase
-      .from("health_assessments")
-      .select("dietary_restrictions, allergens")
-      .eq("user_id", user?.id ?? "")
+      .from('health_assessments')
+      .select('dietary_restrictions, allergens')
+      .eq('user_id', user?.id ?? '')
       .maybeSingle(),
   ]);
 
@@ -37,12 +39,12 @@ export default async function ProfilePage() {
   const dietaryRestrictions = (healthRow.data?.dietary_restrictions as string[] | null) ?? [];
   const allergens = (healthRow.data?.allergens as string[] | null) ?? [];
 
-  const isPremium = sub?.plan === "premium" && sub?.status === "active";
+  const isPremium = sub?.plan === 'premium' && sub?.status === 'active';
   const periodEnd = sub?.current_period_end
-    ? new Date(sub.current_period_end).toLocaleDateString("ru-RU", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+    ? new Date(sub.current_period_end).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       })
     : null;
 
@@ -57,7 +59,9 @@ export default async function ProfilePage() {
 
       {/* Account info */}
       <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-4">Аккаунт</h2>
+        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-4">
+          Аккаунт
+        </h2>
         <dl className="space-y-3">
           <DisplayNameForm initialName={fullName} />
           <div className="flex justify-between text-sm">
@@ -69,7 +73,9 @@ export default async function ProfilePage() {
 
       {/* Subscription */}
       <div className="rounded-xl border border-parchment-200 bg-parchment-100 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-4">Подписка</h2>
+        <h2 className="text-sm font-semibold text-bark-300 uppercase tracking-wide mb-4">
+          Подписка
+        </h2>
 
         {isPremium ? (
           <div className="flex items-start justify-between gap-4">
@@ -79,13 +85,17 @@ export default async function ProfilePage() {
                   Premium
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {sub?.status === "active" ? "активна" : sub?.status === "cancelled" ? "отменена" : sub?.status === "pending" ? "ожидание" : sub?.status ?? ""}
+                  {sub?.status === 'active'
+                    ? 'активна'
+                    : sub?.status === 'cancelled'
+                      ? 'отменена'
+                      : sub?.status === 'pending'
+                        ? 'ожидание'
+                        : (sub?.status ?? '')}
                 </span>
               </div>
               {periodEnd && (
-                <p className="text-sm text-muted-foreground">
-                  Действует до {periodEnd}
-                </p>
+                <p className="text-sm text-muted-foreground">Действует до {periodEnd}</p>
               )}
             </div>
           </div>

@@ -1,19 +1,23 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { generateWeeklyMealPlan, type UserProfile, type MealRecipeRaw } from "@/lib/gigachat/client";
-import { getMealPlanPrompt, type MealPlanPromptParams } from "@/lib/planner/goal-prompts";
-import { calculateTDEE, calculateMacros } from "@/lib/nutrition/tdee";
-import { canAccessPremiumFeatures } from "@/lib/subscription";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  generateWeeklyMealPlan,
+  type UserProfile,
+  type MealRecipeRaw,
+} from '@/lib/gigachat/client';
+import { getMealPlanPrompt, type MealPlanPromptParams } from '@/lib/planner/goal-prompts';
+import { calculateTDEE, calculateMacros } from '@/lib/nutrition/tdee';
+import { canAccessPremiumFeatures } from '@/lib/subscription';
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
+const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
 
 function per100g(value: number, estimatedWeightG: number): number {
   return Math.round((value / estimatedWeightG) * 100 * 10) / 10;
 }
 
 function buildRecipeRow(meal: MealRecipeRaw, mealType: string, userId: string) {
-  const weightEstimate = mealType === "snacks" ? 150 : 300;
+  const weightEstimate = mealType === 'snacks' ? 150 : 300;
   return {
     title: meal.title,
     ingredients: meal.ingredients,
@@ -31,30 +35,30 @@ function buildRecipeRow(meal: MealRecipeRaw, mealType: string, userId: string) {
     dietary_tags: meal.tags ?? [],
     goal_tags: [],
     substitutions: meal.substitutions ?? [],
-    source: "gigachat",
+    source: 'gigachat',
     created_by_user_id: userId,
   };
 }
 
 function getWeekStart(dateStr?: string): string {
-  const d = dateStr ? new Date(dateStr + "T00:00:00") : new Date();
+  const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 }
 
 function getWeekEnd(weekStart: string): string {
-  const d = new Date(weekStart + "T00:00:00");
+  const d = new Date(weekStart + 'T00:00:00');
   d.setDate(d.getDate() + 6);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 }
 
 function getWeekDates(weekStart: string): string[] {
   const dates: string[] = [];
-  const d = new Date(weekStart + "T00:00:00");
+  const d = new Date(weekStart + 'T00:00:00');
   for (let i = 0; i < 7; i++) {
-    dates.push(d.toISOString().split("T")[0]);
+    dates.push(d.toISOString().split('T')[0]);
     d.setDate(d.getDate() + 1);
   }
   return dates;
@@ -68,32 +72,34 @@ interface MealSlot {
 
 export async function GET(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // Paywall: block redo checks after trial ends
   const hasAccess = await canAccessPremiumFeatures();
   if (!hasAccess) {
     return NextResponse.json(
-      { error: "Trial expired. Upgrade to premium to continue." },
+      { error: 'Trial expired. Upgrade to premium to continue.' },
       { status: 403 }
     );
   }
 
   const url = new URL(req.url);
-  const weekNumber = url.searchParams.get("week_number");
+  const weekNumber = url.searchParams.get('week_number');
   if (!weekNumber) {
-    return NextResponse.json({ error: "Missing week_number parameter" }, { status: 400 });
+    return NextResponse.json({ error: 'Missing week_number parameter' }, { status: 400 });
   }
 
   const { data: redos, error } = await supabase
-    .from("meal_redos")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("week_number", parseInt(weekNumber));
+    .from('meal_redos')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('week_number', parseInt(weekNumber));
 
   if (error) {
-    return NextResponse.json({ error: "Failed to fetch redo count" }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch redo count' }, { status: 500 });
   }
 
   const count = redos?.length ?? 0;
@@ -108,14 +114,16 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // Paywall: block meal redos after trial ends
   const hasAccess = await canAccessPremiumFeatures();
   if (!hasAccess) {
     return NextResponse.json(
-      { error: "Trial expired. Upgrade to premium to continue." },
+      { error: 'Trial expired. Upgrade to premium to continue.' },
       { status: 403 }
     );
   }
@@ -123,7 +131,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const { week_number, redo_type, affected_date, reason, affected_meal_type } = body as {
     week_number: number;
-    redo_type: "individual" | "daily" | "weekly";
+    redo_type: 'individual' | 'daily' | 'weekly';
     affected_date: string;
     reason: string;
     affected_meal_type?: string;
@@ -131,40 +139,38 @@ export async function POST(req: Request) {
 
   if (!week_number || !redo_type || !affected_date) {
     return NextResponse.json(
-      { error: "Missing week_number, redo_type, or affected_date" },
+      { error: 'Missing week_number, redo_type, or affected_date' },
       { status: 400 }
     );
   }
 
   // Count existing redos for this week
   const { data: existingRedos, error: countError } = await supabase
-    .from("meal_redos")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("week_number", week_number);
+    .from('meal_redos')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('week_number', week_number);
 
   if (countError) {
-    return NextResponse.json({ error: "Failed to check redo limit" }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to check redo limit' }, { status: 500 });
   }
 
   const redoCount = existingRedos?.length ?? 0;
   const requiresPayment = redoCount >= 3;
 
   // Record redo in database
-  const { error: insertError } = await supabase
-    .from("meal_redos")
-    .insert({
-      user_id: user.id,
-      week_number,
-      redo_type,
-      affected_date,
-      reason,
-      paid: !requiresPayment, // true=free, false=needs payment
-    });
+  const { error: insertError } = await supabase.from('meal_redos').insert({
+    user_id: user.id,
+    week_number,
+    redo_type,
+    affected_date,
+    reason,
+    paid: !requiresPayment, // true=free, false=needs payment
+  });
 
   if (insertError) {
-    console.error("Redo insert error:", insertError);
-    return NextResponse.json({ error: "Failed to record redo request" }, { status: 500 });
+    console.error('Redo insert error:', insertError);
+    return NextResponse.json({ error: 'Failed to record redo request' }, { status: 500 });
   }
 
   // If payment required, return early without regenerating
@@ -183,25 +189,25 @@ export async function POST(req: Request) {
   // Load user profile
   const [haRes, goalsRes, settingsRes, planRes] = await Promise.all([
     supabase
-      .from("health_assessments")
-      .select("primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding")
-      .eq("user_id", user.id)
+      .from('health_assessments')
+      .select(
+        'primary_goal, secondary_goals, dietary_restrictions, allergens, avoided_ingredients, medical_conditions, eating_disorder_flag, eating_disorder_anorexia_restrictive, eating_disorder_binge, eating_disorder_orthorexia, is_pregnant, pregnancy_trimester, is_breastfeeding'
+      )
+      .eq('user_id', user.id)
       .maybeSingle(),
     supabase
-      .from("user_goals")
-      .select("daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g, weight_kg, height_cm, age, sex, activity_level")
-      .eq("user_id", user.id)
+      .from('user_goals')
+      .select(
+        'daily_calorie_target, protein_target_g, carbs_target_g, fat_target_g, weight_kg, height_cm, age, sex, activity_level'
+      )
+      .eq('user_id', user.id)
       .maybeSingle(),
+    supabase.from('user_settings').select('budget_preference').eq('user_id', user.id).maybeSingle(),
     supabase
-      .from("user_settings")
-      .select("budget_preference")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("meal_plans")
-      .select("id, slots")
-      .eq("user_id", user.id)
-      .eq("week_start_date", weekStart)
+      .from('meal_plans')
+      .select('id, slots')
+      .eq('user_id', user.id)
+      .eq('week_start_date', weekStart)
       .maybeSingle(),
   ]);
 
@@ -211,10 +217,10 @@ export async function POST(req: Request) {
   const existingPlan = planRes.data;
 
   if (!existingPlan) {
-    return NextResponse.json({ error: "No meal plan found for this week" }, { status: 404 });
+    return NextResponse.json({ error: 'No meal plan found for this week' }, { status: 404 });
   }
 
-  const primaryGoal = ha?.primary_goal ?? "general_wellness";
+  const primaryGoal = ha?.primary_goal ?? 'general_wellness';
   let tdeeKcal = goals?.daily_calorie_target ?? 2000;
   let proteinG = goals?.protein_target_g ?? 120;
   let carbsG = goals?.carbs_target_g ?? 200;
@@ -222,17 +228,21 @@ export async function POST(req: Request) {
 
   if (goals) {
     const computedTDEE = calculateTDEE({
-      weight_kg:           goals.weight_kg           ?? undefined,
-      height_cm:           goals.height_cm           ?? undefined,
-      age:                 goals.age                 ?? undefined,
-      sex:                 (goals.sex ?? undefined) as "male" | "female" | undefined,
-      activity_level:      goals.activity_level      ?? "moderate",
-      is_pregnant:         ha?.is_pregnant,
+      weight_kg: goals.weight_kg ?? undefined,
+      height_cm: goals.height_cm ?? undefined,
+      age: goals.age ?? undefined,
+      sex: (goals.sex ?? undefined) as 'male' | 'female' | undefined,
+      activity_level: goals.activity_level ?? 'moderate',
+      is_pregnant: ha?.is_pregnant,
       pregnancy_trimester: (ha?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
-      is_breastfeeding:    ha?.is_breastfeeding,
+      is_breastfeeding: ha?.is_breastfeeding,
     });
     if (computedTDEE) {
-      const m = calculateMacros(computedTDEE, primaryGoal, (goals.sex ?? undefined) as "male" | "female" | undefined);
+      const m = calculateMacros(
+        computedTDEE,
+        primaryGoal,
+        (goals.sex ?? undefined) as 'male' | 'female' | undefined
+      );
       tdeeKcal = m.daily_calorie_target;
       proteinG = m.protein_target_g;
       carbsG = m.carbs_target_g;
@@ -253,9 +263,9 @@ export async function POST(req: Request) {
     eating_disorder_binge: ha?.eating_disorder_binge ?? false,
     eating_disorder_orthorexia: ha?.eating_disorder_orthorexia ?? false,
     // TES-150: Pregnancy/breastfeeding for safety restrictions
-    is_pregnant:         ha?.is_pregnant            ?? false,
+    is_pregnant: ha?.is_pregnant ?? false,
     pregnancy_trimester: (ha?.pregnancy_trimester ?? undefined) as 1 | 2 | 3 | undefined,
-    is_breastfeeding:    ha?.is_breastfeeding       ?? false,
+    is_breastfeeding: ha?.is_breastfeeding ?? false,
     tdee_kcal: tdeeKcal,
     target_protein_g: proteinG,
     target_carbs_g: carbsG,
@@ -266,7 +276,7 @@ export async function POST(req: Request) {
   const weekDates = getWeekDates(weekStart);
 
   const promptParams: MealPlanPromptParams = {
-    primaryGoal: userProfile.primary_goal ?? "general_wellness",
+    primaryGoal: userProfile.primary_goal ?? 'general_wellness',
     tdeeKcal: userProfile.tdee_kcal ?? 2000,
     targetProteinG: userProfile.target_protein_g ?? 120,
     targetCarbsG: userProfile.target_carbs_g ?? 200,
@@ -279,8 +289,8 @@ export async function POST(req: Request) {
     weekStart,
     weekEnd,
     phaseNumber: 1,
-    phaseName: "Phase 1",
-    budgetPreference: (settings?.budget_preference as "low" | "moderate" | "high") ?? "moderate",
+    phaseName: 'Phase 1',
+    budgetPreference: (settings?.budget_preference as 'low' | 'moderate' | 'high') ?? 'moderate',
   };
 
   const goalPrompt = getMealPlanPrompt(promptParams);
@@ -290,23 +300,23 @@ export async function POST(req: Request) {
   try {
     weekPlan = await generateWeeklyMealPlan(userProfile, weekStart, weekEnd, goalPrompt);
   } catch (err) {
-    console.error("GigaChat meal plan error:", err);
-    return NextResponse.json({ error: "AI generation failed" }, { status: 502 });
+    console.error('GigaChat meal plan error:', err);
+    return NextResponse.json({ error: 'AI generation failed' }, { status: 502 });
   }
 
   // Determine which dates/meals to update
   const datesToUpdate = new Set<string>();
   const mealTypesToUpdate = new Set<string>();
 
-  if (redo_type === "individual") {
+  if (redo_type === 'individual') {
     datesToUpdate.add(affected_date);
-    mealTypesToUpdate.add(affected_meal_type ?? "breakfast");
-  } else if (redo_type === "daily") {
+    mealTypesToUpdate.add(affected_meal_type ?? 'breakfast');
+  } else if (redo_type === 'daily') {
     datesToUpdate.add(affected_date);
     for (const mt of MEAL_TYPES) {
       mealTypesToUpdate.add(mt);
     }
-  } else if (redo_type === "weekly") {
+  } else if (redo_type === 'weekly') {
     for (const d of weekDates) {
       datesToUpdate.add(d);
     }
@@ -335,13 +345,13 @@ export async function POST(req: Request) {
 
       const recipeRow = buildRecipeRow(mealData, mealType, user.id);
       const { data: inserted, error } = await admin
-        .from("recipes")
+        .from('recipes')
         .insert(recipeRow)
-        .select("id")
+        .select('id')
         .single();
 
       if (error || !inserted) {
-        console.error("Recipe insert error:", error);
+        console.error('Recipe insert error:', error);
         continue;
       }
 
@@ -351,13 +361,13 @@ export async function POST(req: Request) {
 
   // Update meal plan
   const { error: updateError } = await admin
-    .from("meal_plans")
+    .from('meal_plans')
     .update({ slots })
-    .eq("id", existingPlan.id);
+    .eq('id', existingPlan.id);
 
   if (updateError) {
-    console.error("Meal plan update error:", updateError);
-    return NextResponse.json({ error: "Failed to save regenerated meals" }, { status: 500 });
+    console.error('Meal plan update error:', updateError);
+    return NextResponse.json({ error: 'Failed to save regenerated meals' }, { status: 500 });
   }
 
   return NextResponse.json({

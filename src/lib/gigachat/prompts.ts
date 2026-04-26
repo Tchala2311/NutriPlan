@@ -5,7 +5,15 @@
  */
 
 // Type for week recipe context in food photo analysis
-type WeekRecipe = { id: string; title: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; ingredients: string[] };
+type WeekRecipe = {
+  id: string;
+  title: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  ingredients: string[];
+};
 
 /**
  * Clinically documented allergen cross-reaction families.
@@ -14,22 +22,30 @@ type WeekRecipe = { id: string; title: string; calories: number; protein_g: numb
  */
 const CROSS_REACTION_MAP: Record<string, string[]> = {
   // Latex-fruit syndrome
-  latex:     ["авокадо", "банан", "киви", "каштан", "папайя", "манго"],
+  latex: ['авокадо', 'банан', 'киви', 'каштан', 'папайя', 'манго'],
   // Birch pollen OAS (oral allergy syndrome)
-  birch_pollen: ["яблоко (сырое)", "сельдерей (сырой)", "морковь (сырая)", "фундук", "персик", "слива", "груша (сырая)"],
+  birch_pollen: [
+    'яблоко (сырое)',
+    'сельдерей (сырой)',
+    'морковь (сырая)',
+    'фундук',
+    'персик',
+    'слива',
+    'груша (сырая)',
+  ],
   // Shellfish: crustaceans ↔ molluscs
-  shellfish: ["креветки", "краб", "омар", "лангуст", "кальмар", "мидии", "устрицы", "гребешки"],
-  shrimp:    ["краб", "омар", "кальмар", "мидии"],
-  crab:      ["креветки", "омар", "кальмар"],
+  shellfish: ['креветки', 'краб', 'омар', 'лангуст', 'кальмар', 'мидии', 'устрицы', 'гребешки'],
+  shrimp: ['краб', 'омар', 'кальмар', 'мидии'],
+  crab: ['креветки', 'омар', 'кальмар'],
   // Tree nut cross-reactivity pairs
-  cashew:    ["фисташки"],
-  pistachio: ["кешью"],
-  walnut:    ["пекан"],
-  pecan:     ["грецкий орех"],
+  cashew: ['фисташки'],
+  pistachio: ['кешью'],
+  walnut: ['пекан'],
+  pecan: ['грецкий орех'],
   // Cow's milk ↔ goat/sheep milk (70–80% cross-reactivity)
-  milk:      ["козье молоко", "овечье молоко", "казеин"],
+  milk: ['козье молоко', 'овечье молоко', 'казеин'],
   // Wheat gluten family
-  wheat:     ["рожь", "ячмень", "полба", "камут"],
+  wheat: ['рожь', 'ячмень', 'полба', 'камут'],
 };
 
 /**
@@ -37,7 +53,7 @@ const CROSS_REACTION_MAP: Record<string, string[]> = {
  * Returns empty string when no cross-reactions apply.
  */
 export function buildCrossReactionWarnings(allergens: string[]): string {
-  if (!allergens || allergens.length === 0) return "";
+  if (!allergens || allergens.length === 0) return '';
 
   const warnings: string[] = [];
   for (const allergen of allergens) {
@@ -45,14 +61,14 @@ export function buildCrossReactionWarnings(allergens: string[]): string {
     const crossReactive = CROSS_REACTION_MAP[key];
     if (crossReactive && crossReactive.length > 0) {
       warnings.push(
-        `- Аллергия на "${allergen}": также исключай перекрёстно-реактивные продукты: ${crossReactive.join(", ")}`
+        `- Аллергия на "${allergen}": также исключай перекрёстно-реактивные продукты: ${crossReactive.join(', ')}`
       );
     }
   }
 
-  if (warnings.length === 0) return "";
+  if (warnings.length === 0) return '';
 
-  return `\n\nПЕРЕКРЁСТНЫЕ АЛЛЕРГИЧЕСКИЕ РЕАКЦИИ (строго соблюдать):\n${warnings.join("\n")}`;
+  return `\n\nПЕРЕКРЁСТНЫЕ АЛЛЕРГИЧЕСКИЕ РЕАКЦИИ (строго соблюдать):\n${warnings.join('\n')}`;
 }
 
 /**
@@ -63,7 +79,7 @@ export function buildPregnancyRestrictions(
   isPregnant?: boolean,
   isBreastfeeding?: boolean
 ): string {
-  if (!isPregnant && !isBreastfeeding) return "";
+  if (!isPregnant && !isBreastfeeding) return '';
   return `
 
 ПОЛЬЗОВАТЕЛЬ БЕРЕМЕННА / КОРМИТ ГРУДЬЮ — СТРОГИЕ ОГРАНИЧЕНИЯ БЕЗОПАСНОСТИ:
@@ -83,28 +99,32 @@ export function buildEatingDisorderInstruction(
   hasBinge?: boolean,
   hasOrthorexia?: boolean
 ): string {
-  if (!hasAnorexiaRestrictive && !hasBinge && !hasOrthorexia) return "";
+  if (!hasAnorexiaRestrictive && !hasBinge && !hasOrthorexia) return '';
 
   const instructions: string[] = [];
 
   // Anorexia/Restrictive: Avoid calorie/number fixation
   if (hasAnorexiaRestrictive) {
-    instructions.push("⚠️ Анорексия/ограничивающее питание: избегай обсуждения калорий/граммов");
+    instructions.push('⚠️ Анорексия/ограничивающее питание: избегай обсуждения калорий/граммов');
   }
 
   // BED: Focus on psychological safety, not restriction messaging
   if (hasBinge) {
-    instructions.push("⚠️ Приступы переедания: избегай рестриктивного тона, фокусируй на принятии и самосострадании");
+    instructions.push(
+      '⚠️ Приступы переедания: избегай рестриктивного тона, фокусируй на принятии и самосострадании'
+    );
   }
 
   // Orthorexia: Avoid perfectionism messaging
   if (hasOrthorexia) {
-    instructions.push("⚠️ Орторексия: не способствуй перфекционизму, поддерживай гибкость и психическое здоровье");
+    instructions.push(
+      '⚠️ Орторексия: не способствуй перфекционизму, поддерживай гибкость и психическое здоровье'
+    );
   }
 
   return instructions.length > 0
-    ? `⚠️ ВАЖНО: ${instructions.join("; ")}. Не упоминай цифры калорий/граммы в ответе, говори о качестве и разнообразии питания.\n\n`
-    : "";
+    ? `⚠️ ВАЖНО: ${instructions.join('; ')}. Не упоминай цифры калорий/граммы в ответе, говори о качестве и разнообразии питания.\n\n`
+    : '';
 }
 
 export const SYSTEM_PROMPT_RU = `Ты — NutriPlan, персональный ИИ-помощник по питанию. Ты помогаешь пользователям понять свои пищевые привычки и принимать обоснованные решения в области питания.
@@ -415,14 +435,17 @@ export const PROMPT_RECIPE_DETAIL_RU = `Ты — шеф-повар и дието
  *  - Calibrated confidence with explicit uncertainty reasons
  */
 export function buildFoodPhotoPrompt(weekRecipes?: WeekRecipe[]): string {
-  const recipesBlock = weekRecipes && weekRecipes.length > 0
-    ? `\n## План питания на неделю (для сопоставления с фото)\n${weekRecipes
-        .map(
-          (r) =>
-            `- id: "${r.id}" | "${r.title}" | ${r.calories} ккал | Б:${r.protein_g}г Ж:${r.fat_g}г У:${r.carbs_g}г | Ингредиенты: ${r.ingredients.slice(0, 6).join(", ")}`
-        )
-        .join("\n")}\n\nЕсли блюдо на фото однозначно совпадает с одним из рецептов выше — заполни "matched_recipe_id" точным id рецепта и используй ТОЧНЫЕ КБЖУ из рецепта для items вместо собственной оценки.\n`
-    : "";
+  const recipesBlock =
+    weekRecipes && weekRecipes.length > 0
+      ? `\n## План питания на неделю (для сопоставления с фото)\n${weekRecipes
+          .map(
+            (r) =>
+              `- id: "${r.id}" | "${r.title}" | ${r.calories} ккал | Б:${r.protein_g}г Ж:${r.fat_g}г У:${r.carbs_g}г | Ингредиенты: ${r.ingredients.slice(0, 6).join(', ')}`
+          )
+          .join(
+            '\n'
+          )}\n\nЕсли блюдо на фото однозначно совпадает с одним из рецептов выше — заполни "matched_recipe_id" точным id рецепта и используй ТОЧНЫЕ КБЖУ из рецепта для items вместо собственной оценки.\n`
+      : '';
 
   return `Ты — нутрициолог-аналитик с 15-летним опытом и специалист по компьютерному зрению в области пищевых продуктов. Твоя задача — максимально точно определить состав и питательную ценность еды на фотографии.
 
@@ -735,33 +758,33 @@ const CONDITION_INSTRUCTIONS_BY_CONDITION: Record<string, string> = {
  * Returns empty string if no matching condition is found.
  */
 export function getConditionInstructions(conditions: string[]): string {
-  if (!conditions || conditions.length === 0) return "";
+  if (!conditions || conditions.length === 0) return '';
   const blocks = conditions
     .map((c) => CONDITION_INSTRUCTIONS_BY_CONDITION[c.toLowerCase().trim()])
     .filter(Boolean);
-  return blocks.length > 0 ? blocks.join("\n\n") : "";
+  return blocks.length > 0 ? blocks.join('\n\n') : '';
 }
 
 export const MAX_TOKENS: Record<string, { краткий: number; подробный: number }> = {
-  food_photo:        { краткий: 800,  подробный: 800  },
-  food_suggestion:   { краткий: 120,  подробный: 200  },
-  meal_plan:         { краткий: 4000, подробный: 4000 },
-  swap_slot:         { краткий: 600,  подробный: 600  },
-  recipe_detail:     { краткий: 800,  подробный: 800  },
-  onboarding:        { краткий: 600,  подробный: 1000 },
-  daily_analysis:    { краткий: 400,  подробный: 700  },
-  safety_alert:      { краткий: 250,  подробный: 500  },
-  weight_loss:       { краткий: 250,  подробный: 500  },
-  muscle_gain:       { краткий: 250,  подробный: 500  },
-  disease_mgmt:      { краткий: 300,  подробный: 600  },
-  trend_warning:     { краткий: 200,  подробный: 400  },
-  optimisation_tip:  { краткий: 200,  подробный: 350  },
-  meal_substitution: { краткий: 350,  подробный: 600  },
-  free_question:     { краткий: 400,  подробный: 400  },
-  taste_portrait:    { краткий: 800,  подробный: 800  },
+  food_photo: { краткий: 800, подробный: 800 },
+  food_suggestion: { краткий: 120, подробный: 200 },
+  meal_plan: { краткий: 4000, подробный: 4000 },
+  swap_slot: { краткий: 600, подробный: 600 },
+  recipe_detail: { краткий: 800, подробный: 800 },
+  onboarding: { краткий: 600, подробный: 1000 },
+  daily_analysis: { краткий: 400, подробный: 700 },
+  safety_alert: { краткий: 250, подробный: 500 },
+  weight_loss: { краткий: 250, подробный: 500 },
+  muscle_gain: { краткий: 250, подробный: 500 },
+  disease_mgmt: { краткий: 300, подробный: 600 },
+  trend_warning: { краткий: 200, подробный: 400 },
+  optimisation_tip: { краткий: 200, подробный: 350 },
+  meal_substitution: { краткий: 350, подробный: 600 },
+  free_question: { краткий: 400, подробный: 400 },
+  taste_portrait: { краткий: 800, подробный: 800 },
 };
 
 export const TONE_INSTRUCTIONS: Record<string, string> = {
-  краткий:    "Максимум 80 слов. Маркированный список. Тон дружелюбный и конкретный.",
-  подробный:  "Развёрнутый формат. Объясни логику рекомендаций. Тёплый, поддерживающий тон.",
+  краткий: 'Максимум 80 слов. Маркированный список. Тон дружелюбный и конкретный.',
+  подробный: 'Развёрнутый формат. Объясни логику рекомендаций. Тёплый, поддерживающий тон.',
 };

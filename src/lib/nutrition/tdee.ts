@@ -10,22 +10,22 @@
  */
 
 export const ACTIVITY_MULTIPLIERS: Record<string, number> = {
-  sedentary:   1.2,
-  light:       1.375,
-  moderate:    1.55,
-  active:      1.725,
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
   very_active: 1.9,
 };
 
 export interface Biometrics {
-  weight_kg:           number;
-  height_cm:           number;
-  age:                 number;
-  sex:                 "male" | "female";
-  activity_level?:     string;
-  is_pregnant?:        boolean;
+  weight_kg: number;
+  height_cm: number;
+  age: number;
+  sex: 'male' | 'female';
+  activity_level?: string;
+  is_pregnant?: boolean;
   pregnancy_trimester?: 1 | 2 | 3;
-  is_breastfeeding?:   boolean;
+  is_breastfeeding?: boolean;
 }
 
 /**
@@ -38,11 +38,11 @@ export function calculateTDEE(bio: Partial<Biometrics>): number | null {
   if (weight_kg <= 0 || height_cm <= 0 || age <= 0) return null;
 
   const bmr =
-    sex === "male"
+    sex === 'male'
       ? 10 * weight_kg + 6.25 * height_cm - 5 * age + 5
       : 10 * weight_kg + 6.25 * height_cm - 5 * age - 161;
 
-  const multiplier = ACTIVITY_MULTIPLIERS[bio.activity_level ?? "moderate"] ?? 1.55;
+  const multiplier = ACTIVITY_MULTIPLIERS[bio.activity_level ?? 'moderate'] ?? 1.55;
   const base = Math.round(bmr * multiplier);
 
   // Pregnancy / breastfeeding TDEE uplift (TES-167)
@@ -59,9 +59,9 @@ export function calculateTDEE(bio: Partial<Biometrics>): number | null {
 
 export interface MacroTargets {
   daily_calorie_target: number;
-  protein_target_g:     number;
-  carbs_target_g:       number;
-  fat_target_g:         number;
+  protein_target_g: number;
+  carbs_target_g: number;
+  fat_target_g: number;
 }
 
 /**
@@ -72,40 +72,44 @@ export interface MacroTargets {
  *   female → 1 200 kcal (standard recommendation)
  *   male   → 1 500 kcal (NIH / BDA guideline)
  */
-export function calculateMacros(tdee: number, primaryGoal: string, sex?: "male" | "female"): MacroTargets {
-  let calories    = tdee;
-  let proteinPct  = 0.25;
-  let carbsPct    = 0.5;
-  let fatPct      = 0.25;
+export function calculateMacros(
+  tdee: number,
+  primaryGoal: string,
+  sex?: 'male' | 'female'
+): MacroTargets {
+  let calories = tdee;
+  let proteinPct = 0.25;
+  let carbsPct = 0.5;
+  let fatPct = 0.25;
 
-  const calorieFloor = sex === "male" ? 1500 : 1200;
+  const calorieFloor = sex === 'male' ? 1500 : 1200;
 
   switch (primaryGoal) {
-    case "weight_loss":
-      calories   = Math.max(calorieFloor, tdee - 400);
+    case 'weight_loss':
+      calories = Math.max(calorieFloor, tdee - 400);
       proteinPct = 0.3;
-      carbsPct   = 0.4;
-      fatPct     = 0.3;
+      carbsPct = 0.4;
+      fatPct = 0.3;
       break;
-    case "muscle_gain":
-      calories   = tdee + 300;
+    case 'muscle_gain':
+      calories = tdee + 300;
       proteinPct = 0.35;
-      carbsPct   = 0.45;
-      fatPct     = 0.2;
+      carbsPct = 0.45;
+      fatPct = 0.2;
       break;
-    case "disease_management":
+    case 'disease_management':
       proteinPct = 0.25;
-      carbsPct   = 0.45;
-      fatPct     = 0.3;
+      carbsPct = 0.45;
+      fatPct = 0.3;
       break;
     // maintenance / general_wellness / default: 25/50/25
   }
 
   return {
     daily_calorie_target: calories,
-    protein_target_g:     Math.round((calories * proteinPct) / 4),
-    carbs_target_g:       Math.round((calories * carbsPct)   / 4),
-    fat_target_g:         Math.round((calories * fatPct)     / 9),
+    protein_target_g: Math.round((calories * proteinPct) / 4),
+    carbs_target_g: Math.round((calories * carbsPct) / 4),
+    fat_target_g: Math.round((calories * fatPct) / 9),
   };
 }
 

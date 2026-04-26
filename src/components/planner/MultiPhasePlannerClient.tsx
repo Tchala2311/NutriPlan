@@ -1,30 +1,48 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback, useTransition, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useTransition, useEffect, useRef } from 'react';
 import {
-  Dumbbell, Moon, CheckCircle2, Circle, Loader2,
-  ShoppingCart, LayoutGrid, List, Package, ChevronDown,
-  Target, Flame, ChevronLeft, ChevronRight,
-  ExternalLink, Copy, Check, Link2, X, RotateCcw,
-} from "lucide-react";
+  Dumbbell,
+  Moon,
+  CheckCircle2,
+  Circle,
+  Loader2,
+  ShoppingCart,
+  LayoutGrid,
+  List,
+  Package,
+  ChevronDown,
+  Target,
+  Flame,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Copy,
+  Check,
+  Link2,
+  X,
+  RotateCcw,
+} from 'lucide-react';
 import {
-  PHASES, MEAL_TYPES, MEAL_LABEL_RU, DAY_NAMES_RU,
-  isCatalogTrainingDay, toGlobalWeek,
-  type MealType, type Phase,
-} from "@/lib/planner/phases";
-import {
-  getPhaseGuidance,
-  getPhaseCalorieTarget,
-} from "@/lib/planner/goal-prompts";
-import { setPlanStartDate } from "@/app/dashboard/planner/actions";
-import { MealRedoModal } from "./MealRedoModal";
+  PHASES,
+  MEAL_TYPES,
+  MEAL_LABEL_RU,
+  DAY_NAMES_RU,
+  isCatalogTrainingDay,
+  toGlobalWeek,
+  type MealType,
+  type Phase,
+} from '@/lib/planner/phases';
+import { getPhaseGuidance, getPhaseCalorieTarget } from '@/lib/planner/goal-prompts';
+import { setPlanStartDate } from '@/app/dashboard/planner/actions';
+import { MealRedoModal } from './MealRedoModal';
 
 function getThisMonday(): string {
   const d = new Date();
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -47,7 +65,7 @@ export interface ShoppingItem {
   category_order: number;
   item_name: string;
   quantity_per_person: string | null;
-  shopping_window: "A" | "B";
+  shopping_window: 'A' | 'B';
 }
 
 export interface UserPlanConfig {
@@ -75,29 +93,29 @@ interface MultiPhasePlannerClientProps {
   goalContext?: UserGoalContext;
 }
 
-type ViewMode = "schedule" | "list" | "shopping";
+type ViewMode = 'schedule' | 'list' | 'shopping';
 
 // ── Meal colours by type ─────────────────────────────────────────────────────
 
 const MEAL_COLOR: Record<string, string> = {
-  breakfast: "bg-amber-50 border-amber-100",
-  lunch:     "bg-sage-50 border-sage-100",
-  snack:     "bg-parchment-100 border-parchment-200",
-  dinner:    "bg-vital-50 border-vital-100",
+  breakfast: 'bg-amber-50 border-amber-100',
+  lunch: 'bg-sage-50 border-sage-100',
+  snack: 'bg-parchment-100 border-parchment-200',
+  dinner: 'bg-vital-50 border-vital-100',
 };
 
 const MEAL_ACCENT: Record<string, string> = {
-  breakfast: "text-amber-500",
-  lunch:     "text-sage-500",
-  snack:     "text-stone-400",
-  dinner:    "text-vital-500",
+  breakfast: 'text-amber-500',
+  lunch: 'text-sage-500',
+  snack: 'text-stone-400',
+  dinner: 'text-vital-500',
 };
 
 const MEAL_DOT: Record<string, string> = {
-  breakfast: "bg-amber-400",
-  lunch:     "bg-sage-400",
-  snack:     "bg-stone-300",
-  dinner:    "bg-vital-400",
+  breakfast: 'bg-amber-400',
+  lunch: 'bg-sage-400',
+  snack: 'bg-stone-300',
+  dinner: 'bg-vital-400',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -113,17 +131,25 @@ function completionKey(day: number, meal_type: string): string {
 }
 
 /** Calculate calendar date for a meal given its global week and day offset (0-6). */
-function getMealDate(globalWeek: number, dayInWeek: number, planStartDate: string | null): string | null {
+function getMealDate(
+  globalWeek: number,
+  dayInWeek: number,
+  planStartDate: string | null
+): string | null {
   if (!planStartDate) return null;
-  const startDate = new Date(planStartDate + "T00:00:00");
+  const startDate = new Date(planStartDate + 'T00:00:00');
   // Don't adjust to Monday - use the chosen start date as week 1, day 0
   // Add weeks and days relative to the actual chosen start date
   startDate.setDate(startDate.getDate() + (globalWeek - 1) * 7 + dayInWeek);
-  return startDate.toISOString().split("T")[0];
+  return startDate.toISOString().split('T')[0];
 }
 
 /** Filter meals that are before the plan start date. */
-function filterMealsBeforeStart(meals: CatalogMeal[], globalWeek: number, planStartDate: string | null): CatalogMeal[] {
+function filterMealsBeforeStart(
+  meals: CatalogMeal[],
+  globalWeek: number,
+  planStartDate: string | null
+): CatalogMeal[] {
   if (!planStartDate) return meals;
   return meals.filter((meal) => {
     const mealDate = getMealDate(globalWeek, meal.day, planStartDate);
@@ -134,15 +160,60 @@ function filterMealsBeforeStart(meals: CatalogMeal[], globalWeek: number, planSt
 // ── Moscow shops ─────────────────────────────────────────────────────────────
 
 const MOSCOW_SHOPS = [
-  { key: "pyaterochka", label: "Пятёрочка",   chipColor: "bg-red-50 text-red-500 border-red-200",     activeColor: "bg-red-500 text-white border-red-500" },
-  { key: "magnit",      label: "Магнит",       chipColor: "bg-rose-50 text-rose-500 border-rose-200",  activeColor: "bg-rose-500 text-white border-rose-500" },
-  { key: "perekrestok", label: "Перекрёсток",  chipColor: "bg-green-50 text-green-600 border-green-200", activeColor: "bg-green-600 text-white border-green-600" },
-  { key: "vkusvill",    label: "ВкусВилл",     chipColor: "bg-emerald-50 text-emerald-600 border-emerald-200", activeColor: "bg-emerald-600 text-white border-emerald-600" },
-  { key: "lenta",       label: "Лента",        chipColor: "bg-blue-50 text-blue-500 border-blue-200",  activeColor: "bg-blue-500 text-white border-blue-500" },
-  { key: "auchan",      label: "Ашан",         chipColor: "bg-orange-50 text-orange-500 border-orange-200", activeColor: "bg-orange-500 text-white border-orange-500" },
-  { key: "lavka",       label: "Яндекс Лавка", chipColor: "bg-yellow-50 text-yellow-600 border-yellow-200", activeColor: "bg-yellow-500 text-white border-yellow-500" },
-  { key: "ozon",        label: "Ozon Fresh",   chipColor: "bg-sky-50 text-sky-500 border-sky-200",     activeColor: "bg-sky-500 text-white border-sky-500" },
-  { key: "rynok",       label: "Рынок",        chipColor: "bg-stone-50 text-stone-500 border-stone-200", activeColor: "bg-stone-600 text-white border-stone-600" },
+  {
+    key: 'pyaterochka',
+    label: 'Пятёрочка',
+    chipColor: 'bg-red-50 text-red-500 border-red-200',
+    activeColor: 'bg-red-500 text-white border-red-500',
+  },
+  {
+    key: 'magnit',
+    label: 'Магнит',
+    chipColor: 'bg-rose-50 text-rose-500 border-rose-200',
+    activeColor: 'bg-rose-500 text-white border-rose-500',
+  },
+  {
+    key: 'perekrestok',
+    label: 'Перекрёсток',
+    chipColor: 'bg-green-50 text-green-600 border-green-200',
+    activeColor: 'bg-green-600 text-white border-green-600',
+  },
+  {
+    key: 'vkusvill',
+    label: 'ВкусВилл',
+    chipColor: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    activeColor: 'bg-emerald-600 text-white border-emerald-600',
+  },
+  {
+    key: 'lenta',
+    label: 'Лента',
+    chipColor: 'bg-blue-50 text-blue-500 border-blue-200',
+    activeColor: 'bg-blue-500 text-white border-blue-500',
+  },
+  {
+    key: 'auchan',
+    label: 'Ашан',
+    chipColor: 'bg-orange-50 text-orange-500 border-orange-200',
+    activeColor: 'bg-orange-500 text-white border-orange-500',
+  },
+  {
+    key: 'lavka',
+    label: 'Яндекс Лавка',
+    chipColor: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    activeColor: 'bg-yellow-500 text-white border-yellow-500',
+  },
+  {
+    key: 'ozon',
+    label: 'Ozon Fresh',
+    chipColor: 'bg-sky-50 text-sky-500 border-sky-200',
+    activeColor: 'bg-sky-500 text-white border-sky-500',
+  },
+  {
+    key: 'rynok',
+    label: 'Рынок',
+    chipColor: 'bg-stone-50 text-stone-500 border-stone-200',
+    activeColor: 'bg-stone-600 text-white border-stone-600',
+  },
 ] as const;
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -157,7 +228,7 @@ export function MultiPhasePlannerClient({
 }: MultiPhasePlannerClientProps) {
   const [activePhase, setActivePhase] = useState<1 | 2 | 3 | 4>(1);
   const [activeWeekInPhase, setActiveWeekInPhase] = useState<1 | 2>(1);
-  const [viewMode, setViewMode] = useState<ViewMode>("schedule");
+  const [viewMode, setViewMode] = useState<ViewMode>('schedule');
 
   const [mealsCache, setMealsCache] = useState<Record<number, CatalogMeal[]>>({ 1: initialMeals });
   const [completionsCache, setCompletionsCache] = useState<Record<number, Set<string>>>({
@@ -181,7 +252,7 @@ export function MultiPhasePlannerClient({
   const [selectedRedoMeal, setSelectedRedoMeal] = useState<{
     mealType: string;
     date: string;
-    redoType: "individual" | "daily" | "weekly";
+    redoType: 'individual' | 'daily' | 'weekly';
   } | null>(null);
 
   // Auto-set plan_start_date to this week's Monday if not configured yet (TES-103)
@@ -192,7 +263,7 @@ export function MultiPhasePlannerClient({
         if (success) setPlanStartDateLocal(monday);
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const globalWeek = toGlobalWeek(activePhase, activeWeekInPhase);
@@ -205,7 +276,7 @@ export function MultiPhasePlannerClient({
   // Compute which day columns to show. For week 1, hide days before the plan start weekday.
   const activeDays = useMemo((): number[] => {
     if (globalWeek === 1 && planStartDate) {
-      const startDate = new Date(planStartDate + "T00:00:00");
+      const startDate = new Date(planStartDate + 'T00:00:00');
       const dayOfWeek = startDate.getDay(); // 0=Sun, 1=Mon...6=Sat
       const dayMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Mon=0...Sun=6
       const count = 7 - dayMon;
@@ -222,7 +293,10 @@ export function MultiPhasePlannerClient({
   );
 
   const dayTotals = useMemo(() => {
-    const totals: Record<number, { kcal: number; protein_g: number; carbs_g: number; fat_g: number }> = {};
+    const totals: Record<
+      number,
+      { kcal: number; protein_g: number; carbs_g: number; fat_g: number }
+    > = {};
     for (const meal of meals) {
       if (!totals[meal.day]) totals[meal.day] = { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
       totals[meal.day].kcal += meal.kcal ?? 0;
@@ -279,19 +353,21 @@ export function MultiPhasePlannerClient({
 
       setCompletionsCache((prev) => {
         const set = new Set(prev[gw] ?? []);
-        if (isNowCompleted) set.add(key); else set.delete(key);
+        if (isNowCompleted) set.add(key);
+        else set.delete(key);
         return { ...prev, [gw]: set };
       });
 
       startTransition(() => {
-        fetch("/api/planner/week", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        fetch('/api/planner/week', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ week: gw, day, meal_type, completed: isNowCompleted }),
         }).catch(() => {
           setCompletionsCache((prev) => {
             const set = new Set(prev[gw] ?? []);
-            if (isNowCompleted) set.delete(key); else set.add(key);
+            if (isNowCompleted) set.delete(key);
+            else set.add(key);
             return { ...prev, [gw]: set };
           });
         });
@@ -309,12 +385,8 @@ export function MultiPhasePlannerClient({
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-bark-300">
-            Планировщик питания
-          </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            8 недель · 4 фазы
-          </p>
+          <h1 className="font-display text-2xl font-bold text-bark-300">Планировщик питания</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">8 недель · 4 фазы</p>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
             <span>Начало плана:</span>
             {editingStartDate ? (
@@ -339,8 +411,12 @@ export function MultiPhasePlannerClient({
                 className="text-bark-200 hover:text-bark-300 underline underline-offset-2 transition-colors"
               >
                 {planStartDate
-                  ? new Date(planStartDate + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
-                  : "не задано"}
+                  ? new Date(planStartDate + 'T00:00:00').toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })
+                  : 'не задано'}
               </button>
             )}
           </div>
@@ -349,9 +425,7 @@ export function MultiPhasePlannerClient({
         {/* Weekly progress badge */}
         {totalMeals > 0 && (
           <div className="flex-shrink-0 flex flex-col items-end gap-1">
-            <span className="text-xs font-medium text-stone-400">
-              Неделя {activeWeekInPhase}
-            </span>
+            <span className="text-xs font-medium text-stone-400">Неделя {activeWeekInPhase}</span>
             <div className="flex items-center gap-2">
               <div className="w-24 h-1.5 bg-parchment-200 rounded-full overflow-hidden">
                 <div
@@ -378,18 +452,22 @@ export function MultiPhasePlannerClient({
                 onClick={() => switchPhase(ph.number as 1 | 2 | 3 | 4)}
                 className={`flex-1 min-w-0 flex flex-col items-center px-3 py-2 rounded-xl text-sm transition-colors ${
                   isActive
-                    ? "bg-white shadow-warm-sm text-bark-300"
-                    : "text-stone-400 hover:text-bark-300"
+                    ? 'bg-white shadow-warm-sm text-bark-300'
+                    : 'text-stone-400 hover:text-bark-300'
                 }`}
               >
-                <span className={`text-xs font-bold leading-none mb-0.5 ${
-                  isActive ? "text-bark-300" : "text-stone-400"
-                }`}>
+                <span
+                  className={`text-xs font-bold leading-none mb-0.5 ${
+                    isActive ? 'text-bark-300' : 'text-stone-400'
+                  }`}
+                >
                   Ф{ph.number}
                 </span>
-                <span className={`text-2xs leading-none ${
-                  isActive ? "text-bark-200" : "text-stone-300"
-                }`}>
+                <span
+                  className={`text-2xs leading-none ${
+                    isActive ? 'text-bark-200' : 'text-stone-300'
+                  }`}
+                >
                   {ph.nameRu}
                 </span>
               </button>
@@ -410,8 +488,8 @@ export function MultiPhasePlannerClient({
               onClick={() => switchWeek(w)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 activeWeekInPhase === w
-                  ? "bg-white shadow-warm-sm text-bark-300"
-                  : "text-stone-400 hover:text-bark-300"
+                  ? 'bg-white shadow-warm-sm text-bark-300'
+                  : 'text-stone-400 hover:text-bark-300'
               }`}
             >
               Неделя {w}
@@ -421,28 +499,34 @@ export function MultiPhasePlannerClient({
 
         <div className="ml-auto flex items-center gap-1 bg-parchment-100 rounded-xl p-1">
           <button
-            onClick={() => setViewMode("schedule")}
+            onClick={() => setViewMode('schedule')}
             title="График"
             className={`p-1.5 rounded-lg transition-colors ${
-              viewMode === "schedule" ? "bg-white shadow-warm-sm text-bark-300" : "text-stone-400 hover:text-bark-300"
+              viewMode === 'schedule'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => setViewMode("list")}
+            onClick={() => setViewMode('list')}
             title="Список"
             className={`p-1.5 rounded-lg transition-colors ${
-              viewMode === "list" ? "bg-white shadow-warm-sm text-bark-300" : "text-stone-400 hover:text-bark-300"
+              viewMode === 'list'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <List className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => setViewMode("shopping")}
+            onClick={() => setViewMode('shopping')}
             title="Покупки"
             className={`p-1.5 rounded-lg transition-colors ${
-              viewMode === "shopping" ? "bg-white shadow-warm-sm text-bark-300" : "text-stone-400 hover:text-bark-300"
+              viewMode === 'shopping'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <ShoppingCart className="h-3.5 w-3.5" />
@@ -455,10 +539,12 @@ export function MultiPhasePlannerClient({
         <div>
           <MealPlanSkeleton />
           {loadingWeekLong && (
-            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">
+              Ещё немного…
+            </p>
           )}
         </div>
-      ) : viewMode === "schedule" ? (
+      ) : viewMode === 'schedule' ? (
         <ScheduleView
           meals={meals}
           completions={completions}
@@ -471,21 +557,21 @@ export function MultiPhasePlannerClient({
           onToggleCompletion={toggleCompletion}
           onRedoMeal={(mealType, dayStr) => {
             // MealCard passes "day${n}" — convert to real calendar date
-            const dayNum = parseInt(dayStr.replace("day", ""), 10);
+            const dayNum = parseInt(dayStr.replace('day', ''), 10);
             const realDate = !isNaN(dayNum)
               ? (getMealDate(globalWeek, dayNum, planStartDate) ?? dayStr)
               : dayStr;
-            setSelectedRedoMeal({ mealType, date: realDate, redoType: "individual" });
+            setSelectedRedoMeal({ mealType, date: realDate, redoType: 'individual' });
             setRedoModalOpen(true);
           }}
           onRedoDay={(day) => {
             const realDate = getMealDate(globalWeek, day, planStartDate) ?? `day${day}`;
-            setSelectedRedoMeal({ mealType: "", date: realDate, redoType: "daily" });
+            setSelectedRedoMeal({ mealType: '', date: realDate, redoType: 'daily' });
             setRedoModalOpen(true);
           }}
           isTrainingDay={isTrainingDay}
         />
-      ) : viewMode === "list" ? (
+      ) : viewMode === 'list' ? (
         <ListView
           meals={meals}
           completions={completions}
@@ -529,7 +615,7 @@ function PhaseBanner({
   goalContext?: UserGoalContext;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const goal = goalContext?.primaryGoal ?? "general_wellness";
+  const goal = goalContext?.primaryGoal ?? 'general_wellness';
   const edFlag = goalContext?.eatingDisorderFlag ?? false;
 
   const goalCalorieTarget = getPhaseCalorieTarget(goal, phase.number);
@@ -549,15 +635,17 @@ function PhaseBanner({
           <div className="flex items-center gap-3 text-xs text-stone-400 flex-shrink-0">
             <span className="flex items-center gap-1">
               <Dumbbell className="h-3 w-3 text-vital-400" />
-              {trainingKcal.toLocaleString("ru")}
+              {trainingKcal.toLocaleString('ru')}
             </span>
             <span className="flex items-center gap-1">
               <Moon className="h-3 w-3 text-stone-300" />
-              {restKcal.toLocaleString("ru")}
+              {restKcal.toLocaleString('ru')}
             </span>
           </div>
         )}
-        <ChevronDown className={`h-3.5 w-3.5 text-stone-300 flex-shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-stone-300 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {expanded && (
@@ -571,11 +659,12 @@ function PhaseBanner({
                   <span className="text-xs font-semibold text-vital-500">День зала</span>
                 </div>
                 <p className="text-xl font-bold text-bark-300 leading-none">
-                  {trainingKcal.toLocaleString("ru")}
+                  {trainingKcal.toLocaleString('ru')}
                   <span className="text-xs font-normal text-stone-400 ml-1">ккал</span>
                 </p>
                 <p className="mt-1.5 text-2xs text-stone-400">
-                  Б{phase.macros.training.protein_g} · У{phase.macros.training.carbs_g} · Ж{phase.macros.training.fat_g}
+                  Б{phase.macros.training.protein_g} · У{phase.macros.training.carbs_g} · Ж
+                  {phase.macros.training.fat_g}
                 </p>
               </div>
               <div className="rounded-xl bg-parchment-100 border border-parchment-200 p-3">
@@ -584,11 +673,12 @@ function PhaseBanner({
                   <span className="text-xs font-semibold text-stone-400">День отдыха</span>
                 </div>
                 <p className="text-xl font-bold text-bark-300 leading-none">
-                  {restKcal.toLocaleString("ru")}
+                  {restKcal.toLocaleString('ru')}
                   <span className="text-xs font-normal text-stone-400 ml-1">ккал</span>
                 </p>
                 <p className="mt-1.5 text-2xs text-stone-400">
-                  Б{phase.macros.rest.protein_g} · У{phase.macros.rest.carbs_g} · Ж{phase.macros.rest.fat_g}
+                  Б{phase.macros.rest.protein_g} · У{phase.macros.rest.carbs_g} · Ж
+                  {phase.macros.rest.fat_g}
                 </p>
               </div>
             </div>
@@ -617,7 +707,18 @@ interface ScheduleViewProps {
 }
 
 function ScheduleView({
-  meals, completions, batchMealNames, dayTotals, phase, config, goalContext, activeDays, onToggleCompletion, onRedoMeal, onRedoDay, isTrainingDay,
+  meals,
+  completions,
+  batchMealNames,
+  dayTotals,
+  phase,
+  config,
+  goalContext,
+  activeDays,
+  onToggleCompletion,
+  onRedoMeal,
+  onRedoDay,
+  isTrainingDay,
 }: ScheduleViewProps) {
   const [selectedDay, setSelectedDay] = useState<number>(() => activeDays[0] ?? 0);
 
@@ -660,28 +761,39 @@ function ScheduleView({
                 className={`flex-shrink-0 flex flex-col items-center gap-1 w-12 py-2 rounded-xl border transition-all ${
                   isSelected
                     ? isTraining
-                      ? "bg-vital-50 border-vital-200 shadow-warm-sm"
-                      : "bg-white border-parchment-300 shadow-warm-sm"
-                    : "bg-parchment-50 border-transparent"
+                      ? 'bg-vital-50 border-vital-200 shadow-warm-sm'
+                      : 'bg-white border-parchment-300 shadow-warm-sm'
+                    : 'bg-parchment-50 border-transparent'
                 }`}
               >
-                <span className={`text-2xs font-semibold uppercase ${
-                  isSelected ? (isTraining ? "text-vital-500" : "text-bark-300") : "text-stone-400"
-                }`}>
+                <span
+                  className={`text-2xs font-semibold uppercase ${
+                    isSelected
+                      ? isTraining
+                        ? 'text-vital-500'
+                        : 'text-bark-300'
+                      : 'text-stone-400'
+                  }`}
+                >
                   {DAY_NAMES_RU[day]}
                 </span>
-                <span className={`h-4 w-4 rounded-full flex items-center justify-center ${
-                  isTraining ? "bg-vital-100" : "bg-parchment-200"
-                }`}>
-                  {isTraining
-                    ? <Dumbbell className="h-2.5 w-2.5 text-vital-500" />
-                    : <Moon className="h-2.5 w-2.5 text-stone-400" />
-                  }
+                <span
+                  className={`h-4 w-4 rounded-full flex items-center justify-center ${
+                    isTraining ? 'bg-vital-100' : 'bg-parchment-200'
+                  }`}
+                >
+                  {isTraining ? (
+                    <Dumbbell className="h-2.5 w-2.5 text-vital-500" />
+                  ) : (
+                    <Moon className="h-2.5 w-2.5 text-stone-400" />
+                  )}
                 </span>
                 {total > 0 && (
-                  <span className={`h-1 w-5 rounded-full transition-all ${
-                    allDone ? "bg-sage-400" : done > 0 ? "bg-amber-300" : "bg-parchment-200"
-                  }`} />
+                  <span
+                    className={`h-1 w-5 rounded-full transition-all ${
+                      allDone ? 'bg-sage-400' : done > 0 ? 'bg-amber-300' : 'bg-parchment-200'
+                    }`}
+                  />
                 )}
               </button>
             );
@@ -699,23 +811,30 @@ function ScheduleView({
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-bark-300">
-              {DAY_NAMES_RU[selectedDay]}
-            </span>
-            <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
-              isTrainingDay(selectedDay)
-                ? "bg-vital-50 text-vital-500"
-                : "bg-parchment-100 text-stone-400"
-            }`}>
-              {isTrainingDay(selectedDay)
-                ? <><Dumbbell className="h-3 w-3" /> Зал</>
-                : <><Moon className="h-3 w-3" /> Отдых</>
-              }
+            <span className="text-sm font-semibold text-bark-300">{DAY_NAMES_RU[selectedDay]}</span>
+            <span
+              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                isTrainingDay(selectedDay)
+                  ? 'bg-vital-50 text-vital-500'
+                  : 'bg-parchment-100 text-stone-400'
+              }`}
+            >
+              {isTrainingDay(selectedDay) ? (
+                <>
+                  <Dumbbell className="h-3 w-3" /> Зал
+                </>
+              ) : (
+                <>
+                  <Moon className="h-3 w-3" /> Отдых
+                </>
+              )}
             </span>
           </div>
 
           <button
-            onClick={() => setSelectedDay((d) => Math.min(activeDays[activeDays.length - 1] ?? 6, d + 1))}
+            onClick={() =>
+              setSelectedDay((d) => Math.min(activeDays[activeDays.length - 1] ?? 6, d + 1))
+            }
             disabled={selectedDay === (activeDays[activeDays.length - 1] ?? 6)}
             className="p-1.5 rounded-lg text-stone-400 hover:text-bark-300 disabled:opacity-20 transition-colors"
           >
@@ -757,35 +876,49 @@ function ScheduleView({
         </div>
 
         {/* Mobile day totals */}
-        {!edFlag && (() => {
-          const totals = dayTotals[selectedDay] ?? { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
-          const isTraining = isTrainingDay(selectedDay);
-          const goalCalTarget = getPhaseCalorieTarget(goalContext?.primaryGoal ?? "general_wellness", phase.number);
-          const target = scaleKcal(isTraining ? goalCalTarget.training : goalCalTarget.rest, config);
-          const pct = target > 0 ? Math.min(Math.round((totals.kcal / target) * 100), 100) : 0;
-          const inRange = pct >= 90 && pct <= 110;
-          return (
-            <div className="mt-3 rounded-2xl bg-parchment-100 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-stone-400">Итого за день</span>
-                <span className={`text-sm font-bold ${inRange ? "text-sage-500" : "text-bark-300"}`}>
-                  {Math.round(totals.kcal)} / {target.toLocaleString("ru")} ккал
-                </span>
+        {!edFlag &&
+          (() => {
+            const totals = dayTotals[selectedDay] ?? {
+              kcal: 0,
+              protein_g: 0,
+              carbs_g: 0,
+              fat_g: 0,
+            };
+            const isTraining = isTrainingDay(selectedDay);
+            const goalCalTarget = getPhaseCalorieTarget(
+              goalContext?.primaryGoal ?? 'general_wellness',
+              phase.number
+            );
+            const target = scaleKcal(
+              isTraining ? goalCalTarget.training : goalCalTarget.rest,
+              config
+            );
+            const pct = target > 0 ? Math.min(Math.round((totals.kcal / target) * 100), 100) : 0;
+            const inRange = pct >= 90 && pct <= 110;
+            return (
+              <div className="mt-3 rounded-2xl bg-parchment-100 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-stone-400">Итого за день</span>
+                  <span
+                    className={`text-sm font-bold ${inRange ? 'text-sage-500' : 'text-bark-300'}`}
+                  >
+                    {Math.round(totals.kcal)} / {target.toLocaleString('ru')} ккал
+                  </span>
+                </div>
+                <div className="h-1.5 bg-parchment-200 rounded-full overflow-hidden mb-3">
+                  <div
+                    className={`h-full rounded-full transition-all ${inRange ? 'bg-sage-400' : 'bg-amber-400'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex gap-4 text-xs text-stone-400">
+                  <span>Белки {Math.round(totals.protein_g)}г</span>
+                  <span>Углев. {Math.round(totals.carbs_g)}г</span>
+                  <span>Жиры {Math.round(totals.fat_g)}г</span>
+                </div>
               </div>
-              <div className="h-1.5 bg-parchment-200 rounded-full overflow-hidden mb-3">
-                <div
-                  className={`h-full rounded-full transition-all ${inRange ? "bg-sage-400" : "bg-amber-400"}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <div className="flex gap-4 text-xs text-stone-400">
-                <span>Белки {Math.round(totals.protein_g)}г</span>
-                <span>Углев. {Math.round(totals.carbs_g)}г</span>
-                <span>Жиры {Math.round(totals.fat_g)}г</span>
-              </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
       </div>
 
       {/* ── Desktop: 7-column grid ───────────────────────────────────────── */}
@@ -804,14 +937,15 @@ function ScheduleView({
                     <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">
                       {DAY_NAMES_RU[day]}
                     </p>
-                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      isTraining ? "bg-vital-50 text-vital-500" : "bg-parchment-100 text-stone-400"
-                    }`}>
-                      {isTraining
-                        ? <Dumbbell className="h-3 w-3" />
-                        : <Moon className="h-3 w-3" />
-                      }
-                      <span>{isTraining ? "Зал" : "Отдых"}</span>
+                    <div
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        isTraining
+                          ? 'bg-vital-50 text-vital-500'
+                          : 'bg-parchment-100 text-stone-400'
+                      }`}
+                    >
+                      {isTraining ? <Dumbbell className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                      <span>{isTraining ? 'Зал' : 'Отдых'}</span>
                     </div>
                     {/* Redo day button */}
                     <div className="mt-1">
@@ -833,7 +967,9 @@ function ScheduleView({
               <div key={mealType} className="mb-3">
                 <div className="flex items-center gap-1.5 mb-1.5 pl-1">
                   <span className={`h-1.5 w-1.5 rounded-full ${MEAL_DOT[mealType]}`} />
-                  <p className={`text-xs font-semibold uppercase tracking-wide ${MEAL_ACCENT[mealType]}`}>
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-wide ${MEAL_ACCENT[mealType]}`}
+                  >
                     {MEAL_LABEL_RU[mealType]}
                   </p>
                 </div>
@@ -886,32 +1022,42 @@ function ScheduleView({
                   style={{ gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))` }}
                 >
                   {activeDays.map((day) => {
-                    const totals = dayTotals[day] ?? { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+                    const totals = dayTotals[day] ?? {
+                      kcal: 0,
+                      protein_g: 0,
+                      carbs_g: 0,
+                      fat_g: 0,
+                    };
                     const isTraining = isTrainingDay(day);
                     const goalCalTarget = getPhaseCalorieTarget(
-                      goalContext?.primaryGoal ?? "general_wellness",
+                      goalContext?.primaryGoal ?? 'general_wellness',
                       phase.number
                     );
                     const target = scaleKcal(
                       isTraining ? goalCalTarget.training : goalCalTarget.rest,
                       config
                     );
-                    const pct = target > 0 ? Math.min(Math.round((totals.kcal / target) * 100), 100) : 0;
+                    const pct =
+                      target > 0 ? Math.min(Math.round((totals.kcal / target) * 100), 100) : 0;
                     const inRange = pct >= 90 && pct <= 110;
                     return (
                       <div key={day} className="rounded-xl bg-parchment-100 p-2 text-center">
-                        <p className={`text-sm font-semibold ${inRange ? "text-sage-500" : "text-bark-300"}`}>
+                        <p
+                          className={`text-sm font-semibold ${inRange ? 'text-sage-500' : 'text-bark-300'}`}
+                        >
                           {Math.round(totals.kcal)}
                         </p>
-                        <p className="text-2xs text-stone-400">/ {target.toLocaleString("ru")}</p>
+                        <p className="text-2xs text-stone-400">/ {target.toLocaleString('ru')}</p>
                         <div className="mt-1 h-1 bg-parchment-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${inRange ? "bg-sage-400" : "bg-amber-400"}`}
+                            className={`h-full rounded-full transition-all ${inRange ? 'bg-sage-400' : 'bg-amber-400'}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
                         <div className="mt-1.5 space-y-0.5">
-                          <p className="text-2xs text-stone-400">Б {Math.round(totals.protein_g)}г</p>
+                          <p className="text-2xs text-stone-400">
+                            Б {Math.round(totals.protein_g)}г
+                          </p>
                           <p className="text-2xs text-stone-400">У {Math.round(totals.carbs_g)}г</p>
                           <p className="text-2xs text-stone-400">Ж {Math.round(totals.fat_g)}г</p>
                         </div>
@@ -926,11 +1072,21 @@ function ScheduleView({
 
         {/* Legend */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-stone-400">
-          <div className="flex items-center gap-1.5"><Dumbbell className="h-3 w-3 text-vital-400" /> День зала</div>
-          <div className="flex items-center gap-1.5"><Moon className="h-3 w-3 text-stone-300" /> День отдыха</div>
-          <div className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-sage-400" /> Съедено</div>
-          <div className="flex items-center gap-1.5"><Package className="h-3 w-3 text-amber-400" /> Можно готовить партией</div>
-          <div className="flex items-center gap-1.5"><Flame className="h-3 w-3 text-sage-400" /> Зелёная полоска = цель ±10%</div>
+          <div className="flex items-center gap-1.5">
+            <Dumbbell className="h-3 w-3 text-vital-400" /> День зала
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Moon className="h-3 w-3 text-stone-300" /> День отдыха
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle2 className="h-3 w-3 text-sage-400" /> Съедено
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Package className="h-3 w-3 text-amber-400" /> Можно готовить партией
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Flame className="h-3 w-3 text-sage-400" /> Зелёная полоска = цель ±10%
+          </div>
         </div>
       </div>
     </>
@@ -940,7 +1096,13 @@ function ScheduleView({
 // ── Meal Card (desktop grid) ─────────────────────────────────────────────────
 
 function MealCard({
-  meal, isDone, isBatch, mealType, day, onToggle, onRedo,
+  meal,
+  isDone,
+  isBatch,
+  mealType,
+  day,
+  onToggle,
+  onRedo,
 }: {
   meal: CatalogMeal;
   isDone: boolean;
@@ -956,7 +1118,7 @@ function MealCard({
   return (
     <div
       className={`group relative rounded-xl border ${MEAL_COLOR[mealType]} p-2 h-28 flex flex-col
-        transition-all ${isDone ? "opacity-55" : "hover:shadow-warm-sm"}`}
+        transition-all ${isDone ? 'opacity-55' : 'hover:shadow-warm-sm'}`}
     >
       {isBatch && (
         <div className="absolute top-1.5 right-1.5" title="Можно готовить партией">
@@ -967,12 +1129,13 @@ function MealCard({
       <button
         className="absolute top-1.5 left-1.5 z-10 rounded-full"
         onClick={onToggle}
-        title={isDone ? "Снять отметку" : "Отметить как съеденное"}
+        title={isDone ? 'Снять отметку' : 'Отметить как съеденное'}
       >
-        {isDone
-          ? <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
-          : <Circle className="h-3.5 w-3.5 text-parchment-300 hover:text-sage-300 transition-colors" />
-        }
+        {isDone ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
+        ) : (
+          <Circle className="h-3.5 w-3.5 text-parchment-300 hover:text-sage-300 transition-colors" />
+        )}
       </button>
 
       {onRedo && (
@@ -985,9 +1148,11 @@ function MealCard({
         </button>
       )}
 
-      <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 pr-4 ${
-        isDone ? "line-through text-stone-400" : ""
-      }`}>
+      <p
+        className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 pr-4 ${
+          isDone ? 'line-through text-stone-400' : ''
+        }`}
+      >
         {meal.name}
       </p>
 
@@ -1008,7 +1173,13 @@ function MealCard({
 // ── Meal Card (mobile) ───────────────────────────────────────────────────────
 
 function MealCardMobile({
-  meal, isDone, isBatch, mealType, day, onToggle, onRedo,
+  meal,
+  isDone,
+  isBatch,
+  mealType,
+  day,
+  onToggle,
+  onRedo,
 }: {
   meal: CatalogMeal;
   isDone: boolean;
@@ -1020,22 +1191,27 @@ function MealCardMobile({
 }) {
   const date = `day${day}`;
   return (
-    <div className={`rounded-2xl border ${MEAL_COLOR[mealType]} transition-all ${isDone ? "opacity-55" : ""}`}>
+    <div
+      className={`rounded-2xl border ${MEAL_COLOR[mealType]} transition-all ${isDone ? 'opacity-55' : ''}`}
+    >
       <div className="flex items-center gap-3 px-4 py-3">
         <button
           onClick={onToggle}
           className="flex-shrink-0 p-1 -m-1 rounded-full"
-          title={isDone ? "Снять отметку" : "Отметить как съеденное"}
+          title={isDone ? 'Снять отметку' : 'Отметить как съеденное'}
         >
-          {isDone
-            ? <CheckCircle2 className="h-5 w-5 text-sage-400" />
-            : <Circle className="h-5 w-5 text-parchment-300" />
-          }
+          {isDone ? (
+            <CheckCircle2 className="h-5 w-5 text-sage-400" />
+          ) : (
+            <Circle className="h-5 w-5 text-parchment-300" />
+          )}
         </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`text-2xs font-semibold uppercase tracking-wide ${MEAL_ACCENT[mealType]}`}>
+            <span
+              className={`text-2xs font-semibold uppercase tracking-wide ${MEAL_ACCENT[mealType]}`}
+            >
               {MEAL_LABEL_RU[mealType]}
             </span>
             {isBatch && (
@@ -1044,7 +1220,9 @@ function MealCardMobile({
               </span>
             )}
           </div>
-          <p className={`text-sm font-semibold text-bark-300 leading-snug ${isDone ? "line-through text-stone-400" : ""}`}>
+          <p
+            className={`text-sm font-semibold text-bark-300 leading-snug ${isDone ? 'line-through text-stone-400' : ''}`}
+          >
             {meal.name}
           </p>
         </div>
@@ -1085,11 +1263,20 @@ interface ListViewProps {
   isTrainingDay: (day: number) => boolean;
 }
 
-function ListView({ meals, completions, batchMealNames, onToggleCompletion, isTrainingDay }: ListViewProps) {
+function ListView({
+  meals,
+  completions,
+  batchMealNames,
+  onToggleCompletion,
+  isTrainingDay,
+}: ListViewProps) {
   const sorted = useMemo(
-    () => [...meals].sort(
-      (a, b) => a.day - b.day || MEAL_TYPES.indexOf(a.meal_type as MealType) - MEAL_TYPES.indexOf(b.meal_type as MealType)
-    ),
+    () =>
+      [...meals].sort(
+        (a, b) =>
+          a.day - b.day ||
+          MEAL_TYPES.indexOf(a.meal_type as MealType) - MEAL_TYPES.indexOf(b.meal_type as MealType)
+      ),
     [meals]
   );
 
@@ -1124,11 +1311,17 @@ function ListView({ meals, completions, batchMealNames, onToggleCompletion, isTr
               <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">
                 {DAY_NAMES_RU[day]}
               </span>
-              <span className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full ${
-                isTraining ? "bg-vital-50 text-vital-500" : "bg-parchment-100 text-stone-400"
-              }`}>
-                {isTraining ? <Dumbbell className="h-2.5 w-2.5" /> : <Moon className="h-2.5 w-2.5" />}
-                {isTraining ? "Зал" : "Отдых"}
+              <span
+                className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  isTraining ? 'bg-vital-50 text-vital-500' : 'bg-parchment-100 text-stone-400'
+                }`}
+              >
+                {isTraining ? (
+                  <Dumbbell className="h-2.5 w-2.5" />
+                ) : (
+                  <Moon className="h-2.5 w-2.5" />
+                )}
+                {isTraining ? 'Зал' : 'Отдых'}
               </span>
               <div className="flex-1 h-px bg-parchment-200" />
             </div>
@@ -1143,22 +1336,25 @@ function ListView({ meals, completions, batchMealNames, onToggleCompletion, isTr
                 return (
                   <div
                     key={meal.id}
-                    className={`rounded-2xl border border-parchment-200 bg-white transition-opacity ${isDone ? "opacity-55" : ""}`}
+                    className={`rounded-2xl border border-parchment-200 bg-white transition-opacity ${isDone ? 'opacity-55' : ''}`}
                   >
                     <div className="flex items-start gap-3 p-4">
                       <button
                         className="mt-0.5 flex-shrink-0"
                         onClick={() => onToggleCompletion(meal.day, meal.meal_type)}
                       >
-                        {isDone
-                          ? <CheckCircle2 className="h-5 w-5 text-sage-400" />
-                          : <Circle className="h-5 w-5 text-parchment-300" />
-                        }
+                        {isDone ? (
+                          <CheckCircle2 className="h-5 w-5 text-sage-400" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-parchment-300" />
+                        )}
                       </button>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                          <span className={`text-2xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${MEAL_COLOR[mealType]}`}>
+                          <span
+                            className={`text-2xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${MEAL_COLOR[mealType]}`}
+                          >
                             {MEAL_LABEL_RU[mealType]}
                           </span>
                           {isBatch && (
@@ -1168,12 +1364,16 @@ function ListView({ meals, completions, batchMealNames, onToggleCompletion, isTr
                           )}
                         </div>
 
-                        <p className={`font-display text-base font-semibold text-bark-300 leading-snug ${isDone ? "line-through text-stone-400" : ""}`}>
+                        <p
+                          className={`font-display text-base font-semibold text-bark-300 leading-snug ${isDone ? 'line-through text-stone-400' : ''}`}
+                        >
                           {meal.name}
                         </p>
 
                         {meal.description && (
-                          <p className="mt-1 text-xs text-stone-400 line-clamp-2">{meal.description}</p>
+                          <p className="mt-1 text-xs text-stone-400 line-clamp-2">
+                            {meal.description}
+                          </p>
                         )}
 
                         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1219,25 +1419,33 @@ interface ShoppingViewProps {
 }
 
 function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
-  const [activeWindow, setActiveWindow] = useState<"all" | "A" | "B">("all");
+  const [activeWindow, setActiveWindow] = useState<'all' | 'A' | 'B'>('all');
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [selectedShop, setSelectedShop] = useState<string | null>(null);
 
   // shop assignments: itemKey → shopKey  (persisted per-week)
   const [shopAssignments, setShopAssignments] = useState<Record<string, string>>(() => {
-    if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem(`np_shops_${globalWeek}`) ?? "{}"); } catch { return {}; }
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(`np_shops_${globalWeek}`) ?? '{}');
+    } catch {
+      return {};
+    }
   });
 
   // ingredient links: itemKey → url  (persisted per-week)
   const [links, setLinks] = useState<Record<string, string>>(() => {
-    if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem(`np_links_${globalWeek}`) ?? "{}"); } catch { return {}; }
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(`np_links_${globalWeek}`) ?? '{}');
+    } catch {
+      return {};
+    }
   });
 
   const [assigningFor, setAssigningFor] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<string | null>(null);
-  const [linkDraft, setLinkDraft] = useState("");
+  const [linkDraft, setLinkDraft] = useState('');
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -1259,14 +1467,17 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
         setAssigningFor(null);
       }
     }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
   }, [assigningFor]);
 
   const filtered = useMemo(() => {
-    let base = activeWindow === "all" ? items : items.filter((i) => i.shopping_window === activeWindow);
+    let base =
+      activeWindow === 'all' ? items : items.filter((i) => i.shopping_window === activeWindow);
     if (selectedShop) {
-      base = base.filter((i) => shopAssignments[`${i.shopping_window}-${i.item_name}`] === selectedShop);
+      base = base.filter(
+        (i) => shopAssignments[`${i.shopping_window}-${i.item_name}`] === selectedShop
+      );
     }
     return base;
   }, [items, activeWindow, selectedShop, shopAssignments]);
@@ -1284,7 +1495,8 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
   function toggleCheck(key: string) {
     setChecked((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -1292,7 +1504,8 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
   function assignShop(itemKey: string, shopKey: string | null) {
     setShopAssignments((prev) => {
       const next = { ...prev };
-      if (shopKey === null) delete next[itemKey]; else next[itemKey] = shopKey;
+      if (shopKey === null) delete next[itemKey];
+      else next[itemKey] = shopKey;
       return next;
     });
     setAssigningFor(null);
@@ -1301,45 +1514,50 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
   function saveLink(itemKey: string, url: string) {
     setLinks((prev) => {
       const next = { ...prev };
-      if (!url.trim()) delete next[itemKey]; else next[itemKey] = url.trim();
+      if (!url.trim()) delete next[itemKey];
+      else next[itemKey] = url.trim();
       return next;
     });
     setEditingLink(null);
   }
 
   function copyShopList() {
-    const shopLabel = MOSCOW_SHOPS.find((s) => s.key === selectedShop)?.label ?? selectedShop ?? "";
-    const lines = [`Список покупок — ${shopLabel}`, ""];
+    const shopLabel = MOSCOW_SHOPS.find((s) => s.key === selectedShop)?.label ?? selectedShop ?? '';
+    const lines = [`Список покупок — ${shopLabel}`, ''];
     for (const [cat, catItems] of byCategory.entries()) {
       lines.push(`${cat}`);
       for (const item of catItems) {
-        const qty = item.quantity_per_person ? ` — ${item.quantity_per_person}` : "";
+        const qty = item.quantity_per_person ? ` — ${item.quantity_per_person}` : '';
         const url = links[`${item.shopping_window}-${item.item_name}`];
-        lines.push(`• ${item.item_name}${qty}${url ? ` (${url})` : ""}`);
+        lines.push(`• ${item.item_name}${qty}${url ? ` (${url})` : ''}`);
       }
-      lines.push("");
+      lines.push('');
     }
-    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   }
 
   const totalItems = filtered.length;
-  const checkedCount = [...filtered].filter((i) => checked.has(`${i.shopping_window}-${i.item_name}`)).length;
+  const checkedCount = [...filtered].filter((i) =>
+    checked.has(`${i.shopping_window}-${i.item_name}`)
+  ).length;
 
   return (
     <div className="space-y-4" ref={containerRef}>
       {/* ── Shop selector strip ───────────────────────────────────────── */}
       <div>
-        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-2 px-1">Магазин</p>
+        <p className="text-2xs font-semibold uppercase tracking-wide text-stone-400 mb-2 px-1">
+          Магазин
+        </p>
         <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
           <button
             onClick={() => setSelectedShop(null)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
               selectedShop === null
-                ? "bg-bark-300 text-white border-bark-300"
-                : "bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300"
+                ? 'bg-bark-300 text-white border-bark-300'
+                : 'bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300'
             }`}
           >
             Все
@@ -1349,7 +1567,9 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
               key={shop.key}
               onClick={() => setSelectedShop(selectedShop === shop.key ? null : shop.key)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
-                selectedShop === shop.key ? shop.activeColor : "bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300"
+                selectedShop === shop.key
+                  ? shop.activeColor
+                  : 'bg-parchment-50 border-parchment-200 text-stone-400 hover:text-bark-300'
               }`}
             >
               {shop.label}
@@ -1362,17 +1582,17 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-1 bg-parchment-100 rounded-xl p-1">
           {[
-            { key: "all", label: "Вся неделя" },
-            { key: "A", label: "Дни 1–3" },
-            { key: "B", label: "Дни 4–7" },
+            { key: 'all', label: 'Вся неделя' },
+            { key: 'A', label: 'Дни 1–3' },
+            { key: 'B', label: 'Дни 4–7' },
           ].map((opt) => (
             <button
               key={opt.key}
-              onClick={() => setActiveWindow(opt.key as "all" | "A" | "B")}
+              onClick={() => setActiveWindow(opt.key as 'all' | 'A' | 'B')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 activeWindow === opt.key
-                  ? "bg-white shadow-warm-sm text-bark-300"
-                  : "text-stone-400 hover:text-bark-300"
+                  ? 'bg-white shadow-warm-sm text-bark-300'
+                  : 'text-stone-400 hover:text-bark-300'
               }`}
             >
               {opt.label}
@@ -1385,12 +1605,12 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
             onClick={copyShopList}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
               copied
-                ? "bg-sage-50 border-sage-200 text-sage-600"
-                : "bg-parchment-50 border-parchment-200 text-stone-500 hover:text-bark-300"
+                ? 'bg-sage-50 border-sage-200 text-sage-600'
+                : 'bg-parchment-50 border-parchment-200 text-stone-500 hover:text-bark-300'
             }`}
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Скопировано" : "Скопировать список"}
+            {copied ? 'Скопировано' : 'Скопировать список'}
           </button>
         )}
 
@@ -1399,10 +1619,14 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
             <div className="w-16 h-1.5 bg-parchment-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-sage-400 rounded-full transition-all"
-                style={{ width: `${totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0}%` }}
+                style={{
+                  width: `${totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0}%`,
+                }}
               />
             </div>
-            <span className="tabular-nums">{checkedCount}/{totalItems}</span>
+            <span className="tabular-nums">
+              {checkedCount}/{totalItems}
+            </span>
           </div>
         )}
       </div>
@@ -1412,26 +1636,32 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
         <div className="rounded-2xl border border-dashed border-parchment-300 bg-parchment-50 p-12 text-center">
           <ShoppingCart className="mx-auto h-10 w-10 text-parchment-300 mb-4" />
           <p className="text-sm text-muted-foreground">
-            {selectedShop ? "Нет товаров для этого магазина" : "Список покупок пуст"}
+            {selectedShop ? 'Нет товаров для этого магазина' : 'Список покупок пуст'}
           </p>
           {selectedShop && (
-            <p className="mt-1 text-xs text-stone-400">Назначьте товары магазину, нажав «—» рядом с ними</p>
+            <p className="mt-1 text-xs text-stone-400">
+              Назначьте товары магазину, нажав «—» рядом с ними
+            </p>
           )}
         </div>
       ) : (
         <div className="space-y-5">
           {[...byCategory.entries()].map(([category, categoryItems]) => {
-            const catChecked = categoryItems.filter(
-              (i) => checked.has(`${i.shopping_window}-${i.item_name}`)
+            const catChecked = categoryItems.filter((i) =>
+              checked.has(`${i.shopping_window}-${i.item_name}`)
             ).length;
             const allCatDone = catChecked === categoryItems.length;
 
             return (
               <div key={category}>
                 <div className="flex items-center gap-2 mb-2 px-1">
-                  <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">{category}</p>
+                  <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">
+                    {category}
+                  </p>
                   <div className="flex-1 h-px bg-parchment-200" />
-                  <span className={`text-2xs tabular-nums ${allCatDone ? "text-sage-500" : "text-stone-300"}`}>
+                  <span
+                    className={`text-2xs tabular-nums ${allCatDone ? 'text-sage-500' : 'text-stone-300'}`}
+                  >
                     {catChecked}/{categoryItems.length}
                   </span>
                 </div>
@@ -1447,22 +1677,28 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                     const isAssigningThis = assigningFor === itemKey;
 
                     return (
-                      <div
-                        key={itemKey}
-                        className={idx > 0 ? "border-t border-parchment-100" : ""}
-                      >
+                      <div key={itemKey} className={idx > 0 ? 'border-t border-parchment-100' : ''}>
                         {/* Main row */}
-                        <div className={`flex items-center gap-2 px-4 py-3 ${isChecked ? "opacity-55" : ""}`}>
+                        <div
+                          className={`flex items-center gap-2 px-4 py-3 ${isChecked ? 'opacity-55' : ''}`}
+                        >
                           {/* Check circle */}
-                          <button
-                            onClick={() => toggleCheck(itemKey)}
-                            className="flex-shrink-0"
-                          >
-                            <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              isChecked ? "bg-sage-400 border-sage-400" : "border-parchment-300 hover:border-sage-300"
-                            }`}>
+                          <button onClick={() => toggleCheck(itemKey)} className="flex-shrink-0">
+                            <div
+                              className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                isChecked
+                                  ? 'bg-sage-400 border-sage-400'
+                                  : 'border-parchment-300 hover:border-sage-300'
+                              }`}
+                            >
                               {isChecked && (
-                                <svg viewBox="0 0 12 12" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <svg
+                                  viewBox="0 0 12 12"
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                >
                                   <polyline points="2,6 5,9 10,3" />
                                 </svg>
                               )}
@@ -1471,7 +1707,9 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
 
                           {/* Name */}
                           <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                            <span className={`text-sm truncate ${isChecked ? "line-through text-stone-400" : "text-bark-300"}`}>
+                            <span
+                              className={`text-sm truncate ${isChecked ? 'line-through text-stone-400' : 'text-bark-300'}`}
+                            >
                               {item.item_name}
                             </span>
                             {itemLink && !isEditingThisLink && (
@@ -1496,12 +1734,14 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                           )}
 
                           {/* Window badge */}
-                          <span className={`text-2xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium hidden sm:inline ${
-                            item.shopping_window === "A"
-                              ? "bg-sage-50 text-sage-500"
-                              : "bg-amber-50 text-amber-500"
-                          }`}>
-                            {item.shopping_window === "A" ? "1–3" : "4–7"}
+                          <span
+                            className={`text-2xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium hidden sm:inline ${
+                              item.shopping_window === 'A'
+                                ? 'bg-sage-50 text-sage-500'
+                                : 'bg-amber-50 text-amber-500'
+                            }`}
+                          >
+                            {item.shopping_window === 'A' ? '1–3' : '4–7'}
                           </span>
 
                           {/* Link button */}
@@ -1510,15 +1750,15 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                               if (isEditingThisLink) {
                                 setEditingLink(null);
                               } else {
-                                setLinkDraft(itemLink ?? "");
+                                setLinkDraft(itemLink ?? '');
                                 setEditingLink(itemKey);
                                 setAssigningFor(null);
                               }
                             }}
                             className={`flex-shrink-0 p-1 rounded-lg transition-colors ${
                               itemLink
-                                ? "text-sage-400 hover:text-sage-500"
-                                : "text-stone-300 hover:text-stone-400"
+                                ? 'text-sage-400 hover:text-sage-500'
+                                : 'text-stone-300 hover:text-stone-400'
                             }`}
                             title="Ссылка на товар"
                           >
@@ -1535,11 +1775,11 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                               className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-2xs font-medium transition-colors ${
                                 assignedShopDef
                                   ? assignedShopDef.chipColor
-                                  : "border-parchment-200 bg-parchment-50 text-stone-400 hover:text-bark-300"
+                                  : 'border-parchment-200 bg-parchment-50 text-stone-400 hover:text-bark-300'
                               }`}
                               title="Выбрать магазин"
                             >
-                              {assignedShopDef ? assignedShopDef.label : "—"}
+                              {assignedShopDef ? assignedShopDef.label : '—'}
                             </button>
                             {isAssigningThis && (
                               <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-parchment-200 rounded-xl shadow-lg p-1.5 min-w-[150px]">
@@ -1554,7 +1794,9 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                                     key={shop.key}
                                     onClick={() => assignShop(itemKey, shop.key)}
                                     className={`w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-parchment-50 ${
-                                      assignedShopKey === shop.key ? "font-semibold text-bark-300" : "text-stone-500"
+                                      assignedShopKey === shop.key
+                                        ? 'font-semibold text-bark-300'
+                                        : 'text-stone-500'
                                     }`}
                                   >
                                     {shop.label}
@@ -1575,8 +1817,8 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                               value={linkDraft}
                               onChange={(e) => setLinkDraft(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") saveLink(itemKey, linkDraft);
-                                if (e.key === "Escape") setEditingLink(null);
+                                if (e.key === 'Enter') saveLink(itemKey, linkDraft);
+                                if (e.key === 'Escape') setEditingLink(null);
                               }}
                               placeholder="https://..."
                               className="flex-1 text-xs bg-transparent border-none outline-none text-bark-300 placeholder:text-stone-300"
@@ -1589,7 +1831,7 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
                             </button>
                             {itemLink && (
                               <button
-                                onClick={() => saveLink(itemKey, "")}
+                                onClick={() => saveLink(itemKey, '')}
                                 className="flex-shrink-0 p-1 rounded-lg text-stone-400 hover:text-red-400 transition-colors"
                                 title="Удалить ссылку"
                               >
@@ -1616,7 +1858,10 @@ function ShoppingView({ items, globalWeek }: ShoppingViewProps) {
 function useLongRunning(active: boolean, ms = 10000) {
   const [long, setLong] = useState(false);
   useEffect(() => {
-    if (!active) { setLong(false); return; }
+    if (!active) {
+      setLong(false);
+      return;
+    }
     const t = setTimeout(() => setLong(true), ms);
     return () => clearTimeout(t);
   }, [active, ms]);

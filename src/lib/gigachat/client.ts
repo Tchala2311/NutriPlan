@@ -7,16 +7,16 @@
  *   GIGACHAT_TOKEN     — static Bearer token (fallback, expires in ~30 min)
  */
 
-import { randomUUID } from "crypto";
-import sharp from "sharp";
+import { randomUUID } from 'crypto';
+import sharp from 'sharp';
 
 // GigaChat endpoints use Sberbank CA certs not in the default Node trust store.
 // NODE_TLS_REJECT_UNAUTHORIZED=0 must be set in the environment (see .env.local).
-if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0") {
+if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
   console.warn(
-    "[gigachat] NODE_TLS_REJECT_UNAUTHORIZED is not set to 0. " +
-    "GigaChat requests may fail with certificate errors. " +
-    "Add NODE_TLS_REJECT_UNAUTHORIZED=0 to .env.local"
+    '[gigachat] NODE_TLS_REJECT_UNAUTHORIZED is not set to 0. ' +
+      'GigaChat requests may fail with certificate errors. ' +
+      'Add NODE_TLS_REJECT_UNAUTHORIZED=0 to .env.local'
   );
 }
 import {
@@ -44,14 +44,11 @@ import {
   getConditionInstructions,
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
-} from "./prompts";
+} from './prompts';
 
-const GIGACHAT_API_URL =
-  "https://gigachat.devices.sberbank.ru/api/v1/chat/completions";
-const GIGACHAT_FILES_URL =
-  "https://gigachat.devices.sberbank.ru/api/v1/files";
-const GIGACHAT_OAUTH_URL =
-  "https://ngw.devices.sberbank.ru:9443/api/v2/oauth";
+const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
+const GIGACHAT_FILES_URL = 'https://gigachat.devices.sberbank.ru/api/v1/files';
+const GIGACHAT_OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
 
 // ─── Token cache ──────────────────────────────────────────────────────────────
 
@@ -69,13 +66,13 @@ async function getToken(): Promise<string> {
   const authKey = process.env.GIGACHAT_AUTH_KEY;
   if (authKey) {
     const res = await fetch(GIGACHAT_OAUTH_URL, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Basic ${authKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
         RqUID: randomUUID(),
       },
-      body: "scope=GIGACHAT_API_PERS",
+      body: 'scope=GIGACHAT_API_PERS',
     });
     if (!res.ok) {
       const body = await res.text();
@@ -89,7 +86,7 @@ async function getToken(): Promise<string> {
 
   // Fallback: static token set externally
   const token = process.env.GIGACHAT_TOKEN;
-  if (!token) throw new Error("Set GIGACHAT_AUTH_KEY or GIGACHAT_TOKEN env var");
+  if (!token) throw new Error('Set GIGACHAT_AUTH_KEY or GIGACHAT_TOKEN env var');
   return token;
 }
 
@@ -102,17 +99,17 @@ async function getToken(): Promise<string> {
 async function uploadImageFile(imageBuffer: Buffer, token: string): Promise<string> {
   // Resize to ≤ 1024 px (GigaChat vision limit)
   const resized = await sharp(imageBuffer)
-    .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+    .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 85 })
     .toBuffer();
 
   const form = new FormData();
   // Convert Buffer to Uint8Array for Blob compatibility
-  form.append("file", new Blob([new Uint8Array(resized)], { type: "image/jpeg" }), "photo.jpg");
-  form.append("purpose", "general");
+  form.append('file', new Blob([new Uint8Array(resized)], { type: 'image/jpeg' }), 'photo.jpg');
+  form.append('purpose', 'general');
 
   const res = await fetch(GIGACHAT_FILES_URL, {
-    method: "POST",
+    method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: form,
   });
@@ -124,7 +121,7 @@ async function uploadImageFile(imageBuffer: Buffer, token: string): Promise<stri
   return data.id as string;
 }
 
-export type ToneMode = "краткий" | "подробный";
+export type ToneMode = 'краткий' | 'подробный';
 
 export interface UserProfile {
   age?: number;
@@ -166,15 +163,15 @@ function interpolate(template: string, vars: Record<string, string>): string {
 }
 
 /** Flatten a nested object into dot-notation keys, converting arrays to comma-separated strings. */
-function flatten(obj: Record<string, unknown>, prefix = ""): Record<string, string> {
+function flatten(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj)) {
     const full = prefix ? `${prefix}.${k}` : k;
     if (v === null || v === undefined) {
-      result[full] = "—";
+      result[full] = '—';
     } else if (Array.isArray(v)) {
-      result[full] = v.length > 0 ? v.join(", ") : "—";
-    } else if (typeof v === "object") {
+      result[full] = v.length > 0 ? v.join(', ') : '—';
+    } else if (typeof v === 'object') {
       Object.assign(result, flatten(v as Record<string, unknown>, full));
     } else {
       result[full] = String(v);
@@ -189,14 +186,13 @@ function buildVars(
   analysis: Record<string, unknown> = {},
   extra: Record<string, string> = {}
 ): Record<string, string> {
-  const toneMode = user.tone_mode ?? "краткий";
+  const toneMode = user.tone_mode ?? 'краткий';
   return {
     ...flatten({ user, analysis }),
-    tone_instruction: TONE_INSTRUCTIONS[toneMode] ?? TONE_INSTRUCTIONS["краткий"],
+    tone_instruction: TONE_INSTRUCTIONS[toneMode] ?? TONE_INSTRUCTIONS['краткий'],
     ...extra,
   };
 }
-
 
 async function callGigaChat(
   systemPrompt: string,
@@ -205,21 +201,21 @@ async function callGigaChat(
 ): Promise<string> {
   const token = await getToken();
   const body = JSON.stringify({
-    model: "GigaChat",
+    model: 'GigaChat',
     max_tokens: maxTokens,
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ],
   });
   const headers = {
     Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
 
   const attempt = async () =>
     fetch(GIGACHAT_API_URL, {
-      method: "POST",
+      method: 'POST',
       headers,
       body,
       signal: AbortSignal.timeout(30_000),
@@ -230,8 +226,8 @@ async function callGigaChat(
     res = await attempt();
   } catch (err) {
     const name = (err as { name?: string }).name;
-    if (name === "TimeoutError" || name === "AbortError") {
-      throw new Error("GigaChat timeout");
+    if (name === 'TimeoutError' || name === 'AbortError') {
+      throw new Error('GigaChat timeout');
     }
     throw err;
   }
@@ -243,15 +239,15 @@ async function callGigaChat(
       res = await attempt();
     } catch (err) {
       const name = (err as { name?: string }).name;
-      if (name === "TimeoutError" || name === "AbortError") {
-        throw new Error("GigaChat timeout");
+      if (name === 'TimeoutError' || name === 'AbortError') {
+        throw new Error('GigaChat timeout');
       }
       throw err;
     }
   }
 
   if (!res.ok) {
-    if (res.status === 429) throw new Error("GigaChat rate limited");
+    if (res.status === 429) throw new Error('GigaChat rate limited');
     const responseBody = await res.text();
     throw new Error(`GigaChat error ${res.status}: ${responseBody}`);
   }
@@ -266,13 +262,14 @@ function resolveMaxTokens(promptId: string, toneMode: ToneMode): number {
 
 // ─── Public helpers ──────────────────────────────────────────────────────────
 
-export async function getOnboardingInsight(
-  user: UserProfile
-): Promise<string> {
+export async function getOnboardingInsight(user: UserProfile): Promise<string> {
   const vars = buildVars(user);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_ONBOARDING_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("onboarding", user.tone_mode ?? "краткий"));
+  return callGigaChat(system, userMsg, resolveMaxTokens('onboarding', user.tone_mode ?? 'краткий'));
 }
 
 export async function getDailyAnalysis(
@@ -283,7 +280,14 @@ export async function getDailyAnalysis(
     total_protein_g: number;
     total_carbs_g: number;
     total_fat_g: number;
-    meals_today: Array<{ time: string; name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }>;
+    meals_today: Array<{
+      time: string;
+      name: string;
+      calories: number;
+      protein_g: number;
+      carbs_g: number;
+      fat_g: number;
+    }>;
   }
 ): Promise<string> {
   const mealsList =
@@ -293,13 +297,22 @@ export async function getDailyAnalysis(
             (m) =>
               `- ${m.time} | ${m.name}: ${m.calories} ккал, белок ${m.protein_g}г, углеводы ${m.carbs_g}г, жиры ${m.fat_g}г`
           )
-          .join("\n")
-      : "— (записи отсутствуют)";
+          .join('\n')
+      : '— (записи отсутствуют)';
 
-  const vars = buildVars(user, analysis as unknown as Record<string, unknown>, { meals_list: mealsList });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const vars = buildVars(user, analysis as unknown as Record<string, unknown>, {
+    meals_list: mealsList,
+  });
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_DAILY_ANALYSIS_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("daily_analysis", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('daily_analysis', user.tone_mode ?? 'краткий')
+  );
 }
 
 export async function getSafetyAlert(
@@ -322,12 +335,21 @@ export async function getSafetyAlert(
       (d) =>
         `- ${d.nutrient_name_ru}: фактически ${d.actual_avg} ${d.unit}/день (норма ${d.clinical_min} ${d.unit}, ${d.pct_of_minimum}% от нормы, ${d.days_below} дн.)`
     )
-    .join("\n");
+    .join('\n');
 
-  const vars = buildVars(user, analysis as unknown as Record<string, unknown>, { deficiencies_list: defList });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const vars = buildVars(user, analysis as unknown as Record<string, unknown>, {
+    deficiencies_list: defList,
+  });
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_SAFETY_ALERT_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("safety_alert", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('safety_alert', user.tone_mode ?? 'краткий')
+  );
 }
 
 export async function getGoalInsight(
@@ -338,42 +360,45 @@ export async function getGoalInsight(
   let template: string;
   let promptId: string;
 
-  if (goal === "weight_loss") {
+  if (goal === 'weight_loss') {
     template = PROMPT_WEIGHT_LOSS_RU;
-    promptId = "weight_loss";
-  } else if (goal === "muscle_gain") {
+    promptId = 'weight_loss';
+  } else if (goal === 'muscle_gain') {
     template = PROMPT_MUSCLE_GAIN_RU;
-    promptId = "muscle_gain";
-  } else if (goal === "disease_management") {
+    promptId = 'muscle_gain';
+  } else if (goal === 'disease_management') {
     template = PROMPT_DISEASE_MGMT_RU;
-    promptId = "disease_mgmt";
+    promptId = 'disease_mgmt';
   } else {
     // Fall back to daily analysis for other goals
     return getDailyAnalysis(user, analysis as Parameters<typeof getDailyAnalysis>[1]);
   }
 
   const extra: Record<string, string> = {};
-  if (goal === "weight_loss" && analysis.plateau_detected) {
+  if (goal === 'weight_loss' && analysis.plateau_detected) {
     extra.plateau_instruction =
-      "Пользователь в плато. Предложи одну научно обоснованную стратегию выхода из плато, соответствующую его уровню активности. Не рекомендуй экстремальное ограничение калорий.";
+      'Пользователь в плато. Предложи одну научно обоснованную стратегию выхода из плато, соответствующую его уровню активности. Не рекомендуй экстремальное ограничение калорий.';
   } else {
-    extra.plateau_instruction = "";
+    extra.plateau_instruction = '';
   }
-  if (goal === "muscle_gain" && user.kidney_disease) {
+  if (goal === 'muscle_gain' && user.kidney_disease) {
     extra.kidney_instruction = `ВАЖНО: У пользователя заболевание почек. Максимум белка: ${user.protein_cap_g} г/день. Не рекомендуй превышать этот уровень.`;
   } else {
-    extra.kidney_instruction = "";
+    extra.kidney_instruction = '';
   }
-  if (goal === "disease_management") {
+  if (goal === 'disease_management') {
     extra.condition_instructions = getConditionInstructions(
       Array.isArray(user.medical_conditions) ? user.medical_conditions : []
     );
   }
 
   const vars = buildVars(user, analysis, extra);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(template, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens(promptId, user.tone_mode ?? "краткий"));
+  return callGigaChat(system, userMsg, resolveMaxTokens(promptId, user.tone_mode ?? 'краткий'));
 }
 
 export async function getTrendWarning(
@@ -387,9 +412,16 @@ export async function getTrendWarning(
   }
 ): Promise<string> {
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_TREND_WARNING_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("trend_warning", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('trend_warning', user.tone_mode ?? 'краткий')
+  );
 }
 
 export async function getOptimisationTip(
@@ -398,9 +430,16 @@ export async function getOptimisationTip(
   tipData: string
 ): Promise<string> {
   const vars = buildVars(user, {}, { tip_subtype_ru: tipSubtypeRu, tip_data: tipData });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_OPTIMISATION_TIP_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("optimisation_tip", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('optimisation_tip', user.tone_mode ?? 'краткий')
+  );
 }
 
 export async function getMealSubstitution(
@@ -415,21 +454,32 @@ export async function getMealSubstitution(
   }
 ): Promise<string> {
   const vars = buildVars(user, analysis as unknown as Record<string, unknown>);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_MEAL_SUBSTITUTION_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("meal_substitution", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('meal_substitution', user.tone_mode ?? 'краткий')
+  );
 }
 
-export async function getFreeAnswer(
-  user: UserProfile,
-  userMessage: string
-): Promise<string> {
+export async function getFreeAnswer(user: UserProfile, userMessage: string): Promise<string> {
   // Escape template delimiters in user input to prevent prompt injection
-  const safeMessage = userMessage.replace(/\{\{/g, "{ {").replace(/\}\}/g, "} }");
+  const safeMessage = userMessage.replace(/\{\{/g, '{ {').replace(/\}\}/g, '} }');
   const vars = buildVars(user, {}, { user_message: safeMessage });
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_FREE_QUESTION_RU, vars);
-  return callGigaChat(system, userMsg, resolveMaxTokens("free_question", user.tone_mode ?? "краткий"));
+  return callGigaChat(
+    system,
+    userMsg,
+    resolveMaxTokens('free_question', user.tone_mode ?? 'краткий')
+  );
 }
 
 // ── Meal planner helpers ──────────────────────────────────────────────────────
@@ -465,11 +515,11 @@ export interface WeekPlanRaw {
  */
 function extractJson(raw: string): string {
   // Strip markdown code fences
-  const fenceStripped = raw.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
+  const fenceStripped = raw.replace(/```(?:json)?\s*([\s\S]*?)```/g, '$1').trim();
   const source = fenceStripped.length > 0 ? fenceStripped : raw;
-  const start = source.indexOf("{");
-  const end = source.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("No JSON object found in response");
+  const start = source.indexOf('{');
+  const end = source.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON object found in response');
   return source.slice(start, end + 1);
 }
 
@@ -480,16 +530,16 @@ function extractJson(raw: string): string {
  */
 function sanitizeNumbers(obj: unknown, numericKeys: Set<string>): unknown {
   if (Array.isArray(obj)) return obj.map((v) => sanitizeNumbers(v, numericKeys));
-  if (obj !== null && typeof obj === "object") {
+  if (obj !== null && typeof obj === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      if (numericKeys.has(k) && (typeof v === "string")) {
-        const n = parseFloat((v as string).replace(/[^0-9.]/g, ""));
+      if (numericKeys.has(k) && typeof v === 'string') {
+        const n = parseFloat((v as string).replace(/[^0-9.]/g, ''));
         out[k] = isNaN(n) ? 0 : n;
-      } else if (k === "ingredients" && Array.isArray(v)) {
+      } else if (k === 'ingredients' && Array.isArray(v)) {
         // ingredients: string[] — join sub-arrays or leave as-is
         out[k] = (v as unknown[]).map((item) =>
-          Array.isArray(item) ? (item as string[]).join(", ") : item
+          Array.isArray(item) ? (item as string[]).join(', ') : item
         );
       } else {
         out[k] = sanitizeNumbers(v, numericKeys);
@@ -500,15 +550,15 @@ function sanitizeNumbers(obj: unknown, numericKeys: Set<string>): unknown {
   return obj;
 }
 
-const MEAL_NUMERIC_KEYS = new Set(["prep_min", "kcal", "p", "c", "f"]);
+const MEAL_NUMERIC_KEYS = new Set(['prep_min', 'kcal', 'p', 'c', 'f']);
 
 export async function generateWeeklyMealPlan(
   user: UserProfile & { avoided_ingredients?: string[] },
   weekStart: string, // "YYYY-MM-DD" Monday
-  weekEnd: string,   // "YYYY-MM-DD" Sunday
+  weekEnd: string, // "YYYY-MM-DD" Sunday
   promptOverride?: string // pre-filled goal-specific prompt; skips interpolation if provided
 ): Promise<WeekPlanRaw> {
-  const system = "Ты профессиональный диетолог, отвечаешь только валидным JSON.";
+  const system = 'Ты профессиональный диетолог, отвечаешь только валидным JSON.';
   let userMsg: string;
 
   if (promptOverride) {
@@ -541,14 +591,14 @@ export async function swapMealSlot(
   const extra: Record<string, string> = {
     meal_type: mealType,
     meal_type_ru: mealTypeRu,
-    existing_meals: existingMealTitles.length > 0 ? existingMealTitles.join(", ") : "—",
+    existing_meals: existingMealTitles.length > 0 ? existingMealTitles.join(', ') : '—',
     target_kcal: String(targetKcal),
     target_p: String(targetP),
     target_c: String(targetC),
     target_f: String(targetF),
   };
   const vars = buildVars(user, {}, extra);
-  const system = "Ты профессиональный диетолог, отвечаешь только валидным JSON.";
+  const system = 'Ты профессиональный диетолог, отвечаешь только валидным JSON.';
   const userMsg = interpolate(PROMPT_SWAP_SLOT_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.swap_slot.краткий);
   const json = extractJson(raw);
@@ -567,7 +617,7 @@ export interface FoodPhotoItem {
   fat_g: number;
   portion: string;
   weight_g?: number;
-  weight_confidence?: "measured" | "visual_high" | "visual_medium" | "visual_low";
+  weight_confidence?: 'measured' | 'visual_high' | 'visual_medium' | 'visual_low';
   is_hidden_calorie_source?: boolean;
   weight_was_estimated?: boolean;
 }
@@ -586,7 +636,7 @@ export interface FoodPhotoResult {
   items: FoodPhotoItem[];
   matched_recipe_id?: string | null;
   dish_type?: string;
-  recognition_confidence?: "high" | "medium" | "low";
+  recognition_confidence?: 'high' | 'medium' | 'low';
   uncertainty_reasons?: string[];
   apology?: string | null;
   total_calories_estimate?: number;
@@ -594,7 +644,12 @@ export interface FoodPhotoResult {
 }
 
 const FOOD_PHOTO_EXTENDED_NUMERIC_KEYS = new Set([
-  "calories", "protein_g", "carbs_g", "fat_g", "weight_g", "total_calories_estimate",
+  'calories',
+  'protein_g',
+  'carbs_g',
+  'fat_g',
+  'weight_g',
+  'total_calories_estimate',
 ]);
 
 /**
@@ -606,7 +661,7 @@ const FOOD_PHOTO_EXTENDED_NUMERIC_KEYS = new Set([
 export async function getFoodPhotoAnalysis(
   imageBuffer: Buffer,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _mimeType = "image/jpeg",
+  _mimeType = 'image/jpeg',
   weekRecipes?: WeekRecipeContext[]
 ): Promise<FoodPhotoResult> {
   const token = await getToken();
@@ -614,13 +669,13 @@ export async function getFoodPhotoAnalysis(
   const prompt = buildFoodPhotoPrompt(weekRecipes);
 
   // Try Max first (best quality), fall back to Pro when Max tokens exhausted
-  for (const model of ["GigaChat-Max", "GigaChat-Pro"]) {
+  for (const model of ['GigaChat-Max', 'GigaChat-Pro']) {
     const visionBody = JSON.stringify({
       model,
       max_tokens: MAX_TOKENS.food_photo.краткий,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: prompt,
           attachments: [fileId],
         },
@@ -628,12 +683,12 @@ export async function getFoodPhotoAnalysis(
     });
     const visionHeaders = {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
 
     const attemptVision = async () =>
       fetch(GIGACHAT_API_URL, {
-        method: "POST",
+        method: 'POST',
         headers: visionHeaders,
         body: visionBody,
         signal: AbortSignal.timeout(60_000),
@@ -644,8 +699,8 @@ export async function getFoodPhotoAnalysis(
       res = await attemptVision();
     } catch (err) {
       const name = (err as { name?: string }).name;
-      if (name === "TimeoutError" || name === "AbortError") {
-        throw new Error("GigaChat timeout");
+      if (name === 'TimeoutError' || name === 'AbortError') {
+        throw new Error('GigaChat timeout');
       }
       throw err;
     }
@@ -657,17 +712,17 @@ export async function getFoodPhotoAnalysis(
         res = await attemptVision();
       } catch (err) {
         const name = (err as { name?: string }).name;
-        if (name === "TimeoutError" || name === "AbortError") {
-          throw new Error("GigaChat timeout");
+        if (name === 'TimeoutError' || name === 'AbortError') {
+          throw new Error('GigaChat timeout');
         }
         throw err;
       }
     }
 
     if (!res.ok) {
-      if (res.status === 429) throw new Error("GigaChat rate limited");
+      if (res.status === 429) throw new Error('GigaChat rate limited');
       // If Max fails (e.g. quota exhausted), try Pro. Only throw if both fail.
-      if (model === "max") continue;
+      if (model === 'max') continue;
       const body = await res.text();
       throw new Error(`GigaChat error ${res.status}: ${body}`);
     }
@@ -679,7 +734,7 @@ export async function getFoodPhotoAnalysis(
     return sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoResult;
   }
 
-  throw new Error("GigaChat vision unavailable (both max and pro failed)");
+  throw new Error('GigaChat vision unavailable (both max and pro failed)');
 }
 
 /**
@@ -691,19 +746,14 @@ export async function estimateIngredientNutrition(
   weightG?: number
 ): Promise<FoodPhotoItem> {
   const isEstimated = !weightG;
-  const prompt = PROMPT_ESTIMATE_INGREDIENT_RU
-    .replace("{{ingredient_name}}", ingredientName)
-    .replace("{{weight_g}}", weightG ? String(weightG) : "стандартная порция")
+  const prompt = PROMPT_ESTIMATE_INGREDIENT_RU.replace('{{ingredient_name}}', ingredientName)
+    .replace('{{weight_g}}', weightG ? String(weightG) : 'стандартная порция')
     .replace(
-      "{{estimated_weight_note}}",
-      isEstimated ? " (вес не указан — оцени стандартную порцию)" : ""
+      '{{estimated_weight_note}}',
+      isEstimated ? ' (вес не указан — оцени стандартную порцию)' : ''
     );
 
-  const raw = await callGigaChat(
-    "Ты — диетолог. Отвечаешь только валидным JSON.",
-    prompt,
-    300
-  );
+  const raw = await callGigaChat('Ты — диетолог. Отвечаешь только валидным JSON.', prompt, 300);
   const json = extractJson(raw);
   const parsed = JSON.parse(json);
   const result = sanitizeNumbers(parsed, FOOD_PHOTO_EXTENDED_NUMERIC_KEYS) as FoodPhotoItem;
@@ -729,8 +779,7 @@ export async function getFoodSuggestion(
     target_fat_g: number;
   }
 ): Promise<string> {
-  const pct = (cur: number, tgt: number) =>
-    tgt > 0 ? Math.round((cur / tgt) * 100) : 0;
+  const pct = (cur: number, tgt: number) => (tgt > 0 ? Math.round((cur / tgt) * 100) : 0);
 
   const extra: Record<string, string> = {
     current_kcal: String(dayTotals.current_kcal),
@@ -752,12 +801,15 @@ export async function getFoodSuggestion(
   };
 
   const vars = buildVars(user, {}, extra);
-  const system = interpolate(SYSTEM_PROMPT_RU, vars) + buildCrossReactionWarnings(user.allergens ?? []) + buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
+  const system =
+    interpolate(SYSTEM_PROMPT_RU, vars) +
+    buildCrossReactionWarnings(user.allergens ?? []) +
+    buildPregnancyRestrictions(user.is_pregnant, user.is_breastfeeding);
   const userMsg = interpolate(PROMPT_FOOD_SUGGESTION_RU, vars);
   const result = await callGigaChat(
     system,
     userMsg,
-    resolveMaxTokens("food_suggestion", user.tone_mode ?? "краткий")
+    resolveMaxTokens('food_suggestion', user.tone_mode ?? 'краткий')
   );
   return result.trim();
 }
@@ -766,13 +818,17 @@ export async function getRecipeDetail(
   user: UserProfile,
   recipeTitle: string,
   ingredientsList: string
-): Promise<{ detailed_steps: string[]; tips: string[]; substitutions: Array<{ original: string; substitute: string; reason: string }> }> {
+): Promise<{
+  detailed_steps: string[];
+  tips: string[];
+  substitutions: Array<{ original: string; substitute: string; reason: string }>;
+}> {
   const extra: Record<string, string> = {
     recipe_title: recipeTitle,
     ingredients_list: ingredientsList,
   };
   const vars = buildVars(user, {}, extra);
-  const system = "Ты профессиональный шеф-повар и диетолог, отвечаешь только валидным JSON.";
+  const system = 'Ты профессиональный шеф-повар и диетолог, отвечаешь только валидным JSON.';
   const userMsg = interpolate(PROMPT_RECIPE_DETAIL_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.recipe_detail.краткий);
   const json = extractJson(raw);
@@ -801,7 +857,8 @@ export async function generateTastePortrait(
     rated_dishes: ratedDishesText,
   };
   const vars = buildVars(user, {}, extra);
-  const system = "Ты профессиональный диетолог и специалист по пищевому поведению, отвечаешь только валидным JSON.";
+  const system =
+    'Ты профессиональный диетолог и специалист по пищевому поведению, отвечаешь только валидным JSON.';
   const userMsg = interpolate(PROMPT_TASTE_PORTRAIT_RU, vars);
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.taste_portrait.краткий);
   const json = extractJson(raw);

@@ -1,16 +1,37 @@
-"use client";
+'use client';
 
-import { useState, useTransition, useCallback, useEffect } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { useState, useTransition, useCallback, useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
 import {
-  Sparkles, RefreshCw, Lock, LockOpen, Loader2, UtensilsCrossed,
-  CheckCircle2, Circle, ShoppingCart, LayoutGrid, List, Dumbbell, Moon, RotateCcw,
-} from "lucide-react";
-import type { MealPlan, MealSlot, RecipeSummary, MealCompletion } from "@/app/dashboard/planner/actions";
-import { togglePinSlot, toggleMealCompletion, setMealBatchSpan } from "@/app/dashboard/planner/actions";
-import { RecipeDetailModal } from "./RecipeDetailModal";
-import { ShoppingListPanel } from "./ShoppingListPanel";
-import { MealRedoModal } from "./MealRedoModal";
+  Sparkles,
+  RefreshCw,
+  Lock,
+  LockOpen,
+  Loader2,
+  UtensilsCrossed,
+  CheckCircle2,
+  Circle,
+  ShoppingCart,
+  LayoutGrid,
+  List,
+  Dumbbell,
+  Moon,
+  RotateCcw,
+} from 'lucide-react';
+import type {
+  MealPlan,
+  MealSlot,
+  RecipeSummary,
+  MealCompletion,
+} from '@/app/dashboard/planner/actions';
+import {
+  togglePinSlot,
+  toggleMealCompletion,
+  setMealBatchSpan,
+} from '@/app/dashboard/planner/actions';
+import { RecipeDetailModal } from './RecipeDetailModal';
+import { ShoppingListPanel } from './ShoppingListPanel';
+import { MealRedoModal } from './MealRedoModal';
 
 interface MealPlannerClientProps {
   initialPlan: MealPlan | null;
@@ -20,66 +41,66 @@ interface MealPlannerClientProps {
   weekStart: string;
 }
 
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snacks"] as const;
+const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
 type MealType = (typeof MEAL_TYPES)[number];
 
 const MEAL_LABEL: Record<MealType, string> = {
-  breakfast: "Завтрак",
-  lunch: "Обед",
-  dinner: "Ужин",
-  snacks: "Перекус",
+  breakfast: 'Завтрак',
+  lunch: 'Обед',
+  dinner: 'Ужин',
+  snacks: 'Перекус',
 };
 
 const MEAL_COLORS: Record<MealType, string> = {
-  breakfast: "bg-amber-50 border-amber-100",
-  lunch: "bg-sage-50 border-sage-100",
-  dinner: "bg-vital-50 border-vital-100",
-  snacks: "bg-parchment-100 border-parchment-200",
+  breakfast: 'bg-amber-50 border-amber-100',
+  lunch: 'bg-sage-50 border-sage-100',
+  dinner: 'bg-vital-50 border-vital-100',
+  snacks: 'bg-parchment-100 border-parchment-200',
 };
 
 const MEAL_ACCENT: Record<MealType, string> = {
-  breakfast: "text-amber-400",
-  lunch: "text-sage-400",
-  dinner: "text-vital-400",
-  snacks: "text-stone-400",
+  breakfast: 'text-amber-400',
+  lunch: 'text-sage-400',
+  dinner: 'text-vital-400',
+  snacks: 'text-stone-400',
 };
 
-const DAY_NAMES_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const DAY_NAMES_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 // Default training pattern: Mon Tue Thu Fri = зал, others = отдых
-const DEFAULT_TRAINING: Record<number, string> = { 1: "зал", 2: "зал", 4: "зал", 5: "зал" };
+const DEFAULT_TRAINING: Record<number, string> = { 1: 'зал', 2: 'зал', 4: 'зал', 5: 'зал' };
 
 function getDayTag(dateStr: string, trainingSchedule: Record<string, string>): string {
   if (trainingSchedule[dateStr]) return trainingSchedule[dateStr];
-  const dayOfWeek = new Date(dateStr + "T00:00:00").getDay();
-  return DEFAULT_TRAINING[dayOfWeek] ?? "отдых";
+  const dayOfWeek = new Date(dateStr + 'T00:00:00').getDay();
+  return DEFAULT_TRAINING[dayOfWeek] ?? 'отдых';
 }
 
 function getWeekDates(weekStart: string): string[] {
   const dates: string[] = [];
-  const d = new Date(weekStart + "T00:00:00");
+  const d = new Date(weekStart + 'T00:00:00');
   for (let i = 0; i < 7; i++) {
-    dates.push(d.toISOString().split("T")[0]);
+    dates.push(d.toISOString().split('T')[0]);
     d.setDate(d.getDate() + 1);
   }
   return dates;
 }
 
 function getWeekStart(dateStr?: string): string {
-  const d = dateStr ? new Date(dateStr + "T00:00:00") : new Date();
+  const d = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 }
 
 function offsetWeek(weekStart: string, weeks: number): string {
-  const d = new Date(weekStart + "T00:00:00");
+  const d = new Date(weekStart + 'T00:00:00');
   d.setDate(d.getDate() + weeks * 7);
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split('T')[0];
 }
 
-type ViewMode = "schedule" | "recipes" | "shopping";
+type ViewMode = 'schedule' | 'recipes' | 'shopping';
 type WeekTab = 1 | 2 | 3 | 4;
 
 export function MealPlannerClient({
@@ -92,7 +113,7 @@ export function MealPlannerClient({
   // The "base" week = week 1. All tabs are relative offsets from here.
   const [planGroupStart] = useState(() => getWeekStart(baseWeekStart));
   const [activeWeekTab, setActiveWeekTab] = useState<WeekTab>(1);
-  const [viewMode, setViewMode] = useState<ViewMode>("schedule");
+  const [viewMode, setViewMode] = useState<ViewMode>('schedule');
 
   // Per-week plan cache
   const [planCache, setPlanCache] = useState<Record<string, MealPlan | null>>({
@@ -123,21 +144,21 @@ export function MealPlannerClient({
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRecipe, setModalRecipe] = useState<RecipeSummary | null>(null);
-  const [modalMealType, setModalMealType] = useState<string>("breakfast");
-  const [modalDate, setModalDate] = useState<string>("");
-  const [modalPlanId, setModalPlanId] = useState<string>("");
+  const [modalMealType, setModalMealType] = useState<string>('breakfast');
+  const [modalDate, setModalDate] = useState<string>('');
+  const [modalPlanId, setModalPlanId] = useState<string>('');
   const [modalCurrentSpan, setModalCurrentSpan] = useState<number>(1);
 
   // Redo modal state
   const [redoModalOpen, setRedoModalOpen] = useState(false);
-  const [redoType, setRedoType] = useState<"individual" | "daily" | "weekly">("individual");
-  const [redoDate, setRedoDate] = useState<string>("");
+  const [redoType, setRedoType] = useState<'individual' | 'daily' | 'weekly'>('individual');
+  const [redoDate, setRedoDate] = useState<string>('');
   const [redoWeekNumber, setRedoWeekNumber] = useState<number>(1);
 
   const currentWeekStart = offsetWeek(planGroupStart, activeWeekTab - 1);
   const plan = planCache[currentWeekStart] ?? null;
   const dates = getWeekDates(currentWeekStart);
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
   const hasPlan = !!plan && Object.keys(plan.slots).length > 0;
 
   async function switchWeekTab(tab: WeekTab) {
@@ -166,16 +187,16 @@ export function MealPlannerClient({
     setSharing(true);
     setShareUrl(null);
     try {
-      const res = await fetch("/api/share/meal-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/share/meal-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mealPlanId: plan.id }),
       });
-      const data = await res.json() as { shareUrl?: string; error?: string };
+      const data = (await res.json()) as { shareUrl?: string; error?: string };
       if (data.shareUrl) {
         setShareUrl(data.shareUrl);
         // Copy to clipboard if supported
-        if (typeof navigator !== "undefined" && navigator.clipboard) {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
           await navigator.clipboard.writeText(data.shareUrl);
           setShareCopied(true);
           setTimeout(() => setShareCopied(false), 3000);
@@ -201,14 +222,14 @@ export function MealPlannerClient({
     setGenerating(true);
     setGenerateError(null);
     try {
-      const res = await fetch("/api/ai/meal-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/ai/meal-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ week_start: currentWeekStart }),
       });
       if (!res.ok) {
         // Try to parse error response for specific messages (e.g., trial expired)
-        let errorMsg = "Ошибка генерации плана. Попробуйте снова.";
+        let errorMsg = 'Ошибка генерации плана. Попробуйте снова.';
         try {
           const errorData = await res.json();
           if (errorData.error) errorMsg = errorData.error;
@@ -221,7 +242,9 @@ export function MealPlannerClient({
       setPlanCache((prev) => ({ ...prev, [currentWeekStart]: data.plan }));
       setRecipesCache((prev) => ({ ...prev, ...data.recipes }));
     } catch (err) {
-      setGenerateError(err instanceof Error ? err.message : "Ошибка генерации плана. Попробуйте снова.");
+      setGenerateError(
+        err instanceof Error ? err.message : 'Ошибка генерации плана. Попробуйте снова.'
+      );
     } finally {
       setGenerating(false);
     }
@@ -232,12 +255,12 @@ export function MealPlannerClient({
     const key = `${date}-${mealType}`;
     setSwappingSlot(key);
     try {
-      const res = await fetch("/api/ai/meal-plan/swap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/ai/meal-plan/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan_id: plan.id, date, meal_type: mealType }),
       });
-      if (!res.ok) throw new Error("Swap failed");
+      if (!res.ok) throw new Error('Swap failed');
       const data = await res.json();
       setPlanCache((prev) => {
         const existing = prev[currentWeekStart];
@@ -248,7 +271,7 @@ export function MealPlannerClient({
       });
       setRecipesCache((prev) => ({ ...prev, [data.recipe.id]: data.recipe }));
     } catch {
-      setSwapError("Не удалось заменить блюдо. Попробуйте снова.");
+      setSwapError('Не удалось заменить блюдо. Попробуйте снова.');
     } finally {
       setSwappingSlot(null);
     }
@@ -277,7 +300,8 @@ export function MealPlannerClient({
     // Optimistic toggle
     setCompletions((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
     try {
@@ -286,7 +310,8 @@ export function MealPlannerClient({
       // Revert on error
       setCompletions((prev) => {
         const next = new Set(prev);
-        if (next.has(key)) next.delete(key); else next.add(key);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
         return next;
       });
     } finally {
@@ -294,29 +319,36 @@ export function MealPlannerClient({
     }
   }
 
-  const openRecipe = useCallback((recipe: RecipeSummary, mealType: string, date: string) => {
-    setModalRecipe(recipe);
-    setModalMealType(mealType);
-    setModalDate(date);
-    if (plan) {
-      setModalPlanId(plan.id);
-      const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
-      setModalCurrentSpan(slot?.days_span ?? 1);
-    }
-    setModalOpen(true);
-  }, [plan]);
+  const openRecipe = useCallback(
+    (recipe: RecipeSummary, mealType: string, date: string) => {
+      setModalRecipe(recipe);
+      setModalMealType(mealType);
+      setModalDate(date);
+      if (plan) {
+        setModalPlanId(plan.id);
+        const slot = plan.slots[date]?.[mealType] as MealSlot | undefined;
+        setModalCurrentSpan(slot?.days_span ?? 1);
+      }
+      setModalOpen(true);
+    },
+    [plan]
+  );
 
-  const openRedoModal = useCallback((type: "daily" | "weekly", date: string) => {
-    setRedoType(type);
-    setRedoDate(date);
-    setRedoWeekNumber(activeWeekTab);
-    setRedoModalOpen(true);
-  }, [activeWeekTab]);
+  const openRedoModal = useCallback(
+    (type: 'daily' | 'weekly', date: string) => {
+      setRedoType(type);
+      setRedoDate(date);
+      setRedoWeekNumber(activeWeekTab);
+      setRedoModalOpen(true);
+    },
+    [activeWeekTab]
+  );
 
   function handleSaveToggle(recipeId: string, saved: boolean) {
     setSavedIds((prev) => {
       const next = new Set(prev);
-      if (saved) next.add(recipeId); else next.delete(recipeId);
+      if (saved) next.add(recipeId);
+      else next.delete(recipeId);
       return next;
     });
   }
@@ -368,9 +400,9 @@ export function MealPlannerClient({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {hasPlan && viewMode === "schedule" && (
+          {hasPlan && viewMode === 'schedule' && (
             <button
-              onClick={() => openRedoModal("weekly", currentWeekStart)}
+              onClick={() => openRedoModal('weekly', currentWeekStart)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sage-400 text-white text-sm font-medium
                 hover:bg-sage-500 transition-colors shadow-warm-sm"
               title="Переделать всю неделю"
@@ -386,9 +418,13 @@ export function MealPlannerClient({
               hover:bg-bark-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed shadow-warm-sm"
           >
             {generating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Генерирую…</>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Генерирую…
+              </>
             ) : (
-              <><Sparkles className="h-4 w-4" /> {hasPlan ? "Обновить план" : "Создать план"}</>
+              <>
+                <Sparkles className="h-4 w-4" /> {hasPlan ? 'Обновить план' : 'Создать план'}
+              </>
             )}
           </button>
           {hasPlan && (
@@ -402,9 +438,15 @@ export function MealPlannerClient({
               {sharing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : shareCopied ? (
-                <><ShareCheckIcon className="h-4 w-4 text-sage-500" /> <span className="hidden sm:inline text-sage-600">Скопировано!</span></>
+                <>
+                  <ShareCheckIcon className="h-4 w-4 text-sage-500" />{' '}
+                  <span className="hidden sm:inline text-sage-600">Скопировано!</span>
+                </>
               ) : (
-                <><ShareIcon className="h-4 w-4" /> <span className="hidden sm:inline">Поделиться</span></>
+                <>
+                  <ShareIcon className="h-4 w-4" />{' '}
+                  <span className="hidden sm:inline">Поделиться</span>
+                </>
               )}
             </button>
           )}
@@ -414,12 +456,20 @@ export function MealPlannerClient({
       {shareUrl && !shareCopied && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-sage-200 bg-sage-50 px-4 py-2.5">
           <ShareIcon className="h-4 w-4 text-sage-500 shrink-0" />
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer"
-            className="flex-1 text-xs text-sage-700 font-mono truncate underline">
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-xs text-sage-700 font-mono truncate underline"
+          >
             {shareUrl}
           </a>
           <button
-            onClick={() => { navigator.clipboard.writeText(shareUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 3000); }}
+            onClick={() => {
+              navigator.clipboard.writeText(shareUrl);
+              setShareCopied(true);
+              setTimeout(() => setShareCopied(false), 3000);
+            }}
             className="shrink-0 text-xs text-sage-600 font-medium hover:text-sage-800"
           >
             Скопировать
@@ -437,8 +487,8 @@ export function MealPlannerClient({
               onClick={() => switchWeekTab(tab)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeWeekTab === tab
-                  ? "bg-white shadow-warm-sm text-bark-300"
-                  : "text-stone-400 hover:text-bark-300"
+                  ? 'bg-white shadow-warm-sm text-bark-300'
+                  : 'text-stone-400 hover:text-bark-300'
               }`}
             >
               Неделя {tab}
@@ -449,33 +499,33 @@ export function MealPlannerClient({
         {/* View toggle */}
         <div className="flex items-center gap-1 bg-parchment-100 rounded-xl p-1 ml-auto">
           <button
-            onClick={() => setViewMode("schedule")}
+            onClick={() => setViewMode('schedule')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === "schedule"
-                ? "bg-white shadow-warm-sm text-bark-300"
-                : "text-stone-400 hover:text-bark-300"
+              viewMode === 'schedule'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">График</span>
           </button>
           <button
-            onClick={() => setViewMode("recipes")}
+            onClick={() => setViewMode('recipes')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === "recipes"
-                ? "bg-white shadow-warm-sm text-bark-300"
-                : "text-stone-400 hover:text-bark-300"
+              viewMode === 'recipes'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <List className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Рецепты</span>
           </button>
           <button
-            onClick={() => setViewMode("shopping")}
+            onClick={() => setViewMode('shopping')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === "shopping"
-                ? "bg-white shadow-warm-sm text-bark-300"
-                : "text-stone-400 hover:text-bark-300"
+              viewMode === 'shopping'
+                ? 'bg-white shadow-warm-sm text-bark-300'
+                : 'text-stone-400 hover:text-bark-300'
             }`}
           >
             <ShoppingCart className="h-3.5 w-3.5" />
@@ -489,7 +539,9 @@ export function MealPlannerClient({
         <div>
           <MealPlanSkeleton />
           {loadingWeekLong && (
-            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
+            <p className="mt-4 text-center text-sm text-muted-foreground animate-pulse">
+              Ещё немного…
+            </p>
           )}
         </div>
       )}
@@ -500,8 +552,12 @@ export function MealPlannerClient({
           {generating ? (
             <>
               <MealPlanSkeleton />
-              <p className="mt-4 font-display text-base font-semibold text-bark-200">Создаю план питания…</p>
-              <p className="mt-1 text-sm text-muted-foreground">GigaChat подбирает рецепты под ваши цели.</p>
+              <p className="mt-4 font-display text-base font-semibold text-bark-200">
+                Создаю план питания…
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                GigaChat подбирает рецепты под ваши цели.
+              </p>
               {generatingLong && (
                 <p className="mt-2 text-sm text-muted-foreground animate-pulse">Ещё немного…</p>
               )}
@@ -509,7 +565,9 @@ export function MealPlannerClient({
           ) : (
             <>
               <UtensilsCrossed className="mx-auto h-10 w-10 text-parchment-300 mb-4" />
-              <p className="font-display text-lg font-semibold text-bark-200">Нет плана на эту неделю</p>
+              <p className="font-display text-lg font-semibold text-bark-200">
+                Нет плана на эту неделю
+              </p>
               <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
                 Нажмите «Создать план» — ИИ подберёт блюда с учётом целей, ограничений и тренировок.
               </p>
@@ -522,7 +580,7 @@ export function MealPlannerClient({
             </>
           )}
         </div>
-      ) : !loadingWeek && viewMode === "schedule" ? (
+      ) : !loadingWeek && viewMode === 'schedule' ? (
         <ScheduleView
           plan={plan!}
           dates={dates}
@@ -537,7 +595,7 @@ export function MealPlannerClient({
           onToggleCompletion={handleToggleCompletion}
           onOpenRedo={openRedoModal}
         />
-      ) : !loadingWeek && viewMode === "recipes" ? (
+      ) : !loadingWeek && viewMode === 'recipes' ? (
         <RecipesView
           weekRecipes={weekRecipes}
           completions={completions}
@@ -545,7 +603,7 @@ export function MealPlannerClient({
           onOpenRecipe={openRecipe}
           onToggleCompletion={handleToggleCompletion}
         />
-      ) : !loadingWeek && viewMode === "shopping" ? (
+      ) : !loadingWeek && viewMode === 'shopping' ? (
         <ShoppingListPanel
           weekRecipes={weekRecipes}
           planGroupStart={planGroupStart}
@@ -602,12 +660,22 @@ interface ScheduleViewProps {
   onTogglePin: (date: string, mealType: MealType) => void;
   onSwapSlot: (date: string, mealType: MealType) => void;
   onToggleCompletion: (date: string, mealType: string) => void;
-  onOpenRedo: (type: "daily" | "weekly", date: string) => void;
+  onOpenRedo: (type: 'daily' | 'weekly', date: string) => void;
 }
 
 function ScheduleView({
-  plan, dates, recipes, today, completions, swappingSlot, completingSlot,
-  onOpenRecipe, onTogglePin, onSwapSlot, onToggleCompletion, onOpenRedo,
+  plan,
+  dates,
+  recipes,
+  today,
+  completions,
+  swappingSlot,
+  completingSlot,
+  onOpenRecipe,
+  onTogglePin,
+  onSwapSlot,
+  onToggleCompletion,
+  onOpenRedo,
 }: ScheduleViewProps) {
   // Mobile day-picker: default to today's index, or 0
   const todayIdx = dates.indexOf(today);
@@ -647,14 +715,16 @@ function ScheduleView({
                 onClick={() => setMobileDayIdx(idx)}
                 className={`flex-shrink-0 flex flex-col items-center rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
                   isSelected
-                    ? "bg-bark-300 text-primary-foreground"
+                    ? 'bg-bark-300 text-primary-foreground'
                     : isToday
-                    ? "bg-parchment-200 text-bark-300"
-                    : "text-stone-400 hover:bg-parchment-100"
+                      ? 'bg-parchment-200 text-bark-300'
+                      : 'text-stone-400 hover:bg-parchment-100'
                 }`}
               >
                 <span className="text-[10px] uppercase tracking-wide">{DAY_NAMES_RU[idx]}</span>
-                <span className="text-base font-semibold">{new Date(date + "T00:00:00").getDate()}</span>
+                <span className="text-base font-semibold">
+                  {new Date(date + 'T00:00:00').getDate()}
+                </span>
               </button>
             );
           })}
@@ -672,12 +742,14 @@ function ScheduleView({
             const isCompleting = completingSlot === slotKey;
             return (
               <div key={mealType}>
-                <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${MEAL_ACCENT[mealType]}`}>
+                <p
+                  className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${MEAL_ACCENT[mealType]}`}
+                >
                   {MEAL_LABEL[mealType]}
                 </p>
                 {slot && recipe ? (
                   <div
-                    className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-3 flex items-center gap-3 cursor-pointer ${isDone ? "opacity-70" : ""}`}
+                    className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-3 flex items-center gap-3 cursor-pointer ${isDone ? 'opacity-70' : ''}`}
                     onClick={() => onOpenRecipe(recipe, mealType, date)}
                   >
                     {isSwapping && (
@@ -688,37 +760,51 @@ function ScheduleView({
                     )}
                     <button
                       className="shrink-0"
-                      onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleCompletion(date, mealType);
+                      }}
                       disabled={isCompleting}
                     >
-                      {isCompleting
-                        ? <Loader2 className="h-4 w-4 animate-spin text-sage-400" />
-                        : isDone
-                          ? <CheckCircle2 className="h-4 w-4 text-sage-400" />
-                          : <Circle className="h-4 w-4 text-parchment-300" />
-                      }
+                      {isCompleting ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-sage-400" />
+                      ) : isDone ? (
+                        <CheckCircle2 className="h-4 w-4 text-sage-400" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-parchment-300" />
+                      )}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium text-bark-300 truncate ${isDone ? "line-through text-stone-400" : ""}`}>
+                      <p
+                        className={`text-sm font-medium text-bark-300 truncate ${isDone ? 'line-through text-stone-400' : ''}`}
+                      >
                         {recipe.title}
                       </p>
                       <p className="text-xs text-stone-400">
-                        {recipe.calories_per_serving != null ? `${Math.round(recipe.calories_per_serving)} ккал` : ""}
-                        {recipe.protein_per_serving != null ? ` · Б ${Math.round(recipe.protein_per_serving)}г` : ""}
+                        {recipe.calories_per_serving != null
+                          ? `${Math.round(recipe.calories_per_serving)} ккал`
+                          : ''}
+                        {recipe.protein_per_serving != null
+                          ? ` · Б ${Math.round(recipe.protein_per_serving)}г`
+                          : ''}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {!slot.pinned && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onSwapSlot(date, mealType); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSwapSlot(date, mealType);
+                          }}
                           disabled={isSwapping}
                           className="p-1.5 rounded-lg hover:bg-black/5 transition-colors"
                           title="Заменить блюдо"
                         >
-                          {isSwapping
-                            ? <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />
-                            : <RefreshCw className="h-3.5 w-3.5 text-stone-400" />
-                          }
+                          {isSwapping ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-400" />
+                          ) : (
+                            <RefreshCw className="h-3.5 w-3.5 text-stone-400" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -732,7 +818,7 @@ function ScheduleView({
             );
           })}
           <button
-            onClick={() => onOpenRedo("daily", dates[mobileDayIdx]!)}
+            onClick={() => onOpenRedo('daily', dates[mobileDayIdx]!)}
             className="w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl border border-parchment-200 py-2.5 text-xs font-medium text-stone-400 hover:bg-parchment-100 hover:text-bark-300 transition-colors"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Переделать день
@@ -748,29 +834,37 @@ function ScheduleView({
             {dates.map((date, idx) => {
               const isToday = date === today;
               const tag = getDayTag(date, plan.training_schedule ?? {});
-              const isTraining = tag === "зал";
+              const isTraining = tag === 'зал';
               return (
                 <div key={date} className="text-center">
-                  <div className={`py-1.5 rounded-lg ${isToday ? "bg-bark-300 text-primary-foreground" : "text-stone-400"}`}>
-                    <p className="text-2xs font-semibold uppercase tracking-wide">{DAY_NAMES_RU[idx]}</p>
-                    <p className={`text-xs mt-0.5 ${isToday ? "text-primary-foreground/80" : "text-stone-300"}`}>
-                      {new Date(date + "T00:00:00").getDate()}
+                  <div
+                    className={`py-1.5 rounded-lg ${isToday ? 'bg-bark-300 text-primary-foreground' : 'text-stone-400'}`}
+                  >
+                    <p className="text-2xs font-semibold uppercase tracking-wide">
+                      {DAY_NAMES_RU[idx]}
+                    </p>
+                    <p
+                      className={`text-xs mt-0.5 ${isToday ? 'text-primary-foreground/80' : 'text-stone-300'}`}
+                    >
+                      {new Date(date + 'T00:00:00').getDate()}
                     </p>
                   </div>
                   {/* Training tag */}
-                  <div className={`mt-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-2xs font-medium ${
-                    isTraining
-                      ? "bg-vital-50 text-vital-500"
-                      : "bg-parchment-100 text-stone-400"
-                  }`}>
-                    {isTraining
-                      ? <Dumbbell className="h-2.5 w-2.5" />
-                      : <Moon className="h-2.5 w-2.5" />}
+                  <div
+                    className={`mt-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-2xs font-medium ${
+                      isTraining ? 'bg-vital-50 text-vital-500' : 'bg-parchment-100 text-stone-400'
+                    }`}
+                  >
+                    {isTraining ? (
+                      <Dumbbell className="h-2.5 w-2.5" />
+                    ) : (
+                      <Moon className="h-2.5 w-2.5" />
+                    )}
                     {tag}
                   </div>
                   {/* Redo day button */}
                   <button
-                    onClick={() => onOpenRedo("daily", date)}
+                    onClick={() => onOpenRedo('daily', date)}
                     title="Переделать день"
                     className="mt-1.5 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-2xs font-medium bg-sage-50 text-sage-500 hover:bg-sage-100 transition-colors"
                   >
@@ -817,7 +911,7 @@ function ScheduleView({
                   <div
                     key={date}
                     className={`relative rounded-xl border ${MEAL_COLORS[mealType]} p-2 h-28 flex flex-col group cursor-pointer
-                      hover:shadow-warm-sm transition-all ${isDone ? "opacity-70" : ""}`}
+                      hover:shadow-warm-sm transition-all ${isDone ? 'opacity-70' : ''}`}
                     style={{ gridColumn: `span ${span}` }}
                     onClick={() => onOpenRecipe(recipe, mealType, date)}
                   >
@@ -836,16 +930,20 @@ function ScheduleView({
                     {/* Completion checkmark */}
                     <button
                       className="absolute top-1.5 left-1.5 z-10"
-                      onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleCompletion(date, mealType);
+                      }}
                       disabled={isCompleting}
-                      title={isDone ? "Отметить как несъеденное" : "Отметить как съеденное"}
+                      title={isDone ? 'Отметить как несъеденное' : 'Отметить как съеденное'}
                     >
-                      {isCompleting
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin text-sage-400" />
-                        : isDone
-                          ? <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
-                          : <Circle className="h-3.5 w-3.5 text-parchment-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      }
+                      {isCompleting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-sage-400" />
+                      ) : isDone ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-sage-400" />
+                      ) : (
+                        <Circle className="h-3.5 w-3.5 text-parchment-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
                     </button>
 
                     {/* Swapping overlay */}
@@ -857,17 +955,23 @@ function ScheduleView({
                     )}
 
                     {/* Recipe title */}
-                    <p className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 ${isDone ? "line-through text-stone-400" : ""}`}>
+                    <p
+                      className={`text-2xs font-medium text-bark-300 leading-tight line-clamp-2 flex-1 mt-0.5 pl-4 ${isDone ? 'line-through text-stone-400' : ''}`}
+                    >
                       {recipe.title}
                     </p>
 
                     {/* Macros */}
                     <div className="mt-auto">
                       <p className="text-2xs text-stone-400">
-                        {recipe.calories_per_serving != null ? `${Math.round(recipe.calories_per_serving)} ккал` : ""}
+                        {recipe.calories_per_serving != null
+                          ? `${Math.round(recipe.calories_per_serving)} ккал`
+                          : ''}
                       </p>
                       <p className="text-2xs text-stone-300">
-                        {recipe.protein_per_serving != null ? `Б ${Math.round(recipe.protein_per_serving)}г` : ""}
+                        {recipe.protein_per_serving != null
+                          ? `Б ${Math.round(recipe.protein_per_serving)}г`
+                          : ''}
                       </p>
                     </div>
 
@@ -877,28 +981,46 @@ function ScheduleView({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
-                        onClick={(e) => { e.stopPropagation(); onTogglePin(date, mealType); }}
-                        title={slot.pinned ? "Открепить" : "Закрепить"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTogglePin(date, mealType);
+                        }}
+                        title={slot.pinned ? 'Открепить' : 'Закрепить'}
                         className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
                       >
-                        {slot.pinned ? <Lock className="h-3 w-3" /> : <LockOpen className="h-3 w-3" />}
+                        {slot.pinned ? (
+                          <Lock className="h-3 w-3" />
+                        ) : (
+                          <LockOpen className="h-3 w-3" />
+                        )}
                       </button>
                       {!slot.pinned && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onSwapSlot(date, mealType); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSwapSlot(date, mealType);
+                          }}
                           disabled={isSwapping}
                           title="Заменить блюдо"
                           className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white disabled:opacity-50"
                         >
-                          {isSwapping
-                            ? <Loader2 className="h-3 w-3 animate-spin" />
-                            : <RefreshCw className="h-3 w-3" />
-                          }
+                          {isSwapping ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
                         </button>
                       )}
                       <button
-                        onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
-                        title={completions.has(`${date}-${mealType}`) ? "Снять отметку" : "Отметить съеденным"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleCompletion(date, mealType);
+                        }}
+                        title={
+                          completions.has(`${date}-${mealType}`)
+                            ? 'Снять отметку'
+                            : 'Отметить съеденным'
+                        }
                         className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
                       >
                         <CheckCircle2 className="h-3 w-3" />
@@ -911,12 +1033,12 @@ function ScheduleView({
 
             return (
               <div key={mealType} className="mb-3">
-                <p className={`text-2xs font-semibold uppercase tracking-wide mb-1.5 pl-1 ${MEAL_ACCENT[mealType]}`}>
+                <p
+                  className={`text-2xs font-semibold uppercase tracking-wide mb-1.5 pl-1 ${MEAL_ACCENT[mealType]}`}
+                >
                   {MEAL_LABEL[mealType]}
                 </p>
-                <div className="grid grid-cols-7 gap-2">
-                  {cells}
-                </div>
+                <div className="grid grid-cols-7 gap-2">{cells}</div>
               </div>
             );
           })}
@@ -926,10 +1048,15 @@ function ScheduleView({
       {/* Day totals — full macro bar (desktop only) */}
       <div className="hidden sm:block mt-4 overflow-x-auto -mx-4 px-4">
         <div className="min-w-[640px]">
-          <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">Итого за день</p>
+          <p className="text-xs font-medium text-stone-400 uppercase tracking-wide mb-2">
+            Итого за день
+          </p>
           <div className="grid grid-cols-7 gap-2">
             {dates.map((date) => {
-              let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
+              let totalKcal = 0,
+                totalP = 0,
+                totalC = 0,
+                totalF = 0;
               const dateIdx = dates.indexOf(date);
 
               for (const mealType of MEAL_TYPES) {
@@ -1015,14 +1142,33 @@ interface RecipesViewProps {
   onToggleCompletion: (date: string, mealType: string) => void;
 }
 
-const MONTH_NAMES_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const MONTH_NAMES_RU = [
+  'янв',
+  'фев',
+  'мар',
+  'апр',
+  'май',
+  'июн',
+  'июл',
+  'авг',
+  'сен',
+  'окт',
+  'ноя',
+  'дек',
+];
 
 function formatDateRu(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
+  const d = new Date(dateStr + 'T00:00:00');
   return `${d.getDate()} ${MONTH_NAMES_RU[d.getMonth()]}`;
 }
 
-function RecipesView({ weekRecipes, completions, completingSlot, onOpenRecipe, onToggleCompletion }: RecipesViewProps) {
+function RecipesView({
+  weekRecipes,
+  completions,
+  completingSlot,
+  onOpenRecipe,
+  onToggleCompletion,
+}: RecipesViewProps) {
   if (weekRecipes.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-parchment-300 bg-parchment-50 p-12 text-center">
@@ -1042,35 +1188,43 @@ function RecipesView({ weekRecipes, completions, completingSlot, onOpenRecipe, o
         return (
           <div
             key={slotKey}
-            className={`rounded-2xl border border-parchment-200 bg-white p-4 flex gap-4 items-start cursor-pointer hover:shadow-warm-sm transition-all ${isDone ? "opacity-70" : ""}`}
+            className={`rounded-2xl border border-parchment-200 bg-white p-4 flex gap-4 items-start cursor-pointer hover:shadow-warm-sm transition-all ${isDone ? 'opacity-70' : ''}`}
             onClick={() => onOpenRecipe(recipe, mealType, date)}
           >
             {/* Check-off */}
             <button
               className="mt-0.5 flex-shrink-0"
-              onClick={(e) => { e.stopPropagation(); onToggleCompletion(date, mealType); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCompletion(date, mealType);
+              }}
               disabled={isCompleting}
             >
-              {isCompleting
-                ? <Loader2 className="h-5 w-5 animate-spin text-sage-400" />
-                : isDone
-                  ? <CheckCircle2 className="h-5 w-5 text-sage-400" />
-                  : <Circle className="h-5 w-5 text-parchment-300" />
-              }
+              {isCompleting ? (
+                <Loader2 className="h-5 w-5 animate-spin text-sage-400" />
+              ) : isDone ? (
+                <CheckCircle2 className="h-5 w-5 text-sage-400" />
+              ) : (
+                <Circle className="h-5 w-5 text-parchment-300" />
+              )}
             </button>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               {/* Labels row */}
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-2xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${MEAL_COLORS[mealType]}`}>
+                <span
+                  className={`text-2xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${MEAL_COLORS[mealType]}`}
+                >
                   {MEAL_LABEL[mealType]}
                 </span>
                 <span className="text-2xs text-stone-400">{formatDateRu(date)}</span>
               </div>
 
               {/* Dish name */}
-              <p className={`font-display text-base font-semibold text-bark-300 leading-snug ${isDone ? "line-through text-stone-400" : ""}`}>
+              <p
+                className={`font-display text-base font-semibold text-bark-300 leading-snug ${isDone ? 'line-through text-stone-400' : ''}`}
+              >
                 {recipe.title}
               </p>
 
@@ -1112,15 +1266,33 @@ function RecipesView({ weekRecipes, completions, completingSlot, onOpenRecipe, o
 
 function ShareIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+      />
     </svg>
   );
 }
 
 function ShareCheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -1131,7 +1303,10 @@ function ShareCheckIcon({ className }: { className?: string }) {
 function useLongRunning(active: boolean, ms = 10000) {
   const [long, setLong] = useState(false);
   useEffect(() => {
-    if (!active) { setLong(false); return; }
+    if (!active) {
+      setLong(false);
+      return;
+    }
     const t = setTimeout(() => setLong(true), ms);
     return () => clearTimeout(t);
   }, [active, ms]);

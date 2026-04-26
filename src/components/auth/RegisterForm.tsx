@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 export function RegisterForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,34 +20,37 @@ export function RegisterForm() {
   useEffect(() => {
     // Capture ?ref= and ?promo= from URL; persist in storage so they survive navigation
     const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref") ?? sessionStorage.getItem("nutriplan_ref") ?? localStorage.getItem("nutriplan_ref");
-    const promo = params.get("promo") ?? sessionStorage.getItem("nutriplan_promo") ?? localStorage.getItem("nutriplan_promo");
+    const ref =
+      params.get('ref') ??
+      sessionStorage.getItem('nutriplan_ref') ??
+      localStorage.getItem('nutriplan_ref');
+    const promo =
+      params.get('promo') ??
+      sessionStorage.getItem('nutriplan_promo') ??
+      localStorage.getItem('nutriplan_promo');
 
     if (ref) {
       setReferralCode(ref);
-      localStorage.setItem("nutriplan_ref", ref);
-      sessionStorage.setItem("nutriplan_ref", ref);
+      localStorage.setItem('nutriplan_ref', ref);
+      sessionStorage.setItem('nutriplan_ref', ref);
     }
     if (promo) {
       setPromoCode(promo);
-      localStorage.setItem("nutriplan_promo", promo);
-      sessionStorage.setItem("nutriplan_promo", promo);
+      localStorage.setItem('nutriplan_promo', promo);
+      sessionStorage.setItem('nutriplan_promo', promo);
     }
   }, []);
 
   useEffect(() => {
     const container = telegramRef.current;
-    if (!container || container.querySelector("script")) return;
+    if (!container || container.querySelector('script')) return;
 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute(
-      "data-telegram-login",
-      process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? ""
-    );
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-auth-url", "/api/auth/telegram/callback");
-    script.setAttribute("data-request-access", "write");
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? '');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-auth-url', '/api/auth/telegram/callback');
+    script.setAttribute('data-request-access', 'write');
     script.async = true;
     container.appendChild(script);
   }, []);
@@ -55,7 +58,7 @@ export function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают.");
+      setError('Пароли не совпадают.');
       return;
     }
     setLoading(true);
@@ -83,25 +86,25 @@ export function RegisterForm() {
     // Track referral if ?ref= provided
     if (referralCode && authData.user?.id) {
       try {
-        await fetch("/api/referrals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        await fetch('/api/referrals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             referred_user_id: authData.user.id,
             referral_code: referralCode,
           }),
         });
       } catch (err) {
-        console.error("[register] Referral tracking failed:", err);
+        console.error('[register] Referral tracking failed:', err);
         // Non-blocking — signup still succeeds
       }
     }
 
     // Clear stored codes after successful signup
-    localStorage.removeItem("nutriplan_ref");
-    localStorage.removeItem("nutriplan_promo");
-    sessionStorage.removeItem("nutriplan_ref");
-    sessionStorage.removeItem("nutriplan_promo");
+    localStorage.removeItem('nutriplan_ref');
+    localStorage.removeItem('nutriplan_promo');
+    sessionStorage.removeItem('nutriplan_ref');
+    sessionStorage.removeItem('nutriplan_promo');
 
     setSuccess(true);
     setLoading(false);
@@ -138,8 +141,8 @@ export function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+            'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
           )}
           placeholder="you@example.com"
         />
@@ -158,8 +161,8 @@ export function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+            'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
           )}
           placeholder="Мин. 8 символов"
         />
@@ -177,8 +180,8 @@ export function RegisterForm() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+            'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1'
           )}
           placeholder="••••••••"
         />
@@ -188,11 +191,11 @@ export function RegisterForm() {
         type="submit"
         disabled={loading}
         className={cn(
-          "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-          "hover:bg-primary/90 transition-colors disabled:opacity-60"
+          'w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+          'hover:bg-primary/90 transition-colors disabled:opacity-60'
         )}
       >
-        {loading ? "Создаём аккаунт…" : "Создать аккаунт"}
+        {loading ? 'Создаём аккаунт…' : 'Создать аккаунт'}
       </button>
 
       <div className="relative">
@@ -206,10 +209,12 @@ export function RegisterForm() {
 
       <button
         type="button"
-        onClick={() => { window.location.href = "/api/auth/yandex"; }}
+        onClick={() => {
+          window.location.href = '/api/auth/yandex';
+        }}
         className={cn(
-          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
-          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
+          'w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium',
+          'hover:bg-muted transition-colors flex items-center justify-center gap-2'
         )}
       >
         <YandexIcon className="h-4 w-4" />

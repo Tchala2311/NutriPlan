@@ -1,6 +1,7 @@
 # Email API Documentation
 
 The NutriPlan application includes email sending capabilities with dual modes:
+
 - **Development**: Mock email service (logs to console, no API key required)
 - **Production**: Resend service (real email delivery with API key)
 
@@ -34,11 +35,13 @@ Once configured, the email service automatically switches from mock to real Rese
 ## Email Service Modes
 
 ### Development Mode (Mock)
+
 - **Enabled**: When `RESEND_API_KEY` is not configured
 - **Behavior**: Logs emails to console, generates fake message IDs
 - **Use Case**: Local testing, CI/CD pipelines without external API access
 
 Console output example:
+
 ```
 📧 [MOCK EMAIL]
    From: noreply@nutriplan.app
@@ -49,6 +52,7 @@ Console output example:
 ```
 
 ### Production Mode (Resend)
+
 - **Enabled**: When `RESEND_API_KEY` is configured
 - **Behavior**: Sends real emails through Resend API
 - **Use Case**: Production deployments, real user communication
@@ -80,6 +84,7 @@ Send a custom email using the configured email service.
 **Response (Development Mode):**
 
 Success (200):
+
 ```json
 {
   "success": true,
@@ -91,6 +96,7 @@ Success (200):
 **Response (Production Mode):**
 
 Success (200):
+
 ```json
 {
   "success": true,
@@ -139,6 +145,7 @@ Send the NutriPlan workflow documentation to an email address.
 **Response (Development Mode):**
 
 Success (200):
+
 ```json
 {
   "success": true,
@@ -151,6 +158,7 @@ Success (200):
 **Response (Production Mode):**
 
 Success (200):
+
 ```json
 {
   "success": true,
@@ -213,10 +221,10 @@ node scripts/send-workflow-doc.js user@example.com  # Send to specific email
 
 ```javascript
 async function sendWorkflowDoc(email) {
-  const response = await fetch("/api/email-send/workflow-doc", {
-    method: "POST",
+  const response = await fetch('/api/email-send/workflow-doc', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({ to: email }),
   });
@@ -225,7 +233,7 @@ async function sendWorkflowDoc(email) {
 }
 
 // Send to specific email
-await sendWorkflowDoc("tsem7354@gmail.com");
+await sendWorkflowDoc('tsem7354@gmail.com');
 ```
 
 ## Workflow Documentation Content
@@ -249,19 +257,23 @@ The workflow documentation includes:
 ### Common Errors
 
 **"Email service not configured"**
+
 - Missing or invalid `RESEND_API_KEY`
 - Check your `.env.local` file
 
 **"Invalid email address"**
+
 - Email format is invalid
 - Verify the recipient email address
 
 **"Failed to send email"**
+
 - API request to Resend failed
 - Check your Resend account and API key validity
 - Verify the email address is not blocked
 
 **Connection refused**
+
 - Development server is not running
 - Start the server with `npm run dev`
 
@@ -304,6 +316,7 @@ node scripts/send-workflow-doc.js
 ### cURL Testing
 
 **Development Mode:**
+
 ```bash
 curl -X POST http://localhost:3001/api/email-send/workflow-doc \
   -H "Content-Type: application/json" \
@@ -314,6 +327,7 @@ curl -X POST http://localhost:3001/api/email-send/workflow-doc \
 ```
 
 **Production Mode (with RESEND_API_KEY):**
+
 ```bash
 curl -X POST http://localhost:3001/api/email-send/workflow-doc \
   -H "Content-Type: application/json" \
@@ -332,6 +346,7 @@ curl -X POST http://localhost:3001/api/email-send/workflow-doc \
 ## Support
 
 For issues with Resend:
+
 - [Resend Documentation](https://resend.com/docs)
 - [Resend Dashboard](https://app.resend.com)
 - [Resend Support](https://resend.com/support)

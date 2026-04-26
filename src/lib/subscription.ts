@@ -3,10 +3,10 @@
  * Always call these in Server Components / Route Handlers — never in client code.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 
-export type Plan = "free" | "premium";
-export type SubscriptionStatus = "active" | "cancelled" | "past_due" | "pending";
+export type Plan = 'free' | 'premium';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'pending';
 
 export interface Subscription {
   id: string;
@@ -36,24 +36,24 @@ export async function getUserSubscription(): Promise<Subscription | null> {
   if (!user) return null;
 
   const { data } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (!data) {
     // Return a virtual free-tier record — no row means free plan
     return {
-      id: "",
+      id: '',
       user_id: user.id,
-      plan: "free",
-      status: "active",
+      plan: 'free',
+      status: 'active',
       current_period_end: null,
       yookassa_subscription_id: null,
       yookassa_payment_method_id: null,
       is_founder: false,
-      created_at: "",
-      updated_at: "",
+      created_at: '',
+      updated_at: '',
     };
   }
 
@@ -68,9 +68,9 @@ export async function isPremium(): Promise<boolean> {
   const sub = await getUserSubscription();
   if (!sub) return false;
   // Founder accounts have permanent premium access — never check expiry
-  if (sub.is_founder && sub.plan === "premium") return true;
-  if (sub.plan !== "premium") return false;
-  if (sub.status !== "active") return false;
+  if (sub.is_founder && sub.plan === 'premium') return true;
+  if (sub.plan !== 'premium') return false;
+  if (sub.status !== 'active') return false;
   if (sub.current_period_end) {
     return new Date(sub.current_period_end) > new Date();
   }
@@ -83,7 +83,9 @@ export async function isPremium(): Promise<boolean> {
  */
 export async function isInTrial(): Promise<boolean> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return false;
 
   const createdAt = user.created_at ? new Date(user.created_at) : null;
@@ -106,7 +108,7 @@ export async function canAccessPremiumFeatures(): Promise<boolean> {
   if (sub.is_founder) return true;
 
   // Active premium always has access
-  if (sub.plan === "premium" && sub.status === "active") {
+  if (sub.plan === 'premium' && sub.status === 'active') {
     if (sub.current_period_end && new Date(sub.current_period_end) < new Date()) {
       return false; // Expired premium
     }
@@ -114,7 +116,7 @@ export async function canAccessPremiumFeatures(): Promise<boolean> {
   }
 
   // Free users: check if in trial
-  if (sub.plan === "free") {
+  if (sub.plan === 'free') {
     return await isInTrial();
   }
 

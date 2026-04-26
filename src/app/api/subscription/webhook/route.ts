@@ -10,9 +10,9 @@
  *   payment.canceled   → mark subscription past_due
  */
 
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { getPayment, type YooKassaWebhookEvent } from "@/lib/yookassa/client";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getPayment, type YooKassaWebhookEvent } from '@/lib/yookassa/client';
 
 const SUBSCRIPTION_PERIOD_DAYS = 30;
 
@@ -22,12 +22,12 @@ export async function POST(req: Request) {
   try {
     event = (await req.json()) as YooKassaWebhookEvent;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
   const paymentId = event.object?.id;
   if (!paymentId) {
-    return NextResponse.json({ error: "Missing payment id" }, { status: 400 });
+    return NextResponse.json({ error: 'Missing payment id' }, { status: 400 });
   }
 
   // Re-fetch from YooKassa to verify authenticity
@@ -35,8 +35,8 @@ export async function POST(req: Request) {
   try {
     payment = await getPayment(paymentId);
   } catch (err) {
-    console.error("[webhook] Failed to fetch payment from YooKassa:", err);
-    return NextResponse.json({ error: "Could not verify payment" }, { status: 502 });
+    console.error('[webhook] Failed to fetch payment from YooKassa:', err);
+    return NextResponse.json({ error: 'Could not verify payment' }, { status: 502 });
   }
 
   const userId = payment.metadata?.user_id;
@@ -49,34 +49,32 @@ export async function POST(req: Request) {
 
   // Never overwrite founder accounts via billing webhooks
   const { data: existing } = await supabase
-    .from("subscriptions")
-    .select("is_founder")
-    .eq("user_id", userId)
+    .from('subscriptions')
+    .select('is_founder')
+    .eq('user_id', userId)
     .maybeSingle();
   if (existing?.is_founder) {
     console.log(`[webhook] Skipping update for founder account ${userId}`);
     return NextResponse.json({ ok: true });
   }
 
-  if (event.event === "payment.succeeded" && payment.status === "succeeded") {
+  if (event.event === 'payment.succeeded' && payment.status === 'succeeded') {
     const periodEnd = new Date();
     periodEnd.setDate(periodEnd.getDate() + SUBSCRIPTION_PERIOD_DAYS);
 
-    const paymentMethodId = payment.payment_method?.saved
-      ? payment.payment_method.id
-      : undefined;
+    const paymentMethodId = payment.payment_method?.saved ? payment.payment_method.id : undefined;
 
-    await supabase.from("subscriptions").upsert(
+    await supabase.from('subscriptions').upsert(
       {
         user_id: userId,
-        plan: "premium",
-        status: "active",
+        plan: 'premium',
+        status: 'active',
         current_period_end: periodEnd.toISOString(),
         yookassa_subscription_id: payment.id,
         ...(paymentMethodId ? { yookassa_payment_method_id: paymentMethodId } : {}),
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "user_id" }
+      { onConflict: 'user_id' }
     );
 
     console.log(`[webhook] Premium activated for user ${userId} until ${periodEnd.toISOString()}`);
@@ -85,19 +83,19 @@ export async function POST(req: Request) {
     try {
       const origin = new URL(req.url).origin;
       await fetch(`${origin}/api/referrals/process-rewards`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ referred_user_id: userId }),
       });
     } catch (err) {
       console.error(`[webhook] Failed to process referral rewards for user ${userId}:`, err);
       // Non-blocking: subscription activation succeeds even if reward processing fails
     }
-  } else if (event.event === "payment.canceled") {
+  } else if (event.event === 'payment.canceled') {
     await supabase
-      .from("subscriptions")
-      .update({ status: "past_due", updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .from('subscriptions')
+      .update({ status: 'past_due', updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
 
     console.log(`[webhook] Payment canceled for user ${userId}`);
   }

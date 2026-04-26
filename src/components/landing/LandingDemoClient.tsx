@@ -1,2 +1,2 @@
-"use client";
-export { LandingDemo as LandingDemoClient } from "@/components/landing/LandingDemo";
+'use client';
+export { LandingDemo as LandingDemoClient } from '@/components/landing/LandingDemo';

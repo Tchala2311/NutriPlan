@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
-import { ChatClient } from "@/components/chat/ChatClient";
+import type { Metadata } from 'next';
+import { ChatClient } from '@/components/chat/ChatClient';
 
-export const metadata: Metadata = { title: "Чат с ИИ — NutriPlan" };
+export const metadata: Metadata = { title: 'Чат с ИИ — NutriPlan' };
 
 export default function ChatPage() {
   return (

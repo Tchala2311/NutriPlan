@@ -3,6 +3,7 @@
 ## Overview
 
 NutriPlan is a Next.js application with Supabase backend. Deployment targets:
+
 - **Frontend:** Vercel (recommended) or self-hosted Node.js server
 - **Database:** Supabase PostgreSQL (managed)
 - **Auth:** Supabase Auth (managed)
@@ -66,6 +67,7 @@ No seed data required. Database auto-creates user records on signup.
 ### 2. Configure Environment Variables
 
 Add all variables from `.env.local` in Vercel dashboard:
+
 - Settings → Environment Variables
 - Paste each variable
 
@@ -80,6 +82,7 @@ Vercel auto-deploys on push to `main`. Build takes ~2-3 minutes.
 ### 4. Domain Setup
 
 Add custom domain in Vercel dashboard (optional):
+
 - Domain → Add → your-domain.com
 - Update DNS records as instructed
 
@@ -166,6 +169,7 @@ vercel logs --follow
 ### Application Monitoring
 
 Monitor key metrics:
+
 - Build time (target: <3 min)
 - Error rate (target: <1%)
 - API response time (target: <200ms)
@@ -246,6 +250,7 @@ npm run build
 ## Support
 
 For deployment issues:
+
 - Vercel docs: https://vercel.com/docs
 - Supabase docs: https://supabase.com/docs
 - GitHub Issues: Check project repo

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 interface WaterWidgetProps {
   initialTotalMl: number;
@@ -11,7 +11,7 @@ const QUICK_AMOUNTS = [200, 350, 500] as const;
 
 export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
   const [totalMl, setTotalMl] = useState(initialTotalMl);
-  const [customMl, setCustomMl] = useState("");
+  const [customMl, setCustomMl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,18 +23,18 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/water", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/water', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount_ml: ml }),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? `Error ${res.status}`);
       }
       setTotalMl((prev) => prev + ml);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось записать воду.");
+      setError(err instanceof Error ? err.message : 'Не удалось записать воду.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,7 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
     const ml = Math.round(Number(customMl));
     if (!ml || ml <= 0) return;
     logWater(ml);
-    setCustomMl("");
+    setCustomMl('');
   }
 
   const glassCount = Math.round(totalMl / 250);
@@ -62,17 +62,25 @@ export function WaterWidget({ initialTotalMl, targetMl }: WaterWidgetProps) {
       {/* Progress */}
       <div className="mb-3">
         <div className="flex justify-between items-baseline mb-1">
-          <span className={`text-2xl font-semibold ${over ? "text-sky-600" : "text-bark-300"}`}>
+          <span className={`text-2xl font-semibold ${over ? 'text-sky-600' : 'text-bark-300'}`}>
             {totalMl}
-            <span className="ml-0.5 text-sm font-normal text-muted-foreground"> / {targetMl} мл</span>
+            <span className="ml-0.5 text-sm font-normal text-muted-foreground">
+              {' '}
+              / {targetMl} мл
+            </span>
           </span>
           <span className="text-xs text-muted-foreground">
-            {glassCount} {glassCount === 1 ? "стакан" : glassCount >= 2 && glassCount <= 4 ? "стакана" : "стаканов"}
+            {glassCount}{' '}
+            {glassCount === 1
+              ? 'стакан'
+              : glassCount >= 2 && glassCount <= 4
+                ? 'стакана'
+                : 'стаканов'}
           </span>
         </div>
         <div className="h-1.5 rounded-full bg-parchment-200 overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${over ? "bg-sky-400" : "bg-sky-500"}`}
+            className={`h-full rounded-full transition-all ${over ? 'bg-sky-400' : 'bg-sky-500'}`}
             style={{ width: `${pct}%` }}
           />
         </div>

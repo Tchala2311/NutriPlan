@@ -1,5 +1,5 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -12,10 +12,10 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+        setAll(
+          cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>
+        ) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,12 +33,12 @@ export async function middleware(request: NextRequest) {
   // /onboarding is intentionally PUBLIC (pre-registration flow)
   // /onboarding/complete requires auth (flushes localStorage → DB)
   const isProtected =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname === "/onboarding/complete";
+    request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname === '/onboarding/complete';
 
   if (!user && isProtected) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    loginUrl.pathname = '/login';
     return NextResponse.redirect(loginUrl);
   }
 
@@ -46,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/complete"],
+  matcher: ['/dashboard/:path*', '/onboarding/complete'],
 };

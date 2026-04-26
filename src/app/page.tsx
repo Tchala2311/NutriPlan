@@ -1,50 +1,50 @@
-import Link from "next/link";
-import { Check, ChevronRight, Star, Zap, ShoppingCart, TrendingUp } from "lucide-react";
-import { LandingDemoClient as LandingDemo } from "@/components/landing/LandingDemoClient";
-import { ReferralCapture } from "@/components/landing/ReferralCapture";
+import Link from 'next/link';
+import { Check, ChevronRight, Star, Zap, ShoppingCart, TrendingUp } from 'lucide-react';
+import { LandingDemoClient as LandingDemo } from '@/components/landing/LandingDemoClient';
+import { ReferralCapture } from '@/components/landing/ReferralCapture';
 
 // ── Feature cards ─────────────────────────────────────────
 const FEATURES = [
   {
     icon: Zap,
-    title: "ИИ-планировщик питания",
-    body: "Просто скажите, что хотите — похудеть, набрать мышцы или питаться здоровее. NutriPlan составит меню на неделю, учитывая ваши вкусы и ограничения. Никакого гречневого похудения.",
+    title: 'ИИ-планировщик питания',
+    body: 'Просто скажите, что хотите — похудеть, набрать мышцы или питаться здоровее. NutriPlan составит меню на неделю, учитывая ваши вкусы и ограничения. Никакого гречневого похудения.',
   },
   {
     icon: Star,
-    title: "Трекинг без боли",
-    body: "Добавляйте блюда за секунды — через поиск, штрих-код или фото. Видите калории, белки, жиры и углеводы в реальном времени. Никаких таблиц.",
+    title: 'Трекинг без боли',
+    body: 'Добавляйте блюда за секунды — через поиск, штрих-код или фото. Видите калории, белки, жиры и углеводы в реальном времени. Никаких таблиц.',
   },
   {
     icon: ShoppingCart,
-    title: "Список покупок с одной кнопкой",
-    body: "Готовый список продуктов на неделю — автоматически. Сходите в магазин один раз и питайтесь по плану.",
+    title: 'Список покупок с одной кнопкой',
+    body: 'Готовый список продуктов на неделю — автоматически. Сходите в магазин один раз и питайтесь по плану.',
   },
   {
     icon: TrendingUp,
-    title: "Прогресс, который виден",
-    body: "Отслеживайте вес, объёмы и динамику питания на одном экране. Видите результат — хочется продолжать.",
+    title: 'Прогресс, который виден',
+    body: 'Отслеживайте вес, объёмы и динамику питания на одном экране. Видите результат — хочется продолжать.',
   },
 ];
 
 // ── Pricing tiers ─────────────────────────────────────────
 const FREE_FEATURES = [
-  "Трекинг калорий и КБЖУ",
-  "База из 1 200+ продуктов",
-  "7-дневная история питания",
-  "1 шаблон недельного меню",
-  "Дневник питания",
+  'Трекинг калорий и КБЖУ',
+  'База из 1 200+ продуктов',
+  '7-дневная история питания',
+  '1 шаблон недельного меню',
+  'Дневник питания',
 ];
 
 const PRO_FEATURES = [
-  "Всё из Базового плана",
-  "AI-планировщик (GigaChat) — меню под ваши цели",
-  "Безлимитная история питания",
-  "Генерация списка покупок",
-  "Подробный трекинг микронутриентов",
-  "Прогресс-графики (вес, ИМТ)",
-  "Экспорт PDF-отчёта",
-  "Приоритетная поддержка",
+  'Всё из Базового плана',
+  'AI-планировщик (GigaChat) — меню под ваши цели',
+  'Безлимитная история питания',
+  'Генерация списка покупок',
+  'Подробный трекинг микронутриентов',
+  'Прогресс-графики (вес, ИМТ)',
+  'Экспорт PDF-отчёта',
+  'Приоритетная поддержка',
 ];
 
 export default function LandingPage() {
@@ -90,9 +90,9 @@ export default function LandingPage() {
                 <span className="text-amber-300">без стресса</span> и без таблиц
               </h1>
               <p className="text-bark-400 text-lg leading-relaxed mb-8 max-w-prose">
-                NutriPlan анализирует ваши цели, предпочтения и ограничения — и составляет меню
-                на неделю вперёд. Считайте калории, следите за прогрессом, получайте список
-                покупок. Всё в одном месте.
+                NutriPlan анализирует ваши цели, предпочтения и ограничения — и составляет меню на
+                неделю вперёд. Считайте калории, следите за прогрессом, получайте список покупок.
+                Всё в одном месте.
               </p>
 
               {/* CTA group */}
@@ -122,9 +122,12 @@ export default function LandingPage() {
                 <div className="text-2xl shrink-0">💬</div>
                 <div>
                   <p className="text-sm text-bark-400 italic leading-snug">
-                    «Наконец-то приложение, которое не заставляет считать каждую ложку. Меню уже готово — просто готовлю.»
+                    «Наконец-то приложение, которое не заставляет считать каждую ложку. Меню уже
+                    готово — просто готовлю.»
                   </p>
-                  <p className="text-xs text-stone-400 mt-1.5 font-medium">— Анна, 31 год, Москва</p>
+                  <p className="text-xs text-stone-400 mt-1.5 font-medium">
+                    — Анна, 31 год, Москва
+                  </p>
                 </div>
               </div>
             </div>
@@ -151,7 +154,10 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map(({ icon: Icon, title, body }) => (
-              <div key={title} className="bg-white rounded-2xl border border-parchment-100 p-6 shadow-warm-sm hover:shadow-warm-md transition-shadow duration-220">
+              <div
+                key={title}
+                className="bg-white rounded-2xl border border-parchment-100 p-6 shadow-warm-sm hover:shadow-warm-md transition-shadow duration-220"
+              >
                 <div className="w-10 h-10 rounded-xl bg-parchment-100 flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-bark-300" />
                 </div>
@@ -177,9 +183,21 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {[
-              { step: "1", title: "Расскажите о себе", desc: "Укажите цель, предпочтения и ограничения. Занимает 30 секунд." },
-              { step: "2", title: "ИИ составит план", desc: "GigaChat анализирует данные и генерирует персональное меню на неделю." },
-              { step: "3", title: "Готовьте и отслеживайте", desc: "Следуйте плану, логируйте питание, смотрите прогресс." },
+              {
+                step: '1',
+                title: 'Расскажите о себе',
+                desc: 'Укажите цель, предпочтения и ограничения. Занимает 30 секунд.',
+              },
+              {
+                step: '2',
+                title: 'ИИ составит план',
+                desc: 'GigaChat анализирует данные и генерирует персональное меню на неделю.',
+              },
+              {
+                step: '3',
+                title: 'Готовьте и отслеживайте',
+                desc: 'Следуйте плану, логируйте питание, смотрите прогресс.',
+              },
             ].map(({ step, title, desc }) => (
               <div key={step} className="text-center">
                 <div className="w-12 h-12 rounded-full bg-bark-300 text-cream-100 font-display text-xl font-bold flex items-center justify-center mx-auto mb-4 shadow-warm-md">
@@ -211,7 +229,9 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Free */}
             <div className="bg-white rounded-2xl border border-parchment-200 p-7 shadow-warm-sm">
-              <p className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-3">Базовый</p>
+              <p className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-3">
+                Базовый
+              </p>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="font-display text-4xl font-bold text-bark-300">0 ₽</span>
               </div>
@@ -240,13 +260,19 @@ export default function LandingPage() {
                   14 дней бесплатно
                 </span>
               </div>
-              <p className="text-xs font-semibold tracking-widest uppercase text-cream-200 mb-3">Про</p>
+              <p className="text-xs font-semibold tracking-widest uppercase text-cream-200 mb-3">
+                Про
+              </p>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="font-display text-4xl font-bold">399 ₽</span>
                 <span className="text-cream-200 text-sm">/месяц</span>
               </div>
-              <p className="text-cream-200 text-sm mb-1">или 2 990 ₽/год — <span className="text-amber-200 font-medium">экономия 38%</span></p>
-              <p className="text-cream-200/70 text-xs mb-6">«Меньше цены одного похода в ресторан»</p>
+              <p className="text-cream-200 text-sm mb-1">
+                или 2 990 ₽/год — <span className="text-amber-200 font-medium">экономия 38%</span>
+              </p>
+              <p className="text-cream-200/70 text-xs mb-6">
+                «Меньше цены одного похода в ресторан»
+              </p>
               <ul className="space-y-3 mb-7">
                 {PRO_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-cream-100">
@@ -299,12 +325,19 @@ export default function LandingPage() {
             <span className="font-display font-semibold text-bark-300">NutriPlan</span>
           </div>
           <p className="text-xs text-stone-400">
-            © {new Date().getFullYear()} NutriPlan. Разработано с учётом рекомендаций ВОЗ по нормам питания.
+            © {new Date().getFullYear()} NutriPlan. Разработано с учётом рекомендаций ВОЗ по нормам
+            питания.
           </p>
           <div className="flex gap-5 text-xs text-stone-400">
-            <Link href="/pricing" className="hover:text-bark-300 transition-colors">Тарифы</Link>
-            <Link href="/login" className="hover:text-bark-300 transition-colors">Войти</Link>
-            <Link href="/onboarding" className="hover:text-bark-300 transition-colors">Начать</Link>
+            <Link href="/pricing" className="hover:text-bark-300 transition-colors">
+              Тарифы
+            </Link>
+            <Link href="/login" className="hover:text-bark-300 transition-colors">
+              Войти
+            </Link>
+            <Link href="/onboarding" className="hover:text-bark-300 transition-colors">
+              Начать
+            </Link>
           </div>
         </div>
       </footer>

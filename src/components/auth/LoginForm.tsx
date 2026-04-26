@@ -1,29 +1,28 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 
 function translateAuthError(message: string): string {
-  if (message.includes("Invalid login credentials") || message.includes("invalid_credentials"))
-    return "Неверный email или пароль.";
-  if (message.includes("Email not confirmed"))
-    return "__email_not_confirmed__";
-  if (message.includes("Too many requests"))
-    return "Слишком много попыток. Подождите немного и попробуйте снова.";
-  if (message.includes("User not found"))
-    return "Аккаунт с таким email не найден. Зарегистрируйтесь.";
-  if (message.includes("over_email_send_rate_limit"))
-    return "Слишком много писем отправлено. Попробуйте позже.";
+  if (message.includes('Invalid login credentials') || message.includes('invalid_credentials'))
+    return 'Неверный email или пароль.';
+  if (message.includes('Email not confirmed')) return '__email_not_confirmed__';
+  if (message.includes('Too many requests'))
+    return 'Слишком много попыток. Подождите немного и попробуйте снова.';
+  if (message.includes('User not found'))
+    return 'Аккаунт с таким email не найден. Зарегистрируйтесь.';
+  if (message.includes('over_email_send_rate_limit'))
+    return 'Слишком много писем отправлено. Попробуйте позже.';
   return message;
 }
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -33,17 +32,14 @@ export function LoginForm() {
 
   useEffect(() => {
     const container = telegramRef.current;
-    if (!container || container.querySelector("script")) return;
+    if (!container || container.querySelector('script')) return;
 
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute(
-      "data-telegram-login",
-      process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? ""
-    );
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-auth-url", "/api/auth/telegram/callback");
-    script.setAttribute("data-request-access", "write");
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? '');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-auth-url', '/api/auth/telegram/callback');
+    script.setAttribute('data-request-access', 'write');
     script.async = true;
     container.appendChild(script);
   }, []);
@@ -60,7 +56,7 @@ export function LoginForm() {
 
     if (error) {
       const translated = translateAuthError(error.message);
-      if (translated === "__email_not_confirmed__") {
+      if (translated === '__email_not_confirmed__') {
         setEmailNotConfirmed(true);
         setError(null);
       } else {
@@ -70,14 +66,14 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push('/dashboard');
     router.refresh();
   }
 
   async function handleResendConfirmation() {
     setResendLoading(true);
     const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email });
+    await supabase.auth.resend({ type: 'signup', email });
     setResendLoading(false);
     setResendSuccess(true);
   }
@@ -93,7 +89,9 @@ export function LoginForm() {
       {emailNotConfirmed && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 space-y-2">
           <p className="font-medium">Email не подтверждён</p>
-          <p>Проверьте почту и перейдите по ссылке из письма. Если письмо не пришло — отправим снова.</p>
+          <p>
+            Проверьте почту и перейдите по ссылке из письма. Если письмо не пришло — отправим снова.
+          </p>
           {resendSuccess ? (
             <p className="text-green-700 font-medium">Письмо отправлено! Проверьте почту.</p>
           ) : (
@@ -103,7 +101,7 @@ export function LoginForm() {
               disabled={resendLoading}
               className="underline underline-offset-2 font-medium disabled:opacity-50"
             >
-              {resendLoading ? "Отправляем…" : "Отправить письмо повторно"}
+              {resendLoading ? 'Отправляем…' : 'Отправить письмо повторно'}
             </button>
           )}
         </div>
@@ -113,7 +111,9 @@ export function LoginForm() {
         <label htmlFor="email" className="text-sm font-medium text-foreground">
           Электронная почта
         </label>
-        <p className="text-xs text-muted-foreground">Используйте адрес электронной почты, а не имя пользователя</p>
+        <p className="text-xs text-muted-foreground">
+          Используйте адрес электронной почты, а не имя пользователя
+        </p>
         <input
           id="email"
           type="email"
@@ -122,10 +122,10 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-            "disabled:cursor-not-allowed disabled:opacity-50"
+            'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground',
+            'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+            'disabled:cursor-not-allowed disabled:opacity-50'
           )}
           placeholder="you@example.com"
         />
@@ -151,10 +151,10 @@ export function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={cn(
-            "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
-            "disabled:cursor-not-allowed disabled:opacity-50"
+            'w-full rounded-lg border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground',
+            'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
+            'disabled:cursor-not-allowed disabled:opacity-50'
           )}
           placeholder="••••••••"
         />
@@ -164,12 +164,12 @@ export function LoginForm() {
         type="submit"
         disabled={loading}
         className={cn(
-          "w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground",
-          "hover:bg-primary/90 transition-colors",
-          "disabled:cursor-not-allowed disabled:opacity-60"
+          'w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground',
+          'hover:bg-primary/90 transition-colors',
+          'disabled:cursor-not-allowed disabled:opacity-60'
         )}
       >
-        {loading ? "Входим…" : "Войти"}
+        {loading ? 'Входим…' : 'Войти'}
       </button>
 
       <div className="relative">
@@ -183,10 +183,12 @@ export function LoginForm() {
 
       <button
         type="button"
-        onClick={() => { window.location.href = "/api/auth/yandex"; }}
+        onClick={() => {
+          window.location.href = '/api/auth/yandex';
+        }}
         className={cn(
-          "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium",
-          "hover:bg-muted transition-colors flex items-center justify-center gap-2"
+          'w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium',
+          'hover:bg-muted transition-colors flex items-center justify-center gap-2'
         )}
       >
         <YandexIcon className="h-4 w-4" />

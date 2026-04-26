@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
-import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
-import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import { createClient } from '@/lib/supabase/server';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
-export const metadata: Metadata = { title: "Настройте план — NutriPlan" };
+export const metadata: Metadata = { title: 'Настройте план — NutriPlan' };
 
 export default async function OnboardingPage({
   searchParams,
@@ -18,16 +18,16 @@ export default async function OnboardingPage({
   // Authenticated + already onboarded → skip straight to dashboard
   if (user) {
     const { data: assessment } = await supabase
-      .from("health_assessments")
-      .select("id")
-      .eq("user_id", user.id)
+      .from('health_assessments')
+      .select('id')
+      .eq('user_id', user.id)
       .maybeSingle();
 
-    if (assessment) redirect("/dashboard");
+    if (assessment) redirect('/dashboard');
   }
 
   const params = await searchParams;
-  const fromDashboard = params.from === "dashboard";
+  const fromDashboard = params.from === 'dashboard';
 
   return (
     <div className="min-h-screen bg-cream-100 flex flex-col items-center justify-center px-4 py-12">

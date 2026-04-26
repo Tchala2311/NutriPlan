@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { Search, Clock, Flame, Bookmark, BookmarkX, BookmarkCheck, Filter } from "lucide-react";
-import type { RecipeSummary } from "@/app/dashboard/planner/actions";
-import { saveRecipeToLibrary, unsaveRecipe, logRecipeMeal } from "@/app/dashboard/planner/actions";
-import { RecipeDetailModal } from "./RecipeDetailModal";
+import { useState, useTransition } from 'react';
+import { Search, Clock, Flame, Bookmark, BookmarkX, BookmarkCheck, Filter } from 'lucide-react';
+import type { RecipeSummary } from '@/app/dashboard/planner/actions';
+import { saveRecipeToLibrary, unsaveRecipe, logRecipeMeal } from '@/app/dashboard/planner/actions';
+import { RecipeDetailModal } from './RecipeDetailModal';
 
 interface SavedRecipeRow {
   recipe: RecipeSummary;
@@ -16,23 +16,23 @@ interface RecipeLibraryClientProps {
 }
 
 const ALL_TAGS = [
-  "вегетарианское",
-  "веганское",
-  "без глютена",
-  "без лактозы",
-  "высокобелковое",
-  "низкоуглеводное",
+  'вегетарианское',
+  'веганское',
+  'без глютена',
+  'без лактозы',
+  'высокобелковое',
+  'низкоуглеводное',
 ];
 
 export function RecipeLibraryClient({ savedRecipes: initial }: RecipeLibraryClientProps) {
   const [savedRecipes, setSavedRecipes] = useState(initial);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRecipe, setModalRecipe] = useState<RecipeSummary | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   const filtered = savedRecipes.filter(({ recipe }) => {
     const matchesQuery = !query || recipe.title.toLowerCase().includes(query.toLowerCase());
@@ -74,9 +74,10 @@ export function RecipeLibraryClient({ savedRecipes: initial }: RecipeLibraryClie
               key={tag}
               onClick={() => setActiveTag(activeTag === tag ? null : tag)}
               className={`px-2.5 py-1 text-2xs rounded-full border transition-colors
-                ${activeTag === tag
-                  ? "bg-sage-300 border-sage-300 text-white"
-                  : "border-parchment-200 text-stone-400 hover:border-sage-200 hover:text-sage-400"
+                ${
+                  activeTag === tag
+                    ? 'bg-sage-300 border-sage-300 text-white'
+                    : 'border-parchment-200 text-stone-400 hover:border-sage-200 hover:text-sage-400'
                 }`}
             >
               {tag}
@@ -97,8 +98,12 @@ export function RecipeLibraryClient({ savedRecipes: initial }: RecipeLibraryClie
             </>
           ) : (
             <>
-              <p className="font-display text-base font-semibold text-bark-200">Ничего не найдено</p>
-              <p className="mt-1 text-sm text-muted-foreground">Попробуйте другой запрос или фильтр.</p>
+              <p className="font-display text-base font-semibold text-bark-200">
+                Ничего не найдено
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Попробуйте другой запрос или фильтр.
+              </p>
             </>
           )}
         </div>
@@ -117,7 +122,10 @@ export function RecipeLibraryClient({ savedRecipes: initial }: RecipeLibraryClie
                 {recipe.dietary_tags?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
                     {recipe.dietary_tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 text-2xs rounded-full bg-sage-50 text-sage-400 border border-sage-100">
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 text-2xs rounded-full bg-sage-50 text-sage-400 border border-sage-100"
+                      >
                         {tag}
                       </span>
                     ))}
@@ -146,20 +154,29 @@ export function RecipeLibraryClient({ savedRecipes: initial }: RecipeLibraryClie
                 </div>
 
                 {/* Macros */}
-                {(recipe.protein_per_serving != null) && (
+                {recipe.protein_per_serving != null && (
                   <div className="mt-2 flex items-center gap-2 text-2xs">
-                    <span className="text-vital-400 font-medium">Б {Math.round(recipe.protein_per_serving)}г</span>
+                    <span className="text-vital-400 font-medium">
+                      Б {Math.round(recipe.protein_per_serving)}г
+                    </span>
                     <span className="text-stone-300">·</span>
-                    <span className="text-stone-400">У {Math.round(recipe.carbs_per_serving ?? 0)}г</span>
+                    <span className="text-stone-400">
+                      У {Math.round(recipe.carbs_per_serving ?? 0)}г
+                    </span>
                     <span className="text-stone-300">·</span>
-                    <span className="text-stone-400">Ж {Math.round(recipe.fat_per_serving ?? 0)}г</span>
+                    <span className="text-stone-400">
+                      Ж {Math.round(recipe.fat_per_serving ?? 0)}г
+                    </span>
                   </div>
                 )}
               </div>
 
               {/* Unsave button */}
               <button
-                onClick={(e) => { e.stopPropagation(); handleUnsave(recipe.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnsave(recipe.id);
+                }}
                 disabled={isPending}
                 title="Убрать из библиотеки"
                 className="absolute top-3 right-3 p-1.5 rounded-lg bg-parchment-100 text-stone-300
