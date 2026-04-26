@@ -118,8 +118,8 @@ export default async function PricingPage() {
 
         {/* Back link */}
         <div className="text-center mt-10">
-          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-bark-300 transition-colors">
-            ← Вернуться в приложение
+          <Link href="/" className="text-sm text-muted-foreground hover:text-bark-300 transition-colors">
+            ← Назад
           </Link>
         </div>
       </div>

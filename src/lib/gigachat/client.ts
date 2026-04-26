@@ -205,7 +205,7 @@ async function callGigaChat(
 ): Promise<string> {
   const token = await getToken();
   const body = JSON.stringify({
-    model: "lite",
+    model: "GigaChat",
     max_tokens: maxTokens,
     messages: [
       { role: "system", content: systemPrompt },
@@ -614,7 +614,7 @@ export async function getFoodPhotoAnalysis(
   const prompt = buildFoodPhotoPrompt(weekRecipes);
 
   // Try Max first (best quality), fall back to Pro when Max tokens exhausted
-  for (const model of ["max", "pro"]) {
+  for (const model of ["GigaChat-Max", "GigaChat-Pro"]) {
     const visionBody = JSON.stringify({
       model,
       max_tokens: MAX_TOKENS.food_photo.краткий,

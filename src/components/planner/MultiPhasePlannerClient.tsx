@@ -301,7 +301,7 @@ export function MultiPhasePlannerClient({
             Планировщик питания
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            8 недель · 4 фазы · Российский рынок
+            8 недель · 4 фазы
           </p>
           <div className="mt-1 flex items-center gap-1.5 text-xs text-stone-400">
             <span>Начало плана:</span>
