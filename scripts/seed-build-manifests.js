@@ -67,6 +67,19 @@ function seedManifests() {
 const isBuildMode = process.argv[2] === "build";
 const isDevMode = !isBuildMode;
 
+// In dev mode: wipe .next/server/ before seeding to clear stale artifacts
+// (TES-173: stale vendor-chunks from prior runs cause MODULE_NOT_FOUND on restart)
+if (isDevMode) {
+  try {
+    const serverDir = path.join(__dirname, "..", ".next", "server");
+    if (fs.existsSync(serverDir)) {
+      fs.rmSync(serverDir, { recursive: true, force: true });
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
+
 // Always seed first
 seedManifests();
 
