@@ -48,12 +48,6 @@ function getWeekStart(dateStr?: string): string {
   return d.toISOString().split('T')[0];
 }
 
-function getWeekEnd(weekStart: string): string {
-  const d = new Date(weekStart + 'T00:00:00');
-  d.setDate(d.getDate() + 6);
-  return d.toISOString().split('T')[0];
-}
-
 function getWeekDates(weekStart: string): string[] {
   const dates: string[] = [];
   const d = new Date(weekStart + 'T00:00:00');
@@ -144,12 +138,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // Count existing redos for this week
+  // Count existing redos for this calendar week (Mon-Sun)
+  const weekStart = getWeekStart(affected_date);
+  const d = new Date(weekStart + 'T00:00:00');
+  d.setDate(d.getDate() + 6);
+  const weekEnd = d.toISOString().split('T')[0];
+
   const { data: existingRedos, error: countError } = await supabase
     .from('meal_redos')
     .select('id')
     .eq('user_id', user.id)
-    .eq('week_number', week_number);
+    .gte('affected_date', weekStart)
+    .lte('affected_date', weekEnd);
 
   if (countError) {
     return NextResponse.json({ error: 'Failed to check redo limit' }, { status: 500 });
@@ -164,6 +164,7 @@ export async function POST(req: Request) {
     week_number,
     redo_type,
     affected_date,
+    affected_meal_type: affected_meal_type ?? null,
     reason,
     paid: !requiresPayment, // true=free, false=needs payment
   });
@@ -183,7 +184,6 @@ export async function POST(req: Request) {
   }
 
   // Regenerate meals via GigaChat
-  const weekStart = getWeekStart(affected_date);
   const admin = createAdminClient();
 
   // Load user profile
@@ -285,7 +285,7 @@ export async function POST(req: Request) {
     target_fat_g: fatG,
   };
 
-  const weekEnd = getWeekEnd(weekStart);
+  // weekEnd and weekEndStr already calculated above for redo quota check
   const weekDates = getWeekDates(weekStart);
 
   const promptParams: MealPlanPromptParams = {

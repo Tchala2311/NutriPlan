@@ -19,6 +19,7 @@ interface MealReactionsProps {
   shared_plan_token: string;
   user_id: string;
   reactions: Reaction[];
+  onReactionsUpdate?: (reactions: Reaction[]) => void;
 }
 
 export function MealReactions({

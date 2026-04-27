@@ -570,9 +570,9 @@ async function regenerateMealsForRedo(
   return { success: true };
 }
 
-/** Get redo count for current week (for paywall logic: 3 free, then paid). */
+/** Get redo count for calendar week (Mon-Sun) for paywall logic: 3 free, then paid. */
 export async function getWeeklyRedoCount(
-  weekNumber: number
+  dateStr?: string
 ): Promise<{ count: number; freeRemaining: number }> {
   const supabase = await createClient();
   const {
@@ -580,11 +580,20 @@ export async function getWeeklyRedoCount(
   } = await supabase.auth.getUser();
   if (!user) return { count: 0, freeRemaining: 3 };
 
+  // Calculate Monday of this week
+  const weekStart = getWeekStart(dateStr);
+  const d = new Date(weekStart + 'T00:00:00');
+  const weekEnd = new Date(d);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekEndStr = weekEnd.toISOString().split('T')[0];
+
+  // Count redos within this calendar week (Mon-Sun)
   const { data: redos, error } = await supabase
     .from('meal_redos')
     .select('id')
     .eq('user_id', user.id)
-    .eq('week_number', weekNumber);
+    .gte('affected_date', weekStart)
+    .lte('affected_date', weekEndStr);
 
   if (error) return { count: 0, freeRemaining: 3 };
 
@@ -619,9 +628,10 @@ export async function recordMealRedo(
     return { success: false, requiresPayment: false, trialExpired: true };
   }
 
-  const { count } = await getWeeklyRedoCount(weekNumber);
+  // Check redo quota for this calendar week (Mon-Sun)
+  const { count } = await getWeeklyRedoCount(affectedDate);
 
-  // Check if payment is required
+  // Check if payment is required (4th+ redo in calendar week)
   const requiresPayment = count >= 3;
 
   const { error } = await supabase.from('meal_redos').insert({
