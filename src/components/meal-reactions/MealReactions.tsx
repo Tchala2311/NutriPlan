@@ -19,7 +19,6 @@ interface MealReactionsProps {
   shared_plan_token: string;
   user_id: string;
   reactions: Reaction[];
-  onReactionsUpdate?: (reactions: Reaction[]) => void;
 }
 
 export function MealReactions({
@@ -117,14 +116,7 @@ export function MealReactions({
       console.error('Reaction toggle failed:', e);
     } finally {
       setLoading(false);
-      onReactionsUpdate?.(reactions);
     }
-  };
-
-  const getReactorNames = (emoji: string): string[] => {
-    const uniqueIds = Array.from(new Set(reactionCounts[emoji] ?? []));
-    // In a real app, you'd fetch user profiles. For now, show counts.
-    return uniqueIds;
   };
 
   return (

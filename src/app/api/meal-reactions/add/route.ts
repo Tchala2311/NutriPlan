@@ -35,24 +35,23 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Shared plan expired' }, { status: 410 });
     }
 
-    // Insert or upsert reaction
+    // Insert reaction (unique constraint prevents duplicates)
     const { data, error } = await supabase
       .from('meal_reactions')
-      .upsert(
-        {
-          meal_plan_id,
-          meal_date,
-          meal_type,
-          user_id,
-          emoji,
-        },
-        {
-          onConflict: 'meal_plan_id,meal_date,meal_type,user_id,emoji',
-        }
-      )
+      .insert({
+        meal_plan_id,
+        meal_date,
+        meal_type,
+        user_id,
+        emoji,
+      })
       .select();
 
     if (error) {
+      // Unique constraint violation - reaction already exists
+      if (error.code === '23505') {
+        return Response.json({ success: true, message: 'Reaction already exists' });
+      }
       console.error('Reaction insert error:', error);
       return Response.json({ error: 'Failed to add reaction' }, { status: 500 });
     }
