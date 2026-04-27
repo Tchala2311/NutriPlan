@@ -57,11 +57,13 @@ export function isRecipeUrl(url: string): boolean {
   }
 }
 
-export function renderTextWithLinks(
-  text: string,
-  onUrl?: (url: string) => React.ReactNode
-): (string | React.ReactNode)[] {
-  const parts: (string | React.ReactNode)[] = [];
+export interface TextPart {
+  type: 'text' | 'url';
+  content: string;
+}
+
+export function extractTextParts(text: string): TextPart[] {
+  const parts: TextPart[] = [];
   let lastIndex = 0;
 
   const matches = [...text.matchAll(URL_REGEX)];
@@ -72,33 +74,19 @@ export function renderTextWithLinks(
 
     // Add text before URL
     if (startIndex > lastIndex) {
-      parts.push(text.slice(lastIndex, startIndex));
+      parts.push({ type: 'text', content: text.slice(lastIndex, startIndex) });
     }
 
-    // Add URL component or rendered link
-    if (onUrl) {
-      parts.push(onUrl(url));
-    } else {
-      parts.push(
-        <a
-          key={`${url}-${startIndex}`}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sage-400 hover:text-sage-500 underline break-all"
-        >
-          {url}
-        </a>
-      );
-    }
+    // Add URL
+    parts.push({ type: 'url', content: url });
 
     lastIndex = startIndex + url.length;
   });
 
   // Add remaining text
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
   }
 
-  return parts.length > 0 ? parts : [text];
+  return parts.length > 0 ? parts : [{ type: 'text', content: text }];
 }

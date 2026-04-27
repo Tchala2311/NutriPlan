@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { RecipePreviewCard } from './RecipePreviewCard';
-import { extractUrls, isRecipeUrl } from '@/lib/url-utils';
+import { extractUrls, isRecipeUrl, extractTextParts } from '@/lib/url-utils';
 
 interface Comment {
   id: string;

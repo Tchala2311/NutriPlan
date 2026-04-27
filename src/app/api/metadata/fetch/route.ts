@@ -1,11 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface OGMetadata {
   title?: string;
@@ -87,6 +81,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const supabase = createAdminClient();
 
     // Check cache first
     const { data: cached } = await supabase
