@@ -458,13 +458,15 @@ export async function updateUsername(username: string): Promise<{ error?: string
     return { error: 'Это имя пользователя уже занято' };
   }
 
-  // Update username in user_settings
-  const { error: updateError } = await supabase
+  // Upsert username in user_settings (row may not exist yet for new users)
+  const { error: upsertError } = await supabase
     .from('user_settings')
-    .update({ username: trimmed })
-    .eq('user_id', user.id);
+    .upsert(
+      { user_id: user.id, username: trimmed },
+      { onConflict: 'user_id' }
+    );
 
-  if (updateError) return { error: updateError.message };
+  if (upsertError) return { error: upsertError.message };
 
   revalidatePath('/dashboard');
   revalidatePath('/dashboard/profile');
