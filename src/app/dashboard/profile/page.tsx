@@ -26,7 +26,7 @@ export default async function ProfilePage() {
     getTrendsData(goals),
     supabase
       .from('user_settings')
-      .select('training_days')
+      .select('training_days, username')
       .eq('user_id', user?.id ?? '')
       .maybeSingle(),
     supabase
@@ -37,6 +37,7 @@ export default async function ProfilePage() {
   ]);
 
   const trainingDays = (settingsRow.data?.training_days as number[] | null) ?? [0, 2, 4, 5];
+  const username = (settingsRow.data?.username as string | null) ?? null;
   const dietaryRestrictions = (healthRow.data?.dietary_restrictions as string[] | null) ?? [];
   const allergens = (healthRow.data?.allergens as string[] | null) ?? [];
 
@@ -65,6 +66,7 @@ export default async function ProfilePage() {
         </h2>
         <dl className="space-y-3">
           <DisplayNameForm initialName={fullName} />
+          <UsernameForm initialUsername={username} />
           <div className="flex justify-between text-sm">
             <dt className="text-muted-foreground">Email</dt>
             <dd className="font-medium text-bark-300">{email}</dd>
