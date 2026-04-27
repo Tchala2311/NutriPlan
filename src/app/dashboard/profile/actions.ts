@@ -421,3 +421,52 @@ export async function updateDisplayName(firstName: string): Promise<{ error?: st
   revalidatePath('/dashboard/profile');
   return {};
 }
+
+export async function updateUsername(username: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await getUser();
+  if (!user) return { error: 'Не авторизован' };
+
+  const trimmed = username.trim().toLowerCase();
+
+  // Validation: 3-32 chars, alphanumeric + underscore
+  if (!trimmed) {
+    return { error: 'Имя пользователя обязательно' };
+  }
+  if (trimmed.length < 3) {
+    return { error: 'Минимум 3 символа' };
+  }
+  if (trimmed.length > 32) {
+    return { error: 'Максимум 32 символа' };
+  }
+  if (!/^[a-z0-9_]+$/.test(trimmed)) {
+    return { error: 'Только буквы (a-z), цифры и подчеркивание' };
+  }
+
+  // Check uniqueness (case-insensitive)
+  const { data: existing, error: checkError } = await supabase
+    .from('user_settings')
+    .select('user_id')
+    .eq('username', trimmed)
+    .neq('user_id', user.id)
+    .maybeSingle();
+
+  if (checkError) return { error: checkError.message };
+  if (existing) {
+    return { error: 'Это имя пользователя уже занято' };
+  }
+
+  // Update username in user_settings
+  const { error: updateError } = await supabase
+    .from('user_settings')
+    .update({ username: trimmed })
+    .eq('user_id', user.id);
+
+  if (updateError) return { error: updateError.message };
+
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/profile');
+  return {};
+}

@@ -4,6 +4,7 @@ import { getUser, createClient } from '@/lib/supabase/server';
 import { GoalSettingsForm } from '@/components/dashboard/GoalSettingsForm';
 import { TrendsSection } from '@/components/dashboard/TrendsSection';
 import { DisplayNameForm } from '@/components/dashboard/DisplayNameForm';
+import { UsernameForm } from '@/components/dashboard/UsernameForm';
 import { UserPreferencesForm } from '@/components/dashboard/UserPreferencesForm';
 import { getUserGoals, getTrendsData } from './actions';
 import { getUserSubscription } from '@/lib/subscription';

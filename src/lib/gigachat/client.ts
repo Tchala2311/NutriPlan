@@ -160,6 +160,8 @@ export interface UserProfile {
   is_breastfeeding?: boolean;
   is_postpartum?: boolean;
   postpartum_weeks_since_birth?: number | null;
+  // TES-130: Recent user feedback from meal redos to improve suggestions
+  recent_redo_reasons?: string[];
 }
 
 /** Replace {{key}} placeholders in a template string with values from a flat record. */

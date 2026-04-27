@@ -187,7 +187,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
 
   // Load user profile
-  const [haRes, goalsRes, settingsRes, planRes] = await Promise.all([
+  const [haRes, goalsRes, settingsRes, planRes, redoReasonsRes] = await Promise.all([
     supabase
       .from('health_assessments')
       .select(
@@ -209,12 +209,21 @@ export async function POST(req: Request) {
       .eq('user_id', user.id)
       .eq('week_start_date', weekStart)
       .maybeSingle(),
+    // TES-130: Fetch recent redo reasons to inform meal suggestions
+    supabase
+      .from('meal_redos')
+      .select('reason')
+      .eq('user_id', user.id)
+      .not('reason', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(10),
   ]);
 
   const ha = haRes.data;
   const goals = goalsRes.data;
   const settings = settingsRes.data;
   const existingPlan = planRes.data;
+  const redoReasons = redoReasonsRes.data?.map((r) => r.reason).filter(Boolean) ?? [];
 
   if (!existingPlan) {
     return NextResponse.json({ error: 'No meal plan found for this week' }, { status: 404 });
@@ -268,6 +277,8 @@ export async function POST(req: Request) {
     is_breastfeeding: ha?.is_breastfeeding ?? false,
     is_postpartum: ha?.is_postpartum ?? false,
     postpartum_weeks_since_birth: ha?.postpartum_weeks_since_birth ?? null,
+    // TES-130: Include recent redo reasons to improve future suggestions
+    recent_redo_reasons: redoReasons.length > 0 ? redoReasons : undefined,
     tdee_kcal: tdeeKcal,
     target_protein_g: proteinG,
     target_carbs_g: carbsG,
