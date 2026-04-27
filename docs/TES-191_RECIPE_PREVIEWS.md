@@ -25,10 +25,12 @@ Card renders with image, title, cook time, domain
 ## Components
 
 ### API Endpoint
+
 **Path:** `src/app/api/metadata/fetch/route.ts`
 **Method:** POST
 **Body:** `{ url: string }`
 **Response:**
+
 ```json
 {
   "cached": true|false,
@@ -43,12 +45,15 @@ Card renders with image, title, cook time, domain
 ```
 
 ### Frontend Components
+
 - **`src/components/social/RecipePreviewCard.tsx`** — Renders preview card with async fetch
 - **`src/components/social/GroupCommentsSection.tsx`** — Group discussion UI with URL detection
 - **`src/lib/url-utils.ts`** — URL extraction + recipe site detection
 
 ### Database
+
 **Table:** `url_metadata_cache`
+
 ```sql
 - id            UUID PRIMARY KEY
 - url           TEXT UNIQUE NOT NULL
@@ -63,6 +68,7 @@ Card renders with image, title, cook time, domain
 ```
 
 **Indexes:**
+
 - `url_metadata_cache_url_idx` on `(url)` for fast lookup
 - `url_metadata_cache_expires_at_idx` on `(expires_at)` for cleanup
 
@@ -71,6 +77,7 @@ Card renders with image, title, cook time, domain
 ## Deployment Steps
 
 ### 1. Apply Database Migration
+
 ```bash
 # Via Supabase CLI
 supabase migrations up
@@ -81,38 +88,45 @@ supabase migrations up
 ```
 
 **Verify:**
+
 ```sql
 SELECT * FROM url_metadata_cache LIMIT 1;  -- Should return empty result, no error
 ```
 
 ### 2. Deploy Code
+
 - Commit `419dc5f` contains full implementation
 - Deploy to staging first, then production
 
 ### 3. QA Testing
 
 **Test Case 1: Basic preview**
+
 1. Login → Social → My Group → Comments
 2. Paste: `https://www.allrecipes.com/recipe/12345/pasta/`
 3. Click send
 4. **Expected:** Preview card with image, title, cook time, "allrecipes.com" domain
 
 **Test Case 2: Cache hit**
+
 1. After Test Case 1, paste same URL in another comment
 2. **Expected:** Preview loads instantly (no network delay)
 3. Verify: `SELECT created_at, expires_at FROM url_metadata_cache WHERE url = '...'`
 
 **Test Case 3: Fallback**
+
 1. Paste invalid URL: `https://example.com/notarecipe`
 2. **Expected:** Plain link rendered (no preview card)
 
 **Test Case 4: Non-recipe URL**
+
 1. Paste: `https://google.com`
 2. **Expected:** Plain link only (isRecipeUrl returns false)
 
 ### 4. Production Monitoring
 
 **Cache metrics:**
+
 ```sql
 -- Total cached entries
 SELECT COUNT(*) FROM url_metadata_cache;
@@ -128,12 +142,14 @@ SELECT COUNT(*) FROM url_metadata_cache WHERE expires_at < NOW();
 ```
 
 **Error monitoring:**
+
 - Watch for 500 errors in `/api/metadata/fetch` logs
 - Monitor failed metadata fetches (timeouts, blocked sites)
 
 ## Recipe Site Detection
 
 Currently detects URLs from these domains (in `url-utils.ts`):
+
 - allrecipes, foodnetwork, seriouseats, bon-appetit, tasty
 - epicurious, food52, smittenkitchen, budgetbytes, copykat
 - delish, recipetineats, skinnytaste, minimalist-baker

@@ -47,10 +47,7 @@ import {
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from './prompts';
-import {
-  getSharedMealPlanPrompt,
-  type GroupMemberInput,
-} from '../planner/goal-prompts';
+import { getSharedMealPlanPrompt, type GroupMemberInput } from '../planner/goal-prompts';
 
 const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
 const GIGACHAT_FILES_URL = 'https://gigachat.devices.sberbank.ru/api/v1/files';

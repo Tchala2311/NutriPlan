@@ -52,18 +52,14 @@ export function GroupCommentsSection() {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-sm font-semibold text-bark-300">
-        Обсуждение группы
-      </h3>
+      <h3 className="font-display text-sm font-semibold text-bark-300">Обсуждение группы</h3>
 
       {/* Comments list */}
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {comments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <ChatBubbleIcon className="h-8 w-8 text-parchment-300 mb-2" />
-            <p className="text-xs text-muted-foreground">
-              Начните обсуждение с группой
-            </p>
+            <p className="text-xs text-muted-foreground">Начните обсуждение с группой</p>
           </div>
         ) : (
           comments.map((comment) => (
@@ -81,17 +77,13 @@ export function GroupCommentsSection() {
               {/* Comment bubble */}
               <div className="flex-1 min-w-0">
                 <div className="rounded-lg bg-parchment-50 border border-parchment-200 px-3 py-2">
-                  <p className="text-xs font-semibold text-bark-300">
-                    {comment.author}
-                  </p>
+                  <p className="text-xs font-semibold text-bark-300">{comment.author}</p>
                   <div className="text-sm text-bark-300 mt-1 space-y-2 break-words">
                     {/* Render comment text with embedded previews */}
                     <CommentContent text={comment.text} />
                   </div>
                 </div>
-                <p className="text-[10px] text-stone-400 mt-1">
-                  {formatTime(comment.timestamp)}
-                </p>
+                <p className="text-[10px] text-stone-400 mt-1">{formatTime(comment.timestamp)}</p>
               </div>
             </div>
           ))
@@ -188,11 +180,7 @@ function SendIcon({ className }: { className?: string }) {
       stroke="currentColor"
       strokeWidth={2}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
     </svg>
   );
 }

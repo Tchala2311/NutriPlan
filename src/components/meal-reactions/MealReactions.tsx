@@ -52,9 +52,7 @@ export function MealReactions({
 
   // Check if current user has reacted with each emoji
   const userReactions = new Set(
-    mealReactions
-      .filter((r) => r.user_id === user_id)
-      .map((r) => r.emoji)
+    mealReactions.filter((r) => r.user_id === user_id).map((r) => r.emoji)
   );
 
   const toggleReaction = async (emoji: string) => {
@@ -79,12 +77,15 @@ export function MealReactions({
 
         if (res.ok) {
           setReactions((prev) =>
-            prev.filter((r) => !(
-              r.meal_date === meal_date &&
-              r.meal_type === meal_type &&
-              r.emoji === emoji &&
-              r.user_id === user_id
-            ))
+            prev.filter(
+              (r) =>
+                !(
+                  r.meal_date === meal_date &&
+                  r.meal_type === meal_type &&
+                  r.emoji === emoji &&
+                  r.user_id === user_id
+                )
+            )
           );
         }
       } else {
@@ -135,18 +136,21 @@ export function MealReactions({
               onMouseLeave={() => setHoveredEmoji(null)}
               className={`
                 text-sm px-2 py-0.5 rounded-full transition-all
-                ${isSelected
-                  ? 'bg-sage-200 border-sage-300'
-                  : count > 0
-                    ? 'bg-parchment-100 border-parchment-200 hover:bg-parchment-200'
-                    : 'hover:bg-parchment-100 border-transparent'
+                ${
+                  isSelected
+                    ? 'bg-sage-200 border-sage-300'
+                    : count > 0
+                      ? 'bg-parchment-100 border-parchment-200 hover:bg-parchment-200'
+                      : 'hover:bg-parchment-100 border-transparent'
                 }
                 border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
                 flex items-center gap-1
               `}
             >
               <span>{emoji}</span>
-              {count > 0 && <span className="text-[10px] font-medium text-muted-foreground">{count}</span>}
+              {count > 0 && (
+                <span className="text-[10px] font-medium text-muted-foreground">{count}</span>
+              )}
             </button>
 
             {/* Tooltip: who reacted */}

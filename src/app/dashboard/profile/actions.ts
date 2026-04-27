@@ -461,10 +461,7 @@ export async function updateUsername(username: string): Promise<{ error?: string
   // Upsert username in user_settings (row may not exist yet for new users)
   const { error: upsertError } = await supabase
     .from('user_settings')
-    .upsert(
-      { user_id: user.id, username: trimmed },
-      { onConflict: 'user_id' }
-    );
+    .upsert({ user_id: user.id, username: trimmed }, { onConflict: 'user_id' });
 
   if (upsertError) return { error: upsertError.message };
 

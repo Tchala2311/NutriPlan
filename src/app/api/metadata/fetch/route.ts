@@ -36,8 +36,7 @@ async function fetchMetadata(url: string): Promise<OGMetadata | null> {
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (compatible; NutriPlan/1.0; +https://nutriplan.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; NutriPlan/1.0; +https://nutriplan.app)',
       },
       signal: AbortSignal.timeout(10000), // 10s timeout
     });
@@ -66,20 +65,14 @@ export async function POST(req: NextRequest) {
     const { url } = await req.json();
 
     if (!url || typeof url !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid URL' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
     // Validate URL
     try {
       new URL(url);
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid URL format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
     }
 
     const supabase = createAdminClient();
@@ -152,9 +145,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Metadata fetch error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch metadata' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch metadata' }, { status: 500 });
   }
 }

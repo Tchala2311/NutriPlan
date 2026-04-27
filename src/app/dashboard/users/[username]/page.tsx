@@ -142,13 +142,14 @@ export default async function UserProfilePage({ params }: PageProps) {
       )}
 
       {/* Empty state message */}
-      {!profile.goal && !profile.dietaryRestrictions.length && !profile.allergens.length && !profile.healthGoals.length && (
-        <div className="rounded-xl border border-dashed border-parchment-200 bg-parchment-50 py-12 px-6 text-center">
-          <p className="text-sm text-bark-200">
-            Пользователь еще не заполнил профиль
-          </p>
-        </div>
-      )}
+      {!profile.goal &&
+        !profile.dietaryRestrictions.length &&
+        !profile.allergens.length &&
+        !profile.healthGoals.length && (
+          <div className="rounded-xl border border-dashed border-parchment-200 bg-parchment-50 py-12 px-6 text-center">
+            <p className="text-sm text-bark-200">Пользователь еще не заполнил профиль</p>
+          </div>
+        )}
     </div>
   );
 }

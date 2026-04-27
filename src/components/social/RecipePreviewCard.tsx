@@ -114,18 +114,12 @@ export function RecipePreviewCard({ url, className }: RecipePreviewCardProps) {
               {metadata.cookTime} мин
             </span>
           )}
-          {metadata.domain && (
-            <span className="text-xs text-stone-400">
-              {metadata.domain}
-            </span>
-          )}
+          {metadata.domain && <span className="text-xs text-stone-400">{metadata.domain}</span>}
         </div>
 
         {/* Description */}
         {metadata.description && (
-          <p className="text-xs text-stone-400 line-clamp-2 mt-1.5">
-            {metadata.description}
-          </p>
+          <p className="text-xs text-stone-400 line-clamp-2 mt-1.5">{metadata.description}</p>
         )}
       </div>
     </a>

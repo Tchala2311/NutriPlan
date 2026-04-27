@@ -2,7 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(req: Request) {
   try {
-    const { shared_plan_token, meal_plan_id, meal_date, meal_type, emoji, user_id } = await req.json();
+    const { shared_plan_token, meal_plan_id, meal_date, meal_type, emoji, user_id } =
+      await req.json();
 
     // Validate emoji
     const VALID_EMOJIS = ['👍', '🔥', '🤢', '❤️'];

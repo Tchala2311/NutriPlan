@@ -97,9 +97,7 @@ export function SharedPlanClient({
 
     const fetchReactions = async () => {
       try {
-        const res = await fetch(
-          `/api/meal-reactions/fetch?token=${token}&meal_plan_id=${plan.id}`
-        );
+        const res = await fetch(`/api/meal-reactions/fetch?token=${token}&meal_plan_id=${plan.id}`);
         if (res.ok) {
           const data = await res.json();
           setReactions(data.data ?? []);

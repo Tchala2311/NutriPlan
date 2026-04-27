@@ -8,19 +8,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ username: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ username: string }> }) {
   try {
     const { username: rawUsername } = await params;
     const username = rawUsername.replace(/^@/, '').toLowerCase();
 
     if (!username) {
-      return NextResponse.json(
-        { error: 'Username required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Username required' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -28,17 +22,12 @@ export async function GET(
     // Get user by username
     const { data: userSettings, error: settingsError } = await supabase
       .from('user_settings')
-      .select(
-        'user_id, username, display_name'
-      )
+      .select('user_id, username, display_name')
       .eq('username', username)
       .single();
 
     if (settingsError || !userSettings) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get user goals (dietary preferences, primary goal)
@@ -67,9 +56,6 @@ export async function GET(
     });
   } catch (err) {
     console.error('[users/[username] GET] Error:', err);
-    return NextResponse.json(
-      { error: 'Failed to fetch user profile' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 500 });
   }
 }

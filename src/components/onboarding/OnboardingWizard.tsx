@@ -784,16 +784,23 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                     setForm((p) => ({
                       ...p,
                       is_postpartum: e.target.checked,
-                      postpartum_weeks_since_birth: e.target.checked ? p.postpartum_weeks_since_birth : null,
+                      postpartum_weeks_since_birth: e.target.checked
+                        ? p.postpartum_weeks_since_birth
+                        : null,
                     }))
                   }
                   className="accent-bark-300"
                 />
-                <span className="text-sm text-bark-300">В послеродовом периоде (в течение 6 месяцев после родов)</span>
+                <span className="text-sm text-bark-300">
+                  В послеродовом периоде (в течение 6 месяцев после родов)
+                </span>
               </label>
               {form.is_postpartum && (
                 <div className="ml-7">
-                  <label htmlFor="postpartum_weeks" className="text-xs font-medium text-muted-foreground block mb-2">
+                  <label
+                    htmlFor="postpartum_weeks"
+                    className="text-xs font-medium text-muted-foreground block mb-2"
+                  >
                     Недель после родов
                   </label>
                   <input
@@ -805,7 +812,9 @@ export function OnboardingWizard({ isAuthenticated }: OnboardingWizardProps) {
                     onChange={(e) =>
                       setForm((p) => ({
                         ...p,
-                        postpartum_weeks_since_birth: e.target.value ? parseInt(e.target.value, 10) : null,
+                        postpartum_weeks_since_birth: e.target.value
+                          ? parseInt(e.target.value, 10)
+                          : null,
                       }))
                     }
                     placeholder="Например, 4"

@@ -669,10 +669,7 @@ export function buildGroupPortraitBlock(members: GroupMemberInput[]): string {
   const weightedKcal =
     totalBmr > 0
       ? Math.round(
-          members.reduce(
-            (sum, m) => sum + m.tdee_kcal * ((m.bmr_kcal || 0) / totalBmr),
-            0
-          )
+          members.reduce((sum, m) => sum + m.tdee_kcal * ((m.bmr_kcal || 0) / totalBmr), 0)
         )
       : Math.round(members.reduce((sum, m) => sum + m.tdee_kcal, 0) / n);
 
@@ -682,9 +679,7 @@ export function buildGroupPortraitBlock(members: GroupMemberInput[]): string {
   const calorieSpread = maxKcal - minKcal;
 
   // Cuisine preferences
-  const cuisines = [
-    ...new Set(members.flatMap((m) => m.cuisine_preferences).filter(Boolean)),
-  ];
+  const cuisines = [...new Set(members.flatMap((m) => m.cuisine_preferences).filter(Boolean))];
   const cuisineGroups = [
     ...new Set(
       members
@@ -723,9 +718,7 @@ export function buildGroupPortraitBlock(members: GroupMemberInput[]): string {
       restrictions.length > 0 ? restrictions.join(', ') : 'нет'
     }`
   );
-  lines.push(
-    `- Целевая калорийность (взвешенное среднее по BMR): ${weightedKcal} ккал/день`
-  );
+  lines.push(`- Целевая калорийность (взвешенное среднее по BMR): ${weightedKcal} ккал/день`);
 
   if (calorieSpread > 400) {
     const highPct = Math.round((maxKcal / weightedKcal - 1) * 100);
@@ -932,9 +925,7 @@ export function getSharedMealPlanPrompt(params: SharedMealPlanPromptParams): str
 
   // Merged constraints
   const allergens = [...new Set(members.flatMap((m) => m.allergens).filter(Boolean))];
-  const restrictions = [
-    ...new Set(members.flatMap((m) => m.dietary_restrictions).filter(Boolean)),
-  ];
+  const restrictions = [...new Set(members.flatMap((m) => m.dietary_restrictions).filter(Boolean))];
   const conditions = [...new Set(members.flatMap((m) => m.medical_conditions).filter(Boolean))];
   const isAnyPregnant = members.some((m) => m.is_pregnant);
   const isAnyBreastfeeding = members.some((m) => m.is_breastfeeding);
@@ -957,7 +948,8 @@ export function getSharedMealPlanPrompt(params: SharedMealPlanPromptParams): str
   if (conditions.includes('t1d')) modifiers.push(SCENARIO_MODIFIERS.t1d);
   if (conditions.includes('diabetes_t2')) modifiers.push(SCENARIO_MODIFIERS.diabetes_t2);
   if (conditions.includes('gout')) modifiers.push(SCENARIO_MODIFIERS.gout);
-  if (conditions.includes('bariatric_surgery')) modifiers.push(SCENARIO_MODIFIERS.bariatric_surgery);
+  if (conditions.includes('bariatric_surgery'))
+    modifiers.push(SCENARIO_MODIFIERS.bariatric_surgery);
   if (conditions.includes('pku')) modifiers.push(SCENARIO_MODIFIERS.pku);
   if (conditions.includes('hypertension')) modifiers.push(SCENARIO_MODIFIERS.hypertension);
   if (conditions.includes('ibs')) modifiers.push(SCENARIO_MODIFIERS.ibs);

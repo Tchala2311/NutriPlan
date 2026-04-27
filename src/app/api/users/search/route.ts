@@ -14,10 +14,7 @@ export async function GET(req: Request) {
     const query = searchParams.get('q')?.trim();
 
     if (!query || query.length < 2) {
-      return NextResponse.json(
-        { error: 'Query must be at least 2 characters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Query must be at least 2 characters' }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -33,26 +30,22 @@ export async function GET(req: Request) {
     const { data: results, error } = await supabase
       .from('user_settings')
       .select('user_id, username, display_name')
-      .or(
-        `username.ilike.${query}%,display_name.ilike.${query}%`
-      )
+      .or(`username.ilike.${query}%,display_name.ilike.${query}%`)
       .not('username', 'is', null)
       .limit(10);
 
     if (error) throw error;
 
     return NextResponse.json({
-      results: results?.map((r) => ({
-        id: r.user_id,
-        username: r.username,
-        displayName: r.display_name,
-      })) ?? [],
+      results:
+        results?.map((r) => ({
+          id: r.user_id,
+          username: r.username,
+          displayName: r.display_name,
+        })) ?? [],
     });
   } catch (err) {
     console.error('[users/search GET] Error:', err);
-    return NextResponse.json(
-      { error: 'Failed to search users' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
   }
 }
