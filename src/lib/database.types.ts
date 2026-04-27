@@ -1057,6 +1057,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      url_metadata_cache: {
+        Row: {
+          cook_time_minutes: number | null;
+          created_at: string | null;
+          expires_at: string | null;
+          id: string;
+          metadata_json: Json | null;
+          og_description: string | null;
+          og_image: string | null;
+          og_title: string | null;
+          source_domain: string | null;
+          url: string;
+        };
+        Insert: {
+          cook_time_minutes?: number | null;
+          created_at?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata_json?: Json | null;
+          og_description?: string | null;
+          og_image?: string | null;
+          og_title?: string | null;
+          source_domain?: string | null;
+          url: string;
+        };
+        Update: {
+          cook_time_minutes?: number | null;
+          created_at?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata_json?: Json | null;
+          og_description?: string | null;
+          og_image?: string | null;
+          og_title?: string | null;
+          source_domain?: string | null;
+          url?: string;
+        };
+        Relationships: [];
+      };
       water_logs: {
         Row: {
           amount_ml: number;

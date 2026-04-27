@@ -625,6 +625,153 @@ export const PROMPT_MEAL_PLAN_BY_GOAL: Record<string, string> = {
 {{base_format}}`,
 };
 
+// ── Shared meal plan (Social Factor — TES-187) ───────────────────────────────
+
+export interface GroupMemberInput {
+  /** Display name shown in portrait block (optional). */
+  name?: string;
+  /** Total daily energy expenditure in kcal. */
+  tdee_kcal: number;
+  /**
+   * Basal metabolic rate in kcal — used to weight the calorie average.
+   * Pass 0 to fall back to equal weighting for this member.
+   */
+  bmr_kcal: number;
+  allergens: string[];
+  dietary_restrictions: string[];
+  medical_conditions: string[];
+  cuisine_preferences: string[];
+  primary_goal: string;
+  is_pregnant?: boolean;
+  is_breastfeeding?: boolean;
+}
+
+/**
+ * Builds a Russian-language group portrait block for the shared meal plan prompt.
+ * Merges all members' constraints and computes the BMR-weighted calorie target.
+ *
+ * Conflict resolution logic (matches prompt instructions):
+ *  - Allergens: union — any allergen from any member is excluded for everyone
+ *  - Dietary restrictions: union — all restrictions apply simultaneously (most restrictive wins)
+ *  - Calories: weighted average by BMR; equal weights when bmr_kcal is 0
+ *  - Calorie spread > 400 kcal: adds per-meal portion guidance instruction for GigaChat
+ *  - Cuisine preferences: union; conflict flag when members prefer different cuisines
+ */
+export function buildGroupPortraitBlock(members: GroupMemberInput[]): string {
+  const n = members.length;
+
+  // Union of all allergens and dietary restrictions
+  const allergens = [...new Set(members.flatMap((m) => m.allergens).filter(Boolean))];
+  const restrictions = [...new Set(members.flatMap((m) => m.dietary_restrictions).filter(Boolean))];
+
+  // Weighted-average calorie target by BMR; fall back to equal weights when BMR is absent
+  const totalBmr = members.reduce((sum, m) => sum + (m.bmr_kcal || 0), 0);
+  const weightedKcal =
+    totalBmr > 0
+      ? Math.round(
+          members.reduce(
+            (sum, m) => sum + m.tdee_kcal * ((m.bmr_kcal || 0) / totalBmr),
+            0
+          )
+        )
+      : Math.round(members.reduce((sum, m) => sum + m.tdee_kcal, 0) / n);
+
+  const kcalValues = members.map((m) => m.tdee_kcal);
+  const minKcal = Math.min(...kcalValues);
+  const maxKcal = Math.max(...kcalValues);
+  const calorieSpread = maxKcal - minKcal;
+
+  // Cuisine preferences
+  const cuisines = [
+    ...new Set(members.flatMap((m) => m.cuisine_preferences).filter(Boolean)),
+  ];
+  const cuisineGroups = [
+    ...new Set(
+      members
+        .filter((m) => m.cuisine_preferences.length > 0)
+        .map((m) => [...m.cuisine_preferences].sort().join('|'))
+    ),
+  ];
+  const hasCuisineConflict = cuisineGroups.length > 1;
+
+  // Per-member summary lines
+  const memberLines = members
+    .map((m, i) => {
+      const label = m.name ?? `Участник ${i + 1}`;
+      const parts: string[] = [`цель: "${m.primary_goal}"`, `TDEE: ${m.tdee_kcal} ккал`];
+      if (m.allergens.length > 0) parts.push(`аллергены: ${m.allergens.join(', ')}`);
+      if (m.dietary_restrictions.length > 0)
+        parts.push(`ограничения: ${m.dietary_restrictions.join(', ')}`);
+      if (m.cuisine_preferences.length > 0)
+        parts.push(`кухня: ${m.cuisine_preferences.join(', ')}`);
+      if (m.is_pregnant) parts.push('беременна');
+      if (m.is_breastfeeding) parts.push('кормит грудью');
+      return `  • ${label}: ${parts.join(' | ')}`;
+    })
+    .join('\n');
+
+  const lines: string[] = [];
+  lines.push(`ПОРТРЕТ ГРУППЫ (${n} участника/участников):`);
+  lines.push(memberLines);
+  lines.push('');
+  lines.push('ОБЪЕДИНЁННЫЕ ОГРАНИЧЕНИЯ ГРУППЫ:');
+  lines.push(
+    `- Аллергены (запрещены для ВСЕХ): ${allergens.length > 0 ? allergens.join(', ') : 'нет'}`
+  );
+  lines.push(
+    `- Диетические ограничения (применяется строжайшее): ${
+      restrictions.length > 0 ? restrictions.join(', ') : 'нет'
+    }`
+  );
+  lines.push(
+    `- Целевая калорийность (взвешенное среднее по BMR): ${weightedKcal} ккал/день`
+  );
+
+  if (calorieSpread > 400) {
+    const highPct = Math.round((maxKcal / weightedKcal - 1) * 100);
+    const lowPct = Math.round((1 - minKcal / weightedKcal) * 100);
+    const highThreshold = Math.round(weightedKcal * 1.15);
+    const lowThreshold = Math.round(weightedKcal * 0.85);
+    lines.push(
+      `- ⚠️ Большой разброс целевых калорий: от ${minKcal} до ${maxKcal} ккал ` +
+        `(разница ${calorieSpread} ккал). В поле "steps" КАЖДОГО блюда добавь ПОСЛЕДНИМ ` +
+        `ШАГОМ порционную подсказку: "Порция: участникам с потребностью >${highThreshold} ккал/день — ` +
+        `увеличить порцию на ~${highPct}%; участникам с потребностью <${lowThreshold} ккал/день — ` +
+        `уменьшить на ~${lowPct}%."`
+    );
+  }
+
+  if (cuisines.length > 0) {
+    lines.push(
+      `- Кулинарные предпочтения: ${cuisines.join(', ')}` +
+        (hasCuisineConflict ? ' (конфликт предпочтений — ротируй кухни по дням)' : '')
+    );
+  }
+
+  return lines.join('\n');
+}
+
+export const PROMPT_SHARED_MEAL_PLAN_RU = `Ты — диетолог-нутрициолог. Составь СОВМЕСТНЫЙ недельный план питания для группы участников. Каждое блюдо должно быть пригодно для КАЖДОГО участника ОДНОВРЕМЕННО.
+ВЕРНИ ТОЛЬКО ВАЛИДНЫЙ JSON — без пояснений, без markdown-блоков, только объект.
+
+{{group.portrait_block}}
+
+Неделя: {{week_start}} — {{week_end}}
+
+ПРАВИЛА СОВМЕСТНОГО ПЛАНА (строго соблюдать):
+1. Аллергены ЛЮБОГО участника = абсолютный запрет для всей группы.
+2. Диетические ограничения: применяется СТРОЖАЙШЕЕ требование (один участник веган → весь план веганский; один без глютена → весь план без глютена).
+3. Калорийность плана = взвешенное среднее по BMR (указано в портрете группы).
+4. При разбросе целевых калорий > 400 ккал — добавляй последним шагом в "steps" каждого блюда порционную подсказку (инструкция в портрете группы).
+5. Кулинарные предпочтения: при конфликте — ротируй кухни по дням (пн: кухня А, вт: кухня Б и т.д.); при отсутствии явного совпадения — выбирай универсально-популярные блюда.
+6. Разные цели участников: фокус на качество ингредиентов и сбалансированные макронутриенты, подходящие для всех.
+
+{{hard_constraints_block}}
+
+{{scenario_modifiers}}
+
+{{base_format}}`;
+
 // ── getMealPlanPrompt ─────────────────────────────────────────────────────────
 
 export interface MealPlanPromptParams {
@@ -751,4 +898,89 @@ export function getMealPlanPrompt(params: MealPlanPromptParams): string {
   }
 
   return prompt;
+}
+
+// ── getSharedMealPlanPrompt (Social Factor — TES-187) ────────────────────────
+
+export interface SharedMealPlanPromptParams {
+  members: GroupMemberInput[];
+  weekStart: string;
+  weekEnd: string;
+  /** Budget preference for ingredient selection. Defaults to 'moderate'. */
+  budgetPreference?: 'low' | 'moderate' | 'high';
+}
+
+/**
+ * Builds the complete GigaChat prompt for a shared/group weekly meal plan.
+ *
+ * Constraint merging strategy:
+ *  - Allergens: union across all members — any allergen from any member is excluded
+ *  - Dietary restrictions: union — most restrictive combination wins
+ *  - Medical conditions: union — any condition's scenario modifier applies
+ *  - Pregnancy/breastfeeding: any member's status triggers safety restrictions
+ *  - No ED-safe pass — eating disorder language modifiers are not applied to group plans
+ *  - Phase: group plans are phase-agnostic (members may be in different phases)
+ *
+ * Test case coverage:
+ *  1. Vegan + omnivore → merged restrictions include 'vegan' → vegan hard constraint
+ *  2. Nut allergy + no restrictions → merged allergens include nuts → nuts excluded for all
+ *  3. 1500 vs 2800 kcal → calorieSpread > 400 → portrait block adds per-meal portion guidance
+ *  4. Three-person conflicting cuisines → hasCuisineConflict → portrait block flags rotation
+ */
+export function getSharedMealPlanPrompt(params: SharedMealPlanPromptParams): string {
+  const { members, weekStart, weekEnd } = params;
+
+  // Merged constraints
+  const allergens = [...new Set(members.flatMap((m) => m.allergens).filter(Boolean))];
+  const restrictions = [
+    ...new Set(members.flatMap((m) => m.dietary_restrictions).filter(Boolean)),
+  ];
+  const conditions = [...new Set(members.flatMap((m) => m.medical_conditions).filter(Boolean))];
+  const isAnyPregnant = members.some((m) => m.is_pregnant);
+  const isAnyBreastfeeding = members.some((m) => m.is_breastfeeding);
+
+  // Hard-constraint block (reuses existing restriction → prohibition translation)
+  const hardConstraintsBlock = buildHardConstraintsBlock(restrictions, allergens);
+
+  // Scenario modifiers — union of all conditions across members
+  const modifiers: string[] = [];
+
+  // Vegan/vegetarian × muscle_gain: apply if any member has muscle goal AND diet restriction
+  const hasVegan = restrictions.some((r) => r === 'vegan' || r === 'веганское');
+  const hasVegetarian = restrictions.some((r) => r === 'vegetarian' || r === 'вегетарианское');
+  const hasMuscleGoal = members.some((m) => m.primary_goal === 'muscle_gain');
+  if (hasVegan && hasMuscleGoal) modifiers.push(SCENARIO_MODIFIERS.vegan_muscle);
+  else if (hasVegetarian && hasMuscleGoal) modifiers.push(SCENARIO_MODIFIERS.vegetarian_muscle);
+
+  // Medical condition modifiers
+  if (conditions.includes('ckd')) modifiers.push(SCENARIO_MODIFIERS.ckd);
+  if (conditions.includes('t1d')) modifiers.push(SCENARIO_MODIFIERS.t1d);
+  if (conditions.includes('diabetes_t2')) modifiers.push(SCENARIO_MODIFIERS.diabetes_t2);
+  if (conditions.includes('gout')) modifiers.push(SCENARIO_MODIFIERS.gout);
+  if (conditions.includes('bariatric_surgery')) modifiers.push(SCENARIO_MODIFIERS.bariatric_surgery);
+  if (conditions.includes('pku')) modifiers.push(SCENARIO_MODIFIERS.pku);
+  if (conditions.includes('hypertension')) modifiers.push(SCENARIO_MODIFIERS.hypertension);
+  if (conditions.includes('ibs')) modifiers.push(SCENARIO_MODIFIERS.ibs);
+  if (conditions.includes('pcos')) modifiers.push(SCENARIO_MODIFIERS.pcos);
+  if (conditions.includes('hypothyroidism')) modifiers.push(SCENARIO_MODIFIERS.hypothyroidism);
+  if (isAnyPregnant || isAnyBreastfeeding) modifiers.push(SCENARIO_MODIFIERS.pregnancy);
+
+  // Budget preference
+  const budgetKey =
+    params.budgetPreference === 'low'
+      ? 'budget_low'
+      : params.budgetPreference === 'high'
+        ? 'budget_high'
+        : 'budget_moderate';
+  modifiers.push(SCENARIO_MODIFIERS[budgetKey]);
+
+  const scenarioBlock = modifiers.join('\n\n');
+  const portraitBlock = buildGroupPortraitBlock(members);
+
+  return PROMPT_SHARED_MEAL_PLAN_RU.replace('{{group.portrait_block}}', portraitBlock)
+    .replace('{{week_start}}', weekStart)
+    .replace('{{week_end}}', weekEnd)
+    .replace('{{hard_constraints_block}}', hardConstraintsBlock)
+    .replace('{{scenario_modifiers}}', scenarioBlock)
+    .replace('{{base_format}}', PROMPT_BASE_FORMAT);
 }

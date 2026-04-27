@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { GroupCommentsSection } from './GroupCommentsSection';
 
 /* ─────────────────────────────────────────────
    Types
@@ -455,6 +456,11 @@ function GroupView() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Group comments section */}
+      <div className="rounded-xl border border-parchment-200 bg-white p-4 sm:p-5">
+        <GroupCommentsSection />
       </div>
     </div>
   );

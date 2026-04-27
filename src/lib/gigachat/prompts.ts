@@ -875,6 +875,7 @@ export const MAX_TOKENS: Record<string, { краткий: number; подробн
   food_photo: { краткий: 800, подробный: 800 },
   food_suggestion: { краткий: 120, подробный: 200 },
   meal_plan: { краткий: 4000, подробный: 4000 },
+  shared_meal_plan: { краткий: 4000, подробный: 4000 },
   swap_slot: { краткий: 600, подробный: 600 },
   recipe_detail: { краткий: 800, подробный: 800 },
   onboarding: { краткий: 600, подробный: 1000 },

@@ -153,6 +153,7 @@ export function MealPlannerClient({
   const [redoModalOpen, setRedoModalOpen] = useState(false);
   const [redoType, setRedoType] = useState<'individual' | 'daily' | 'weekly'>('individual');
   const [redoDate, setRedoDate] = useState<string>('');
+  const [redoMealType, setRedoMealType] = useState<string>('');
   const [redoWeekNumber, setRedoWeekNumber] = useState<number>(1);
 
   const currentWeekStart = offsetWeek(planGroupStart, activeWeekTab - 1);
@@ -335,9 +336,10 @@ export function MealPlannerClient({
   );
 
   const openRedoModal = useCallback(
-    (type: 'daily' | 'weekly', date: string) => {
+    (type: 'individual' | 'daily' | 'weekly', date: string, mealType?: string) => {
       setRedoType(type);
       setRedoDate(date);
+      setRedoMealType(mealType || '');
       setRedoWeekNumber(activeWeekTab);
       setRedoModalOpen(true);
     },
@@ -635,7 +637,7 @@ export function MealPlannerClient({
         open={redoModalOpen}
         onOpenChange={setRedoModalOpen}
         weekNumber={redoWeekNumber}
-        mealType=""
+        mealType={redoMealType}
         date={redoDate}
         redoType={redoType}
         onSuccess={() => {
@@ -660,7 +662,7 @@ interface ScheduleViewProps {
   onTogglePin: (date: string, mealType: MealType) => void;
   onSwapSlot: (date: string, mealType: MealType) => void;
   onToggleCompletion: (date: string, mealType: string) => void;
-  onOpenRedo: (type: 'daily' | 'weekly', date: string) => void;
+  onOpenRedo: (type: 'individual' | 'daily' | 'weekly', date: string, mealType?: string) => void;
 }
 
 function ScheduleView({
@@ -995,21 +997,33 @@ function ScheduleView({
                         )}
                       </button>
                       {!slot.pinned && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSwapSlot(date, mealType);
-                          }}
-                          disabled={isSwapping}
-                          title="Заменить блюдо"
-                          className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white disabled:opacity-50"
-                        >
-                          {isSwapping ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-3 w-3" />
-                          )}
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenRedo('individual', date, mealType);
+                            }}
+                            title="Переделать приём пищи"
+                            className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSwapSlot(date, mealType);
+                            }}
+                            disabled={isSwapping}
+                            title="Заменить блюдо"
+                            className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-white disabled:opacity-50"
+                          >
+                            {isSwapping ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3" />
+                            )}
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={(e) => {

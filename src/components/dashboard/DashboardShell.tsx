@@ -18,17 +18,18 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Планировщик', href: '/dashboard/planner', icon: PlannerIcon },
   { label: 'Рецепты', href: '/dashboard/recipes', icon: RecipesIcon },
   { label: 'Чат с ИИ', href: '/dashboard/chat', icon: ChatIcon },
+  { label: 'Социальное', href: '/dashboard/social', icon: SocialIcon },
   { label: 'Профиль и цели', href: '/dashboard/profile', icon: ProfileIcon },
   { label: 'Настройки', href: '/dashboard/settings', icon: SettingsIcon },
 ];
 
-// 5 primary tabs for the mobile bottom nav — Рецепты and Настройки accessible via sidebar
+// 5 primary tabs for the mobile bottom nav — Рецепты, Социальное and Настройки accessible via sidebar
 const BOTTOM_NAV_ITEMS: NavItem[] = [
   NAV_ITEMS[0], // Главная
   NAV_ITEMS[1], // Дневник питания
   NAV_ITEMS[2], // Планировщик
+  NAV_ITEMS[5], // Социальное
   NAV_ITEMS[4], // Чат с ИИ
-  NAV_ITEMS[5], // Профиль и цели
 ];
 
 interface DashboardShellProps {
@@ -179,7 +180,9 @@ export function DashboardShell({
                     ? 'Дневник'
                     : item.label === 'Профиль и цели'
                       ? 'Профиль'
-                      : item.label}
+                      : item.label === 'Социальное'
+                        ? 'Группа'
+                        : item.label}
                 </span>
               </Link>
             );
@@ -336,6 +339,25 @@ function ChatIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+      />
+    </svg>
+  );
+}
+
+function SocialIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
       />
     </svg>
   );

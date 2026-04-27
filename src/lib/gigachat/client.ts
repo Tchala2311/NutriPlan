@@ -47,6 +47,10 @@ import {
   MAX_TOKENS,
   TONE_INSTRUCTIONS,
 } from './prompts';
+import {
+  getSharedMealPlanPrompt,
+  type GroupMemberInput,
+} from '../planner/goal-prompts';
 
 const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
 const GIGACHAT_FILES_URL = 'https://gigachat.devices.sberbank.ru/api/v1/files';
@@ -885,4 +889,46 @@ export async function generateTastePortrait(
   const raw = await callGigaChat(system, userMsg, MAX_TOKENS.taste_portrait.краткий);
   const json = extractJson(raw);
   return JSON.parse(json);
+}
+
+// ── Shared meal plan (Social Factor — TES-187) ───────────────────────────────
+
+/**
+ * Re-export so API route doesn't need to import directly from goal-prompts.
+ * Keeps the group member shape co-located with the generator function.
+ */
+export type { GroupMemberInput };
+
+/**
+ * Generates a shared weekly meal plan for a group of participants.
+ *
+ * The prompt engine merges all members' constraints before calling GigaChat:
+ *  - Allergens: union (any allergen from any member is excluded for everyone)
+ *  - Dietary restrictions: union (most restrictive combination applies)
+ *  - Calorie target: BMR-weighted average across members
+ *  - Calorie spread > 400 kcal: per-meal portion guidance is embedded in steps
+ *  - Cuisine conflicts: rotation across days + neutral-dish preference
+ *
+ * Returns the same WeekPlanRaw format as generateWeeklyMealPlan, so existing
+ * recipe-insertion and meal-plan-upsert logic works unchanged.
+ */
+export async function generateSharedWeeklyMealPlan(
+  members: GroupMemberInput[],
+  weekStart: string,
+  weekEnd: string,
+  budgetPreference?: 'low' | 'moderate' | 'high'
+): Promise<WeekPlanRaw> {
+  if (members.length < 2) {
+    throw new Error(
+      'generateSharedWeeklyMealPlan requires at least 2 group members. ' +
+        'Use generateWeeklyMealPlan for single-user plans.'
+    );
+  }
+
+  const prompt = getSharedMealPlanPrompt({ members, weekStart, weekEnd, budgetPreference });
+  const system = 'Ты профессиональный диетолог, отвечаешь только валидным JSON.';
+  const raw = await callGigaChat(system, prompt, MAX_TOKENS.shared_meal_plan.краткий);
+  const json = extractJson(raw);
+  const parsed = JSON.parse(json);
+  return sanitizeNumbers(parsed, MEAL_NUMERIC_KEYS) as WeekPlanRaw;
 }
