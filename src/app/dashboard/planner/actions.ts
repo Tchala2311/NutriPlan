@@ -639,6 +639,7 @@ export async function recordMealRedo(
     week_number: weekNumber,
     redo_type: redoType,
     affected_date: affectedDate,
+    affected_meal_type: affectedMealType ?? null,
     reason,
     paid: requiresPayment ? false : true, // Free=true, needs payment=false
   });

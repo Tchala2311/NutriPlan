@@ -497,6 +497,20 @@ export function MultiPhasePlannerClient({
           ))}
         </div>
 
+        {/* Redo entire week button */}
+        <button
+          onClick={() => {
+            const weekStartDate = getMealDate(globalWeek, 0, planStartDate) ?? '';
+            setSelectedRedoMeal({ mealType: '', date: weekStartDate, redoType: 'weekly' });
+            setRedoModalOpen(true);
+          }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-parchment-200 text-xs font-medium text-stone-400 hover:bg-parchment-100 hover:text-bark-300 transition-colors"
+          title="Переделать всю неделю"
+        >
+          <RotateCcw className="h-3 w-3" />
+          <span className="hidden sm:inline">Переделать неделю</span>
+        </button>
+
         <div className="ml-auto flex items-center gap-1 bg-parchment-100 rounded-xl p-1">
           <button
             onClick={() => setViewMode('schedule')}
